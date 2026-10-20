@@ -1,5 +1,5 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>네팔 경보 시스템 | EntryJS 편집기 v1.0</title>
+<title>네팔 경보 시스템 | EntryJS 편집기 v1.1</title>
 <link href="https://entry-cdn.pstatic.net/lib/entry-tool/dist/entry-tool.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://playentry.org/lib/entry-tool/dist/entry-tool.css'"/>
 <link href="https://entry-cdn.pstatic.net/lib/entry-js/dist/entry.min.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://playentry.org/lib/entry-js/dist/entry.min.css'"/>
 <style>
@@ -27,7 +27,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f3f5fa;fon
 #nepalSpriteChooser .npmsg{margin-top:12px;font-size:13px;min-height:18px;color:#b13d2b}
 @media(max-width:660px){#nepalSpriteChooser .npgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style></head><body>
-<div id="top"><span>🟢 실제 엔트리(EntryJS) 블록 편집기 · v1.0</span><span style="display:flex;align-items:center;gap:12px"><span id="assets-status" role="button" tabindex="0" title="클릭하면 이미지 오류 진단을 볼 수 있습니다" style="font-size:11px;cursor:pointer">이미지 리소스 경로 확인 중</span><span id="status">외부 라이브러리를 불러오는 중…</span></span></div>
+<div id="top"><span>🟢 실제 엔트리(EntryJS) 블록 편집기 · v1.1</span><span style="display:flex;align-items:center;gap:12px"><span id="assets-status" role="button" tabindex="0" title="클릭하면 이미지 오류 진단을 볼 수 있습니다" style="font-size:11px;cursor:pointer">이미지 리소스 경로 확인 중</span><span id="status">외부 라이브러리를 불러오는 중…</span></span></div>
 <div id="workspace"></div><div id="assets-report" style="position:fixed;right:14px;top:58px;z-index:999998;width:min(600px,92vw);max-height:65vh;overflow:auto;background:#16241a;color:white;border:2px solid #86c85d;border-radius:10px;padding:16px;display:none;box-shadow:0 12px 30px #0005"><div style="display:flex;justify-content:space-between;align-items:center"><strong>엔트리 이미지 리소스 진단</strong><button id="close-assets" style="padding:6px 10px">닫기</button></div><pre id="assets-report-text" style="font-size:12px;white-space:pre-wrap;word-break:break-all"></pre><button id="copy-assets" style="padding:6px 10px;background:#a4e06b;border:0">진단 내용 복사하기</button></div><div id="fatal"><strong>엔트리 편집기를 불러오지 못했습니다</strong><p id="fatal-msg" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px"></p><div style="display:flex;flex-wrap:wrap;gap:12px"><button onclick="navigator.clipboard.writeText(document.getElementById('fatal-msg').textContent).then(()=>this.textContent='오류 내용 복사됨').catch(()=>this.textContent='복사 실패: 문구를 직접 선택하세요')" style="font-size:15px;padding:10px;background:#b6e874;color:#11200b;border:0;border-radius:6px;cursor:pointer">오류 내용 복사하기</button><button onclick="location.reload()" style="font-size:15px;padding:10px;background:#234a29;color:#fff;border:1px solid #4b8556;border-radius:6px;cursor:pointer">다시 시도</button></div></div>
 
 <div id="nepalSpriteChooser" hidden role="dialog" aria-modal="true" aria-labelledby="nepalSpriteTitle">
@@ -248,12 +248,21 @@ async function check(mission){
  return {ok:false,details:['현재 미션 3~5는 실제 엔트리 런타임과의 자동 검사 기능 개발 전입니다.']};
 }
 
-/* v1.0: Asset-path bridge for EntryJS hosted under /nepal/ on GitHub Pages.
+/* v1.1: Asset-path bridge for EntryJS hosted under /nepal/ on GitHub Pages.
  * EntryJS uses BOTH /images/* and /lib/entry-js/images/* regardless of libDir.
  * Do not change mission logic or substitute mock block icons.
  * Restrict rewrites to EntryJS's own images; students' external images untouched.
  */
 const NEPAL_ASSET_RESCUE = (() => {
+  // Six official EntryJS start-event SVG icons (entrylabs/entryjs, Apache-2.0).
+const embeddedEntryStartIcons = {
+    'start_icon_play.svg':'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCIgdmlld0JveD0iMCAwIDMwIDMwIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxjaXJjbGUgY3g9IjE1IiBjeT0iMTUiIHI9IjE0LjUiIGZpbGw9IiNGRkYiIGZpbGwtcnVsZT0ibm9uemVybyIgc3Ryb2tlPSIjRjJGMkYyIi8+PHBhdGggZmlsbD0iIzAwQjQwMCIgZD0iTTExIDkuNjd2MTAuNjZhMSAxIDAgMCAwIDEuNTM5Ljg0M2w4LjMzOS01LjMzYTEgMSAwIDAgMCAwLTEuNjg2bC04LjM0LTUuMzNBMSAxIDAgMCAwIDExIDkuNjd6Ii8+PC9nPjwvc3ZnPg==',
+    'start_icon_mouse.svg':'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCIgdmlld0JveD0iMCAwIDMwIDMwIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxjaXJjbGUgY3g9IjE1IiBjeT0iMTUiIHI9IjE0LjUiIGZpbGw9IiNGRkYiIGZpbGwtcnVsZT0ibm9uemVybyIgc3Ryb2tlPSIjRjJGMkYyIi8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoOSA2KSI+PHJlY3Qgd2lkdGg9IjEyIiBoZWlnaHQ9IjE3IiBmaWxsPSIjMDBCNDAwIiByeD0iNS41Ii8+PHJlY3Qgd2lkdGg9IjIiIGhlaWdodD0iNCIgeD0iNSIgeT0iMyIgZmlsbD0iI0ZGRiIgZmlsbC1ydWxlPSJub256ZXJvIiByeD0iMSIvPjwvZz48L2c+PC9zdmc+',
+    'start_icon_keyboard.svg':'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCIgdmlld0JveD0iMCAwIDMwIDMwIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxjaXJjbGUgY3g9IjE1IiBjeT0iMTUiIHI9IjE0LjUiIGZpbGw9IiNGRkYiIGZpbGwtcnVsZT0ibm9uemVybyIgc3Ryb2tlPSIjRjJGMkYyIi8+PHBhdGggZmlsbD0iIzAwQjQwMCIgZD0iTTEwIDEwaDEyLjVhMS41IDEuNSAwIDAgMSAxLjUgMS41djlhMS41IDEuNSAwIDAgMS0xLjUgMS41aC0xNUExLjUgMS41IDAgMCAxIDYgMjAuNXYtOUExLjUgMS41IDAgMCAxIDcuNSAxMEg5VjcuNUEyLjUgMi41IDAgMCAxIDExLjUgNWg2QTEuNSAxLjUgMCAwIDAgMTkgMy41di0yaDF2MkEyLjUgMi41IDAgMCAxIDE3LjUgNmgtNkExLjUgMS41IDAgMCAwIDEwIDcuNVYxMHoiLz48cGF0aCBmaWxsPSIjRkZGIiBmaWxsLXJ1bGU9Im5vbnplcm8iIGQ9Ik05IDE0YTEgMSAwIDEgMSAwLTIgMSAxIDAgMCAxIDAgMnptNCAwYTEgMSAwIDEgMSAwLTIgMSAxIDAgMCAxIDAgMnptMiAzYTEgMSAwIDEgMSAwLTIgMSAxIDAgMCAxIDAgMnptNCAwYTEgMSAwIDEgMSAwLTIgMSAxIDAgMCAxIDAgMnptLTggMGExIDEgMCAxIDEgMC0yIDEgMSAwIDAgMSAwIDJ6bTYtM2ExIDEgMCAxIDEgMC0yIDEgMSAwIDAgMSAwIDJ6bTQgMGExIDEgMCAxIDEgMC0yIDEgMSAwIDAgMSAwIDJ6TTkuNSAxOWgxMWEuNS41IDAgMSAxIDAgMWgtMTFhLjUuNSAwIDEgMSAwLTF6Ii8+PHBhdGggZmlsbD0iI0ZGRiIgZmlsbC1ydWxlPSJub256ZXJvIiBzdHJva2U9IiNGMkYyRjIiIGQ9Ik0xNSAyOS41YzguMDA4IDAgMTQuNS02LjQ5MiAxNC41LTE0LjVTMjMuMDA4LjUgMTUgLjUuNSA2Ljk5Mi41IDE1IDYuOTkyIDI5LjUgMTUgMjkuNXptMCAwQzYuOTkyIDI5LjUuNSAyMy4wMDguNSAxNVM2Ljk5Mi41IDE1IC41IDI5LjUgNi45OTIgMjkuNSAxNSAyMy4wMDggMjkuNSAxNSAyOS41eiIvPjwvZz48L3N2Zz4=',
+    'start_icon_scene.svg':'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCIgdmlld0JveD0iMCAwIDMwIDMwIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGwtcnVsZT0ibm9uemVybyI+PGNpcmNsZSBjeD0iMTUiIGN5PSIxNSIgcj0iMTQuNSIgZmlsbD0iI0ZGRiIgc3Ryb2tlPSIjRjJGMkYyIi8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNi41IDUpIj48cmVjdCB3aWR0aD0iMTQuOTMzIiBoZWlnaHQ9IjkuNiIgeD0iMS4wNjciIHk9IjcuNDY3IiBmaWxsPSIjMDBCNDAwIiByeD0iMSIvPjxnIHRyYW5zZm9ybT0icm90YXRlKC0xNSAxNi43MzggMS4yODIpIj48cmVjdCB3aWR0aD0iMTQuOTMzIiBoZWlnaHQ9IjMuMiIgZmlsbD0iIzAwQjQwMCIgcng9Ii41Ii8+PHBhdGggZmlsbD0iI0ZGRiIgZD0iTTIuMTMzIDBoMi4xMzRMMi4xMzMgMy4ySDBMMi4xMzMgMHptNS4zMzQgMEg5LjZMNy40NjcgMy4ySDUuMzMzTDcuNDY3IDB6TTEyLjggMGgyLjEzM0wxMi44IDMuMmgtMi4xMzNMMTIuOCAweiIvPjwvZz48cGF0aCBmaWxsPSIjRkZGIiBkPSJNMy43IDkuNmg0LjMzM2EuNS41IDAgMCAxIC41LjV2LjA2N2EuNS41IDAgMCAxLS41LjVIMy43YS41LjUgMCAwIDEtLjUtLjVWMTAuMWEuNS41IDAgMCAxIC41LS41em0wIDIuMTMzaDguNmEuNS41IDAgMCAxIC41LjV2LjA2N2EuNS41IDAgMCAxLS41LjVIMy43YS41LjUgMCAwIDEtLjUtLjV2LS4wNjdhLjUuNSAwIDAgMSAuNS0uNXptMCAyLjEzNGg5LjY2N2EuNS41IDAgMCAxIC41LjV2LjA2NmEuNS41IDAgMCAxLS41LjVIMy43YS41LjUgMCAwIDEtLjUtLjV2LS4wNjZhLjUuNSAwIDAgMSAuNS0uNXoiLz48L2c+PC9nPjwvZz48L3N2Zz4=',
+    'start_icon_signal.svg':'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCIgdmlld0JveD0iMCAwIDMwIDMwIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGwtcnVsZT0ibm9uemVybyI+PGNpcmNsZSBjeD0iMTUiIGN5PSIxNSIgcj0iMTQuNSIgZmlsbD0iI0ZGRiIgc3Ryb2tlPSIjRjJGMkYyIi8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNiAxLjUpIj48cGF0aCBmaWxsPSIjMDBCNDAwIiBzdHJva2U9IiMwMEI0MDAiIGQ9Ik04LjQ4OCAxMi42NThINi45ODVsLTIuOTYzIDguMzk1aDcuNDNsLTIuOTY0LTguMzk1eiIvPjxnIGZpbGw9IiMwMEI0MDAiPjxwYXRoIHN0cm9rZT0iI0ZGRiIgZD0iTTE2LjMwMSAxNC45NjdBNy40NTMgNy40NTMgMCAwIDEgNS43ODUgNC40NWwxMC41MTYgMTAuNTE2eiIvPjxwYXRoIGQ9Ik0xNC4xNzMgNi4xNDRhLjUyNS41MjUgMCAwIDEgLjY4My42ODNsLTIuMjEgNS41MjZhLjUyNS41MjUgMCAwIDEtLjg2LjE3Nkw4LjQ3MiA5LjIxM2EuNTI1LjUyNSAwIDAgMSAuMTc2LS44NThsNS41MjYtMi4yMXptLTQuMzk3IDIuODlsMi4xOSAyLjE5IDEuNDYtMy42NS0zLjY1IDEuNDZ6Ii8+PC9nPjxjaXJjbGUgY3g9IjEzLjgxNiIgY3k9IjcuMTg0IiByPSIxLjE1OCIgZmlsbD0iI0ZGRiIgc3Ryb2tlPSIjMDBCNDAwIi8+PC9nPjwvZz48L2c+PC9zdmc+',
+    'start_icon.svg':'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMiIgaGVpZ2h0PSIyMiIgdmlld0JveD0iMCAwIDIyIDIyIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxjaXJjbGUgY3g9IjExIiBjeT0iMTEiIHI9IjExIiBmaWxsPSIjMDA5NDAwIi8+PHBhdGggZmlsbD0iIzNCQ0UzQiIgZD0iTTguMiAxNi4ySDlhLjguOCAwIDAgMSAwIDEuNkg1LjhhLjguOCAwIDEgMSAwLTEuNmguOFY1LjhhLjguOCAwIDEgMSAxLjYgMHYxMC40em0zLjYyMi00LjMxYy0uOTUyLjE5LTIuMDkuMTIzLTIuNjYtLjI2MUEuMzQuMzQgMCAwIDEgOSAxMS4zNDNWNi4wMWEuMzMzLjMzMyAwIDAgMSAuNTQyLS4yNmMuNTcxLjM4IDEuMzMxLjQ3MyAyLjI4LjI4MyAxLjQyOS0uMjg2IDIuNjgtMS4zMjggNS4wNjItLjI3OC4xMy4wNjUuMTE1LjE1NC4xMTUuMjU1djUuMzMzYzAgLjE4NC0uMTQ5LjMzNC0uMzMzLjMzNC0uMDkyIDAtLjIxNC0uMDY1LS4zNDQtLjExMy0yLjE5Ny0uNzgyLTMuMDcxLjAzOS00LjUuMzI1eiIvPjwvZz48L3N2Zz4='
+  };
   const sources = [
     'https://entry-cdn.pstatic.net/lib/entry-js/images/',
     'https://playentry.org/lib/entry-js/images/',
@@ -261,7 +270,7 @@ const NEPAL_ASSET_RESCUE = (() => {
     'https://raw.githubusercontent.com/entrylabs/entryjs/develop/images/'
   ];
   const elementState = new WeakMap();
-  const report = {redirected:0, recovered:0, exhausted:[], lastFailures:[]};
+  const report = {redirected:0, recovered:0, embedded:0, exhausted:[], lastFailures:[]};
   const queued = new Set();
   const isTrustedHost = (host) => [location.hostname,'entry-cdn.pstatic.net','playentry.org',
     'cdn.jsdelivr.net','raw.githubusercontent.com'].includes(host);
@@ -315,6 +324,19 @@ const NEPAL_ASSET_RESCUE = (() => {
     if(old && (old.current===current || old.original===current))return;
     const nameInImages=parseAsset(current);
     if(!nameInImages)return;
+    // The upstream build sometimes concatenates two absolute init paths: /libhttps://.../lib/entry-js/images/...
+    // Render these six frequently used event icons from the official source bundled with this HTML.
+    // This works even when the CDN is blocked and prevents dozens of repeated retries for the same SVG.
+    if(nameInImages.startsWith('block_icon/') && embeddedEntryStartIcons[nameInImages.slice('block_icon/'.length)]){
+      const bundled=embeddedEntryStartIcons[nameInImages.slice('block_icon/'.length)];
+      if(current !== bundled){
+        writeAttr(el,attr,bundled);
+        report.embedded++;
+        updateUI();
+      }
+      elementState.delete(el);  // data: URLs are final; do not run CDN fallbacks on them.
+      return;
+    }
     const candidates=[...new Set(sources.map(prefix=>prefix+nameInImages))];
     // Try to preserve a currently valid remote URL, and only reroute when it fails.
     const exact=candidates.findIndex(u=>u===new URL(current,location.href).href);
@@ -339,7 +361,7 @@ const NEPAL_ASSET_RESCUE = (() => {
       const label=document.getElementById('assets-status');
       if(label){
         label.textContent=report.exhausted.length?`이미지 일부 복구 실패 ${report.exhausted.length}개 · 상세 확인`:
-          report.redirected?`이미지 리소스 자동 연결 중 · ${report.redirected}회 시도`:'이미지 리소스 경로 확인 중';
+          report.embedded?`엔트리 시작 아이콘 ${report.embedded}개 복구 완료`:report.redirected?`이미지 리소스 자동 연결 중 · ${report.redirected}회 시도`:'이미지 리소스 경로 확인 중';
         label.style.color=report.exhausted.length?'#a33926':'#396b32';
       }
     },160);
@@ -348,6 +370,7 @@ const NEPAL_ASSET_RESCUE = (() => {
     // In capture phase, broken image events are available even when they do not bubble.
     document.addEventListener('error',event=>{
       const el=event.target;
+      if(!el || !['img','image'].includes(el.localName?.toLowerCase())) return;
       if(!elementState.has(el))hookElement(el);
       if(elementState.has(el))tryNext(el);
     },true);
@@ -366,7 +389,7 @@ const NEPAL_ASSET_RESCUE = (() => {
     updateUI();
   }
   function diagnostic(){
-    return `NEPAL × ENTRY 이미지 진단 v1.0\n자동 연결 시도: ${report.redirected}회\n로딩 완료: ${report.recovered}회\n복구 실패: ${report.exhausted.length}건\n` +
+    return `NEPAL × ENTRY 이미지 진단 v1.1\n내장 아이콘 복구: ${report.embedded}건\nCDN 연결 시도: ${report.redirected}회\n이미지 로드 이벤트: ${report.recovered}회 (SVG 이미지에서는 감지되지 않을 수 있음)\n복구 실패: ${report.exhausted.length}건\n` +
       report.lastFailures.map((o,i)=>`${i+1}. ${o.original} → ${o.filename}`).join('\n') +
       '\n공식 CDN이 차단되었다면 이미지 파일을 저장소에 직접 설치해야 합니다.';
   }
@@ -468,7 +491,7 @@ async function boot(){try{
   statusEl.textContent='엔트리 실행 환경을 초기화하는 중…';
   if(E.Event)E.creationChangedEvent=new E.Event(window);
   E.init(document.getElementById('workspace'),{
-    type:'workspace',libDir:'https://entry-cdn.pstatic.net/lib',entryDir:'https://entry-cdn.pstatic.net/lib/entry-js',defaultDir:'https://playentry.org',soundDir:'https://playentry.org',
+    type:'workspace',libDir:'https://entry-cdn.pstatic.net/lib',entryDir:'/entry-js',defaultDir:'https://playentry.org',soundDir:'https://playentry.org',
     projectsaveable:true,variableEnable:true,listEnable:true,
     hardwareEnable:false,textCodingEnable:false,expansionDisable:true,
     fonts:[{name:'나눔고딕',family:'Nanum Gothic',url:'https://fonts.googleapis.com/earlyaccess/nanumgothic.css'}]
