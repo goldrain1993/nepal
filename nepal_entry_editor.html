@@ -1,5 +1,5 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>네팔 경보 시스템 | EntryJS 편집기 v0.8</title>
+<title>네팔 경보 시스템 | EntryJS 편집기 v0.9</title>
 <link href="https://entry-cdn.pstatic.net/lib/entry-tool/dist/entry-tool.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://playentry.org/lib/entry-tool/dist/entry-tool.css'"/>
 <link href="https://entry-cdn.pstatic.net/lib/entry-js/dist/entry.min.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://playentry.org/lib/entry-js/dist/entry.min.css'"/>
 <style>
@@ -8,8 +8,8 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f3f5fa;fon
 #top{height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#e9f1e6;color:#21431d;font-size:13px;font-weight:800;border-bottom:1px solid #c1d9bc;box-sizing:border-box}
 #status{color:#396b32;font-size:12px}#fatal{position:absolute;inset:48px 0 0;background:#131b15;color:white;padding:20px;line-height:1.8;overflow:auto;display:none;z-index:99999}#fatal strong{font-size:20px;color:#ffb3a4}
 </style></head><body>
-<div id="top"><span>🟢 실제 엔트리(EntryJS) 블록 편집기 · v0.8</span><span id="status">외부 라이브러리를 불러오는 중…</span></div>
-<div id="workspace"></div><div id="fatal"><strong>엔트리 편집기를 불러오지 못했습니다</strong><p id="fatal-msg" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px"></p><div style="display:flex;flex-wrap:wrap;gap:12px"><button onclick="navigator.clipboard.writeText(document.getElementById('fatal-msg').textContent).then(()=>this.textContent='오류 내용 복사됨').catch(()=>this.textContent='복사 실패: 문구를 직접 선택하세요')" style="font-size:15px;padding:10px;background:#b6e874;color:#11200b;border:0;border-radius:6px;cursor:pointer">오류 내용 복사하기</button><button onclick="location.reload()" style="font-size:15px;padding:10px;background:#234a29;color:#fff;border:1px solid #4b8556;border-radius:6px;cursor:pointer">다시 시도</button></div></div>
+<div id="top"><span>🟢 실제 엔트리(EntryJS) 블록 편집기 · v0.9</span><span style="display:flex;align-items:center;gap:12px"><span id="assets-status" role="button" tabindex="0" title="클릭하면 이미지 오류 진단을 볼 수 있습니다" style="font-size:11px;cursor:pointer">이미지 리소스 경로 확인 중</span><span id="status">외부 라이브러리를 불러오는 중…</span></span></div>
+<div id="workspace"></div><div id="assets-report" style="position:fixed;right:14px;top:58px;z-index:999998;width:min(600px,92vw);max-height:65vh;overflow:auto;background:#16241a;color:white;border:2px solid #86c85d;border-radius:10px;padding:16px;display:none;box-shadow:0 12px 30px #0005"><div style="display:flex;justify-content:space-between;align-items:center"><strong>엔트리 이미지 리소스 진단</strong><button id="close-assets" style="padding:6px 10px">닫기</button></div><pre id="assets-report-text" style="font-size:12px;white-space:pre-wrap;word-break:break-all"></pre><button id="copy-assets" style="padding:6px 10px;background:#a4e06b;border:0">진단 내용 복사하기</button></div><div id="fatal"><strong>엔트리 편집기를 불러오지 못했습니다</strong><p id="fatal-msg" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px"></p><div style="display:flex;flex-wrap:wrap;gap:12px"><button onclick="navigator.clipboard.writeText(document.getElementById('fatal-msg').textContent).then(()=>this.textContent='오류 내용 복사됨').catch(()=>this.textContent='복사 실패: 문구를 직접 선택하세요')" style="font-size:15px;padding:10px;background:#b6e874;color:#11200b;border:0;border-radius:6px;cursor:pointer">오류 내용 복사하기</button><button onclick="location.reload()" style="font-size:15px;padding:10px;background:#234a29;color:#fff;border:1px solid #4b8556;border-radius:6px;cursor:pointer">다시 시도</button></div></div>
 <script>
 /* EntryJS is loaded from its publisher and independently hosted fallbacks below. It is NOT an imitation block editor. */
 const statusEl=document.getElementById('status');
@@ -23,7 +23,7 @@ window.addEventListener('error',(e)=>{if(!window.__entryReady)console.warn('Entr
  * We first try well-known vendor CDN URLs (for third-party libs), then
  * the Entry CDN and original playentry paths. Do not silently fake EntryJS.
  */
-// v0.8: The script element's onload does NOT mean its JavaScript executed
+// v0.9: The script element's onload does NOT mean its JavaScript executed
 // successfully. Capture runtime errors to distinguish script load vs script eval.
 const bootNotes=[];
 const executionErrors=[];
@@ -170,7 +170,7 @@ async function loadDependency(path,key,required,index,total){
 function debugReport(problem){
   const entryObj=window.Entry;
   return [
-    `NEPAL × ENTRY v0.8 오류 진단`,
+    `NEPAL × ENTRY v0.9 오류 진단`,
     `문제: ${problem}`,
     `Entry: ${typeof entryObj} / Entry.init: ${typeof entryObj?.init}`,
     `module globals: EntryStatic=${typeof window.EntryStatic}; EntryTool=${typeof window.EntryTool}; EntryPaint=${typeof window.EntryPaint}; soundEditor=${typeof window.SoundEditor}; legacyVideo=${typeof window.LegacyVideo}; createjs=${typeof window.createjs}; React=${typeof window.React}; ReactDOM=${typeof window.ReactDOM}`,
@@ -220,6 +220,132 @@ async function check(mission){
  }
  return {ok:false,details:['현재 미션 3~5는 실제 엔트리 런타임과의 자동 검사 기능 개발 전입니다.']};
 }
+
+/* v0.9: Asset-path bridge for EntryJS hosted under /nepal/ on GitHub Pages.
+ * EntryJS uses BOTH /images/* and /lib/entry-js/images/* regardless of libDir.
+ * Do not change mission logic or substitute mock block icons.
+ * Restrict rewrites to EntryJS's own images; students' external images untouched.
+ */
+const NEPAL_ASSET_RESCUE = (() => {
+  const sources = [
+    'https://entry-cdn.pstatic.net/lib/entry-js/images/',
+    'https://playentry.org/lib/entry-js/images/',
+    'https://cdn.jsdelivr.net/gh/entrylabs/entryjs@develop/images/',
+    'https://raw.githubusercontent.com/entrylabs/entryjs/develop/images/'
+  ];
+  const elementState = new WeakMap();
+  const report = {redirected:0, recovered:0, exhausted:[], lastFailures:[]};
+  const queued = new Set();
+  const isTrustedHost = (host) => [location.hostname,'entry-cdn.pstatic.net','playentry.org',
+    'cdn.jsdelivr.net','raw.githubusercontent.com'].includes(host);
+  function parseAsset(uri) {
+    if (!uri || /^(data:|blob:|javascript:|#)/i.test(uri)) return null;
+    let url;try {url=new URL(uri,location.href)}catch(_){return null}
+    if (!isTrustedHost(url.hostname)) return null;
+    const match=url.pathname.match(/(?:^|\/)images\/([^?#]+\.(?:svg|png|jpg|jpeg|gif|webp))$/i);
+    if (!match) return null;
+    // Reject project uploads and unrelated CDN imagery.
+    if (/\/(?:uploads|projects|thumb|user|api)\//i.test(url.pathname)) return null;
+    return match[1];
+  }
+  function readAttr(el,attr){
+    return el.getAttribute(attr) || (attr==='href' ? el.getAttribute('xlink:href'):null);
+  }
+  function writeAttr(el,attr,url){
+    if (attr==='href' && el.hasAttribute('xlink:href')){
+      el.setAttributeNS('http://www.w3.org/1999/xlink','xlink:href',url);
+    }
+    el.setAttribute(attr,url);
+  }
+  function tryNext(el){
+    const st=elementState.get(el);
+    if(!st)return;
+    if(st.index >= st.candidates.length){
+      if (!st.exhausted){
+        st.exhausted=true;
+        report.exhausted.push(st.original);
+        report.lastFailures.push({original:st.original,filename:st.name});
+        if(report.lastFailures.length>12)report.lastFailures.shift();
+        updateUI();
+      }
+      return;
+    }
+    const next=st.candidates[st.index++];
+    st.current=next;
+    st.attempted.push(next);
+    writeAttr(el,st.attr,next);
+    report.redirected++;
+    updateUI();
+  }
+  function hookElement(el){
+    if(!el || el.nodeType!==1)return;
+    const name=el.localName?.toLowerCase();
+    if(name!=='img' && name!=='image')return;
+    const attr=name==='img'?'src':'href';
+    const current=readAttr(el,attr);
+    if(!current)return;
+    const old=elementState.get(el);
+    if(old && (old.current===current || old.original===current))return;
+    const nameInImages=parseAsset(current);
+    if(!nameInImages)return;
+    const candidates=[...new Set(sources.map(prefix=>prefix+nameInImages))];
+    // Try to preserve a currently valid remote URL, and only reroute when it fails.
+    const exact=candidates.findIndex(u=>u===new URL(current,location.href).href);
+    const state={attr,original:current,name:nameInImages,index:0,candidates,attempted:[],current,exhausted:false};
+    elementState.set(el,state);
+    if(exact>=0){state.index=exact+1;state.attempted.push(current);}
+    else tryNext(el);
+    if(name==='img'){
+      // Already loaded images should not be modified further.
+      if(el.complete && el.naturalWidth>0)report.recovered++;
+    }
+  }
+  function scan(node){
+    if(!node || node.nodeType!==1)return;
+    hookElement(node);
+    node.querySelectorAll?.('img,svg image').forEach(hookElement);
+  }
+  let uiTimer=0;
+  function updateUI(){
+    clearTimeout(uiTimer);
+    uiTimer=setTimeout(()=>{
+      const label=document.getElementById('assets-status');
+      if(label){
+        label.textContent=report.exhausted.length?`이미지 일부 복구 실패 ${report.exhausted.length}개 · 상세 확인`:
+          report.redirected?`이미지 리소스 자동 연결 중 · ${report.redirected}회 시도`:'이미지 리소스 경로 확인 중';
+        label.style.color=report.exhausted.length?'#a33926':'#396b32';
+      }
+    },160);
+  }
+  function install(){
+    // In capture phase, broken image events are available even when they do not bubble.
+    document.addEventListener('error',event=>{
+      const el=event.target;
+      if(!elementState.has(el))hookElement(el);
+      if(elementState.has(el))tryNext(el);
+    },true);
+    document.addEventListener('load',event=>{
+      const st=elementState.get(event.target);
+      if(st){report.recovered++;updateUI();}
+    },true);
+    const observer=new MutationObserver(records=>{
+      for(const r of records){
+        if(r.type==='attributes')hookElement(r.target);
+        else for(const n of r.addedNodes)scan(n);
+      }
+    });
+    observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['src','href','xlink:href']});
+    scan(document.body);
+    updateUI();
+  }
+  function diagnostic(){
+    return `NEPAL × ENTRY 이미지 진단 v0.9\n자동 연결 시도: ${report.redirected}회\n로딩 완료: ${report.recovered}회\n복구 실패: ${report.exhausted.length}건\n` +
+      report.lastFailures.map((o,i)=>`${i+1}. ${o.original} → ${o.filename}`).join('\n') +
+      '\n공식 CDN이 차단되었다면 이미지 파일을 저장소에 직접 설치해야 합니다.';
+  }
+  return {install,report,diagnostic};
+})();
+
 async function boot(){try{
   for(let i=0;i<deps.length;i++){await loadDependency(deps[i][0],deps[i][1],deps[i][2],i+1,deps.length);}
   if(typeof window.Entry?.init!=='function')throw Error('EntryJS 로딩 후 초기화 함수를 찾지 못했습니다.');
@@ -237,12 +363,17 @@ async function boot(){try{
   const seed=teacherVariables.filter(([,name])=>!getVar(name)).map(([id,name,value])=>({id,name,value,variableType:'variable',visible:true,object:null}));
   if(seed.length)E.variableContainer.appendVariables(seed);
   window.__entryReady=true;statusEl.textContent='✅ 실제 엔트리 편집기 준비 완료';notify('ENTRY_READY');
- }catch(e){console.error('[NEPAL ENTRY v0.8] 부팅 실패',e,executionErrors,bootNotes);fail(e.message||String(e));}}
+ }catch(e){console.error('[NEPAL ENTRY v0.9] 부팅 실패',e,executionErrors,bootNotes);fail(e.message||String(e));}}
 window.addEventListener('message',async e=>{
  if(e.source!==window.parent || e.origin!==location.origin)return;
  if(e.data?.type!=='NEPAL_TEST')return;
  try{const result=await check(Number(e.data.mission));notify('ENTRY_CHECK_RESULT',result)}
  catch(error){notify('ENTRY_CHECK_RESULT',{ok:false,details:['엔트리 실행 또는 검사 오류: '+String(error.message||error),'브라우저 개발자 도구 콘솔을 확인해 주세요.']})}
 });
+document.getElementById('assets-status').addEventListener('click',()=>{document.getElementById('assets-report-text').textContent=NEPAL_ASSET_RESCUE.diagnostic();document.getElementById('assets-report').style.display='block';});
+document.getElementById('assets-status').addEventListener('keydown',(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.target.click();}});
+document.getElementById('close-assets').addEventListener('click',()=>{document.getElementById('assets-report').style.display='none'});
+document.getElementById('copy-assets').addEventListener('click',()=>{navigator.clipboard.writeText(NEPAL_ASSET_RESCUE.diagnostic()).then(()=>{document.getElementById('copy-assets').textContent='복사 완료'})});
+NEPAL_ASSET_RESCUE.install();
 boot();
 </script></body></html>
