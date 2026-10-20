@@ -1,20 +1,20 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>네팔 경보 시스템 | EntryJS 편집기 v0.6</title>
+<title>네팔 경보 시스템 | EntryJS 편집기 v0.7</title>
 <link href="https://entry-cdn.pstatic.net/lib/entry-tool/dist/entry-tool.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://playentry.org/lib/entry-tool/dist/entry-tool.css'"/>
-<link href="https://entry-cdn.pstatic.net/lib/entry-js/dist/entry.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://playentry.org/lib/entry-js/dist/entry.css'"/>
+<link href="https://entry-cdn.pstatic.net/lib/entry-js/dist/entry.min.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://playentry.org/lib/entry-js/dist/entry.min.css'"/>
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f3f5fa;font-family:system-ui,'Malgun Gothic',sans-serif}
 #workspace{height:calc(100vh - 48px);width:100%;overflow:hidden;position:relative;background:#fff}
 #top{height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#e9f1e6;color:#21431d;font-size:13px;font-weight:800;border-bottom:1px solid #c1d9bc;box-sizing:border-box}
 #status{color:#396b32;font-size:12px}#fatal{position:absolute;inset:48px 0 0;background:#131b15;color:white;padding:20px;line-height:1.8;overflow:auto;display:none;z-index:99999}#fatal strong{font-size:20px;color:#ffb3a4}
 </style></head><body>
-<div id="top"><span>🟢 실제 엔트리(EntryJS) 블록 편집기</span><span id="status">외부 라이브러리를 불러오는 중…</span></div>
+<div id="top"><span>🟢 실제 엔트리(EntryJS) 블록 편집기 · v0.7</span><span id="status">외부 라이브러리를 불러오는 중…</span></div>
 <div id="workspace"></div><div id="fatal"><strong>엔트리 편집기를 불러오지 못했습니다</strong><p id="fatal-msg" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px"></p><div style="display:flex;flex-wrap:wrap;gap:12px"><button onclick="navigator.clipboard.writeText(document.getElementById('fatal-msg').textContent).then(()=>this.textContent='오류 내용 복사됨').catch(()=>this.textContent='복사 실패: 문구를 직접 선택하세요')" style="font-size:15px;padding:10px;background:#b6e874;color:#11200b;border:0;border-radius:6px;cursor:pointer">오류 내용 복사하기</button><button onclick="location.reload()" style="font-size:15px;padding:10px;background:#234a29;color:#fff;border:1px solid #4b8556;border-radius:6px;cursor:pointer">다시 시도</button></div></div>
 <script>
 /* EntryJS is loaded from the publisher CDN below. It is NOT an imitation block editor. */
 const statusEl=document.getElementById('status');
 function notify(type,data={}){try{window.parent.postMessage(Object.assign({type},data),location.origin)}catch(e){console.warn(e)}}
-function fail(message){statusEl.textContent='초기화 오류';document.getElementById('fatal').style.display='block';document.getElementById('fatal-msg').textContent=message; notify('ENTRY_ERROR',{message})}
+function fail(message){const report=typeof debugReport==='function'?debugReport(message):message;statusEl.textContent='초기화 오류';document.getElementById('fatal').style.display='block';document.getElementById('fatal-msg').textContent=report;notify('ENTRY_ERROR',{message:report})}
 window.addEventListener('error',(e)=>{if(!window.__entryReady)console.warn('Entry dependency error',e.message,e.filename)});
 /*
  * v0.6: EntryJS dependencies are NOT all hosted at playentry.org/lib/.
@@ -23,97 +23,134 @@ window.addEventListener('error',(e)=>{if(!window.__entryReady)console.warn('Entr
  * We first try well-known vendor CDN URLs (for third-party libs), then
  * the Entry CDN and original playentry paths. Do not silently fake EntryJS.
  */
+// v0.7: The script element's onload does NOT mean its JavaScript executed
+// successfully. Capture runtime errors to distinguish script load vs script eval.
+const bootNotes=[];
+const executionErrors=[];
+let currentlyLoading='(없음)';
+window.PUBLIC_PATH_FOR_ENTRYJS='https://entry-cdn.pstatic.net/lib/entry-js/dist/';
+window.addEventListener('error',e=>{
+  // Script execution error; resource failures usually have an ErrorEvent with a target.
+  const msg=e.message || (e.target?.src ? '자원 로드 오류: '+e.target.src : '스크립트 오류');
+  if(!msg || /ResizeObserver loop limit exceeded/.test(msg))return;
+  executionErrors.push({stage:currentlyLoading,message:msg,source:e.filename||e.target?.src||'',line:e.lineno||0,column:e.colno||0,stack:e.error?.stack||''});
+},true);
+window.addEventListener('unhandledrejection',e=>{
+  executionErrors.push({stage:currentlyLoading,message:'Promise 오류: '+String(e.reason?.message||e.reason),stack:e.reason?.stack||''});
+});
 const deps = [
-  ['entry-js/extern/lang/ko.js'],
-  ['lodash/dist/lodash.min.js','lodash'],
-  ['@react-18','react'],
-  ['@react-dom-18','reactdom'],
-  ['jquery/jquery.min.js','jquery'],
-  ['jquery-ui/ui/minified/jquery-ui.min.js','jqueryui'],
-  ['PreloadJS/lib/preloadjs-0.6.0.min.js'],
-  ['EaselJS/lib/easeljs-0.8.0.min.js'],
-  ['SoundJS/lib/soundjs-0.6.0.min.js'],
-  ['SoundJS/lib/flashaudioplugin-0.6.0.min.js'],
-  ['velocity/velocity.min.js','velocity'],
-  ['codemirror/lib/codemirror.js','codemirror'],
-  ['codemirror/addon/hint/show-hint.js','codemirror-hint'],
-  ['codemirror/addon/lint/lint.js','codemirror-lint'],
-  ['codemirror/addon/selection/active-line.js','codemirror-active'],
-  ['codemirror/mode/javascript/javascript.js','codemirror-js'],
-  ['codemirror/addon/hint/javascript-hint.js','codemirror-jshint'],
-  ['@jshint'],
-  ['fuzzy/lib/fuzzy.js','fuzzy'],
-  ['socket.io-client/socket.io.js','socket'],
-  ['entry-js/extern/util/filbert.js'],
-  ['entry-js/extern/util/CanvasInput.js'],
-  ['entry-js/extern/util/ndgmr.Collision.js'],
-  ['entry-js/extern/util/handle.js'],
-  ['entry-js/extern/util/bignumber.min.js'],
-  ['components-webfontloader/webfontloader.js'],
-  ['entry-lms/dist/assets/app.js'],
-  ['entry-js/extern/util/static.js'],
-  ['entry-tool/dist/entry-tool.js'],
-  ['entry-js/dist/entry.min.js','entryjs']
+  ['entry-js/extern/lang/ko.js','',true],
+  // CreateJS order matters: Preload → Easel → Sound.
+  ['PreloadJS/lib/preloadjs-0.6.0.min.js','',true],
+  ['EaselJS/lib/easeljs-0.8.0.min.js','',true],
+  ['SoundJS/lib/soundjs-0.6.0.min.js','',true],
+  ['SoundJS/lib/flashaudioplugin-0.6.0.min.js','',true],
+  ['lodash/dist/lodash.min.js','lodash',true],
+  ['jquery/jquery.min.js','jquery',true],
+  ['jquery-ui/ui/minified/jquery-ui.min.js','jqueryui',true],
+  ['velocity/velocity.min.js','velocity',true],
+  ['codemirror/lib/codemirror.js','codemirror',true],
+  ['codemirror/addon/hint/show-hint.js','codemirror-hint',true],
+  ['codemirror/addon/lint/lint.js','codemirror-lint',true],
+  ['codemirror/addon/selection/active-line.js','codemirror-active',true],
+  ['codemirror/mode/javascript/javascript.js','codemirror-js',true],
+  ['codemirror/addon/hint/javascript-hint.js','codemirror-jshint',true],
+  ['fuzzy/lib/fuzzy.js','fuzzy',true],
+  ['entry-js/extern/util/filbert.js','',true],
+  ['entry-js/extern/util/CanvasInput.js','',true],
+  ['entry-js/extern/util/ndgmr.Collision.js','',true],
+  ['entry-js/extern/util/handle.js','',true],
+  ['entry-js/extern/util/bignumber.min.js','',true],
+  ['socket.io-client/socket.io.js','socket',true],
+  ['@react-18','react',true],
+  ['@react-dom-18','reactdom',true],
+  ['entry-lms/dist/assets/app.js','',true],
+  ['entry-js/extern/util/static.js','',true],
+  ['entry-tool/dist/entry-tool.js','',true],
+  // Both are present in the official 'EntryJS 실행하기' integration example;
+  // previous v0.6 missed them, so onload could pass while Entry.init failed.
+  ['entry-paint/dist/static/js/entry-paint.js','',true],
+  ['external/sound/sound-editor.js','soundeditor',false],
+  ['entry-js/dist/entry.min.js','entryjs',true]
 ];
-const errorLog=[];
 const official='https://entry-cdn.pstatic.net';
 const legacy='https://playentry.org';
 const thirdParty={
-  'lodash':['https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js','https://unpkg.com/lodash@4.17.21/lodash.min.js'],
-  'react':['https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js'],
-  'reactdom':['https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js'],
-  'jquery':['https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js'],
-  'jqueryui':['https://cdn.jsdelivr.net/npm/jquery-ui-dist@1.13.3/jquery-ui.min.js'],
-  'velocity':['https://cdn.jsdelivr.net/npm/velocity-animate@1.5.2/velocity.min.js'],
-  'codemirror':['https://cdn.jsdelivr.net/npm/codemirror@5.65.20/lib/codemirror.js'],
+  lodash:['https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js'],
+  react:['https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js'],
+  reactdom:['https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js'],
+  jquery:['https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js'],
+  jqueryui:['https://cdn.jsdelivr.net/npm/jquery-ui-dist@1.13.3/jquery-ui.min.js'],
+  velocity:['https://cdn.jsdelivr.net/npm/velocity-animate@1.5.2/velocity.min.js'],
+  codemirror:['https://cdn.jsdelivr.net/npm/codemirror@5.65.20/lib/codemirror.js'],
   'codemirror-hint':['https://cdn.jsdelivr.net/npm/codemirror@5.65.20/addon/hint/show-hint.js'],
   'codemirror-lint':['https://cdn.jsdelivr.net/npm/codemirror@5.65.20/addon/lint/lint.js'],
   'codemirror-active':['https://cdn.jsdelivr.net/npm/codemirror@5.65.20/addon/selection/active-line.js'],
   'codemirror-js':['https://cdn.jsdelivr.net/npm/codemirror@5.65.20/mode/javascript/javascript.js'],
   'codemirror-jshint':['https://cdn.jsdelivr.net/npm/codemirror@5.65.20/addon/hint/javascript-hint.js'],
-  'fuzzy':['https://cdn.jsdelivr.net/npm/fuzzy@0.1.3/lib/fuzzy.js'],
-  'socket':['https://cdn.jsdelivr.net/npm/socket.io-client@2.5.0/dist/socket.io.js']
+  fuzzy:['https://cdn.jsdelivr.net/npm/fuzzy@0.1.3/lib/fuzzy.js'],
+  socket:['https://cdn.jsdelivr.net/npm/socket.io-client@2.5.0/dist/socket.io.js']
 };
-function unique(arr){return [...new Set(arr)];}
+function unique(a){return [...new Set(a)];}
 function urlsFor(path,key){
   if(path==='@react-18')return unique([...(thirdParty.react||[]),`${legacy}/js/react18/react.production.min.js`]);
   if(path==='@react-dom-18')return unique([...(thirdParty.reactdom||[]),`${legacy}/js/react18/react-dom.production.min.js`]);
-  if(path==='@jshint')return [`${legacy}/js/jshint.js`,`${legacy}/js/ws/jshint.js`];
-  const urlOptions=[...(thirdParty[key]||[])];
-  // Try both official CDN layout conventions; URL validity is tested at runtime.
-  // Relative ./lib files allow future local self-hosting without code changes.
-  urlOptions.push(`./lib/${path}`,`${official}/lib/${path}`,`${legacy}/lib/${path}`,`${official}/${path}`);
-  return unique(urlOptions);
+  const opt=[...(thirdParty[key]||[]),`./lib/${path}`,`${official}/lib/${path}`,`${legacy}/lib/${path}`];
+  if(key==='soundeditor')opt.push(`${legacy}/lib/sound-editor/sound-editor.js`,`${official}/lib/sound-editor/sound-editor.js`);
+  return unique(opt);
 }
-function loadOnce(src,timeout=14000){return new Promise((resolve,reject)=>{
+function loadOnce(src,timeout=12000){return new Promise((resolve,reject)=>{
   const el=document.createElement('script');el.src=src;el.async=false;
   let settled=false;
-  const finish=(ok,reason)=>{if(settled)return;settled=true;clearTimeout(t);el.onload=null;el.onerror=null;if(!ok){el.remove();reject(new Error(reason));}else resolve()};
+  const finish=(ok,reason)=>{if(settled)return;settled=true;clearTimeout(t);el.onload=null;el.onerror=null;if(!ok){el.remove();reject(new Error(reason));}else resolve();};
   const t=setTimeout(()=>finish(false,'시간 초과'),timeout);
   el.onload=()=>finish(true);
   el.onerror=()=>finish(false,'접속/파일 오류');
   document.head.appendChild(el);
 });}
-async function loadDependency(path,key,index,total){
+async function loadDependency(path,key,required,index,total){
   const urls=urlsFor(path,key);
-  let failures=[];
+  const failReasons=[];
   for(let i=0;i<urls.length;i++){
-    const src=urls[i];
-    statusEl.textContent=`라이브러리 ${index}/${total} · ${path}${i?' (대체 경로 '+(i+1)+')':''}`;
+    const src=urls[i];currentlyLoading=path;
+    statusEl.textContent=`라이브러리 ${index}/${total} · ${path}${i?' (대체 주소 '+(i+1)+')':''}`;
+    const before=executionErrors.length;
     try{
-      await loadOnce(src,11000);
-      if(key==='lodash'&&typeof window._!=='function')throw Error('Lodash 전역 객체를 찾지 못함');
-      if(key==='react'&&!window.React)throw Error('React 전역 객체를 찾지 못함');
-      if(key==='reactdom'&&!window.ReactDOM)throw Error('ReactDOM 전역 객체를 찾지 못함');
-      if(key==='entryjs'&&!window.Entry?.init)throw Error('Entry.init을 찾지 못함');
-      if(i>0)errorLog.push(`${path}: 대체 경로 로딩 성공 (${new URL(src).host})`);
-      return;
+      await loadOnce(src);
+      if(key==='lodash'&&typeof window._!=='function')throw Error('Lodash 객체 없음');
+      if(key==='react'&&!window.React)throw Error('React 객체 없음');
+      if(key==='reactdom'&&!window.ReactDOM)throw Error('ReactDOM 객체 없음');
+      if(key==='entryjs'){
+        // EntryJS bundles may synchronously throw despite script.onload firing.
+        for(let retry=0;retry<12 && typeof window.Entry?.init!=='function';retry++) await new Promise(r=>setTimeout(r,150));
+        if(typeof window.Entry?.init!=='function'){
+          const jsErr=executionErrors.slice(before).map(x=>x.message).join(' / ');
+          throw Error(`JavaScript 로드 후 Entry.init 없음 (window.Entry=${typeof window.Entry}, init=${typeof window.Entry?.init})`+(jsErr?' · 실행 오류: '+jsErr:''));
+        }
+      }
+      bootNotes.push(`✓ ${path}: ${src}`);
+      currentlyLoading='(없음)';return;
     }catch(e){
-      failures.push(`${src} : ${e.message||e}`);
+      const runError=executionErrors.slice(before).map(x=>x.message).join(' / ');
+      failReasons.push(`${src}: ${e.message}${runError?' [스크립트 오류: '+runError+']':''}`);
     }
   }
-  errorLog.push(`${path}: 모든 로딩 경로 실패`);
-  throw new Error(`필수 라이브러리 로딩 실패: ${path}\n시도한 주소:\n${failures.join('\n')}\n\n학교망의 CDN 차단 또는 배포 경로 변경 가능성도 확인해 주세요.`);
+  currentlyLoading='(없음)';
+  bootNotes.push(`✗ ${path}: ${failReasons.join(' | ')}`);
+  if(!required){return;}
+  throw new Error(`필수 라이브러리 실패: ${path}\n${failReasons.join('\n')}`);
+}
+function debugReport(problem){
+  const entryObj=window.Entry;
+  return [
+    `NEPAL × ENTRY v0.7 오류 진단`,
+    `문제: ${problem}`,
+    `Entry: ${typeof entryObj} / Entry.init: ${typeof entryObj?.init}`,
+    `URL: ${location.href}`,
+    `실행 중 오류 (${executionErrors.length}건):`,
+    ...(executionErrors.length?executionErrors.slice(-8).map((x,i)=>`${i+1}. [${x.stage}] ${x.message}\n${x.source}${x.line?':'+x.line+':'+x.column:''}\n${String(x.stack||'').slice(0,700)}`):['감지되지 않음 — 교차 출처 스크립트 오류는 브라우저 정책으로 상세 내용이 숨겨질 수 있습니다.']),
+    `라이브러리 최근 상태:`,...bootNotes.slice(-12)
+  ].join('\n');
 }
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const teacherVariables=[
@@ -156,13 +193,13 @@ async function check(mission){
  return {ok:false,details:['현재 미션 3~5는 실제 엔트리 런타임과의 자동 검사 기능 개발 전입니다.']};
 }
 async function boot(){try{
-  for(let i=0;i<deps.length;i++){await loadDependency(deps[i][0],deps[i][1],i+1,deps.length);}
-  if(!window.Entry?.init)throw Error('EntryJS 라이브러리를 읽었지만 Entry.init을 찾지 못했습니다.');
+  for(let i=0;i<deps.length;i++){await loadDependency(deps[i][0],deps[i][1],deps[i][2],i+1,deps.length);}
+  if(typeof window.Entry?.init!=='function')throw Error('EntryJS 로딩 후 초기화 함수를 찾지 못했습니다.');
   const E=window.Entry;
   statusEl.textContent='엔트리 실행 환경을 초기화하는 중…';
   if(E.Event)E.creationChangedEvent=new E.Event(window);
   E.init(document.getElementById('workspace'),{
-    type:'workspace',libDir:'https://playentry.org/lib',
+    type:'workspace',libDir:'https://entry-cdn.pstatic.net/lib',entryDir:'https://entry-cdn.pstatic.net/lib/entry-js',
     projectsaveable:true,variableEnable:true,listEnable:true,
     hardwareEnable:false,textCodingEnable:false,expansionDisable:true,
     fonts:[{name:'나눔고딕',family:'Nanum Gothic',url:'https://fonts.googleapis.com/earlyaccess/nanumgothic.css'}]
@@ -172,7 +209,7 @@ async function boot(){try{
   const seed=teacherVariables.filter(([,name])=>!getVar(name)).map(([id,name,value])=>({id,name,value,variableType:'variable',visible:true,object:null}));
   if(seed.length)E.variableContainer.appendVariables(seed);
   window.__entryReady=true;statusEl.textContent='✅ 실제 엔트리 편집기 준비 완료';notify('ENTRY_READY');
- }catch(e){console.error('[NEPAL ENTRY v0.6] 부팅 실패',e,errorLog);fail(e.message||String(e));}}
+ }catch(e){console.error('[NEPAL ENTRY v0.7] 부팅 실패',e,executionErrors,bootNotes);fail(e.message||String(e));}}
 window.addEventListener('message',async e=>{
  if(e.source!==window.parent || e.origin!==location.origin)return;
  if(e.data?.type!=='NEPAL_TEST')return;
