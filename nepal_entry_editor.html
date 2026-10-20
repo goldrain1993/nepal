@@ -1,0 +1,116 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>네팔 경보 시스템 | 실제 EntryJS 편집기</title>
+<link href="https://playentry.org/lib/entry-tool/dist/entry-tool.css" rel="stylesheet"/>
+<link href="https://playentry.org/lib/entry-js/dist/entry.css" rel="stylesheet"/>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f3f5fa;font-family:system-ui,'Malgun Gothic',sans-serif}
+#workspace{height:calc(100vh - 48px);width:100%;overflow:hidden;position:relative;background:#fff}
+#top{height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#e9f1e6;color:#21431d;font-size:13px;font-weight:800;border-bottom:1px solid #c1d9bc;box-sizing:border-box}
+#status{color:#396b32;font-size:12px}#fatal{position:absolute;inset:48px 0 0;background:#131b15;color:white;padding:20px;line-height:1.8;overflow:auto;display:none;z-index:99999}#fatal strong{font-size:20px;color:#ffb3a4}
+</style></head><body>
+<div id="top"><span>🟢 실제 엔트리(EntryJS) 블록 편집기</span><span id="status">외부 라이브러리를 불러오는 중…</span></div>
+<div id="workspace"></div><div id="fatal"><strong>엔트리 편집기 초기화 실패</strong><p id="fatal-msg"></p></div>
+<script>
+/* EntryJS is loaded from the publisher CDN below. It is NOT an imitation block editor. */
+const statusEl=document.getElementById('status');
+function notify(type,data={}){try{window.parent.postMessage(Object.assign({type},data),location.origin)}catch(e){console.warn(e)}}
+function fail(message){statusEl.textContent='초기화 오류';document.getElementById('fatal').style.display='block';document.getElementById('fatal-msg').textContent=message; notify('ENTRY_ERROR',{message})}
+window.addEventListener('error',(e)=>{if(!window.__entryReady)console.warn('Entry dependency error',e.message,e.filename)});
+const sources=[
+ 'https://playentry.org/lib/entry-js/extern/lang/ko.js',
+ 'https://playentry.org/lib/lodash/dist/lodash.min.js',
+ 'https://playentry.org/js/react18/react.production.min.js',
+ 'https://playentry.org/js/react18/react-dom.production.min.js',
+ 'https://playentry.org/lib/jquery/jquery.min.js',
+ 'https://playentry.org/lib/jquery-ui/ui/minified/jquery-ui.min.js',
+ 'https://playentry.org/lib/PreloadJS/lib/preloadjs-0.6.0.min.js',
+ 'https://playentry.org/lib/EaselJS/lib/easeljs-0.8.0.min.js',
+ 'https://playentry.org/lib/SoundJS/lib/soundjs-0.6.0.min.js',
+ 'https://playentry.org/lib/SoundJS/lib/flashaudioplugin-0.6.0.min.js',
+ 'https://playentry.org/lib/velocity/velocity.min.js',
+ 'https://playentry.org/lib/codemirror/lib/codemirror.js',
+ 'https://playentry.org/lib/codemirror/addon/hint/show-hint.js',
+ 'https://playentry.org/lib/codemirror/addon/lint/lint.js',
+ 'https://playentry.org/lib/codemirror/addon/selection/active-line.js',
+ 'https://playentry.org/lib/codemirror/mode/javascript/javascript.js',
+ 'https://playentry.org/lib/codemirror/addon/hint/javascript-hint.js',
+ 'https://playentry.org/js/jshint.js',
+ 'https://playentry.org/lib/fuzzy/lib/fuzzy.js',
+ 'https://playentry.org/lib/socket.io-client/socket.io.js',
+ 'https://playentry.org/lib/entry-js/extern/util/filbert.js',
+ 'https://playentry.org/lib/entry-js/extern/util/CanvasInput.js',
+ 'https://playentry.org/lib/entry-js/extern/util/ndgmr.Collision.js',
+ 'https://playentry.org/lib/entry-js/extern/util/handle.js',
+ 'https://playentry.org/lib/entry-js/extern/util/bignumber.min.js',
+ 'https://playentry.org/lib/components-webfontloader/webfontloader.js',
+ 'https://playentry.org/lib/entry-lms/dist/assets/app.js',
+ 'https://playentry.org/lib/entry-js/extern/util/static.js',
+ 'https://playentry.org/lib/entry-tool/dist/entry-tool.js',
+ 'https://playentry.org/lib/entry-js/dist/entry.min.js'
+ ];
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const teacherVariables=[
+ ['네팔_입력_현재','현재센서값',4.2],
+ ['네팔_입력_수위','수위측정값',4.2],
+ ['네팔_입력_유속','유속측정값',3.1],
+ ['네팔_입력_진동','진동측정값',2.8]
+];
+function getVar(name){return window.Entry?.variableContainer?.getVariableByName(name,false)}
+function getList(name){return window.Entry?.variableContainer?.getListByName(name,false)}
+function readVar(name){let v=getVar(name);if(!v)return null;try{return v.getValue()}catch(e){return v.value_}}
+function setVar(name,value){let v=getVar(name);if(!v)throw new Error('입력 변수 '+name+'가 없습니다.');v.setValue(value);}
+function readList(name){const list=getList(name);if(!list)return null;let values=list.getArray();return values.map(v=>typeof v==='object'&&v!==null&&'data' in v?v.data:v)}
+function saveProject(){return window.Entry.exportProject()}
+function codeHasTypes(types){let p=saveProject();let code=p.objects?.map(o=>o.script||'').join('\n')||'';return types.every(t=>code.includes('"'+t+'"'))}
+async function runCode(){
+ const engine=Entry.engine;
+ if(!engine?.toggleRun)throw new Error('현재 EntryJS 버전에서 실행 호출 기능을 찾을 수 없습니다.');
+ // Internal engine function: version-sensitive and needs validation against the deployed EntryJS build.
+ engine.toggleRun();
+ await wait(850);
+}
+function stopCode(){try{if(Entry.engine?.stop)Entry.engine.stop();else if(Entry.engine?.toggleRun)Entry.engine.toggleRun()}catch(e){console.warn('Entry stop',e)}}
+async function check(mission){
+ if(!window.__entryReady)throw new Error('엔트리 편집기 초기화가 끝나지 않았습니다.');
+ const details=[];
+ if(mission===0){
+   if(!getVar('수위센서값'))return {ok:false,details:['아직 「수위센서값」 변수를 만들지 않았습니다.','엔트리 자료 탭에서 직접 변수를 만들고 코드를 작성하세요.']};
+   if(!codeHasTypes(['set_variable','get_variable']))return {ok:false,details:['변수 생성은 확인했습니다.','측정값을 읽고 변수에 저장하는 엔트리 블록을 연결해 주세요.']};
+   setVar('현재센서값',4.2);setVar('수위센서값',-99999);
+   try{await runCode();const got=Number(readVar('수위센서값'));const ok=Math.abs(got-4.2)<1e-6;details.push(`엔트리 실제 실행 결과: 수위센서값 = ${readVar('수위센서값')}`);details.push(ok?'측정한 값이 변수에 저장되었습니다.':'현재센서값을 수위센서값에 저장하는 코드를 확인해 주세요.');return {ok,details}}finally{stopCode()}
+ }
+ if(mission===1){
+   if(!getList('센서값목록'))return {ok:false,details:['아직 「센서값목록」 리스트를 만들지 않았습니다.']};
+   if(!codeHasTypes(['add_value_to_list']))return {ok:false,details:['리스트는 생성했습니다.','「리스트에 값 추가하기」 블록을 연결해 주세요.']};
+   setVar('수위측정값',4.2);setVar('유속측정값',3.1);setVar('진동측정값',2.8);
+   const list=getList('센서값목록');try{list.getArray().splice(0)}catch(e){details.push('리스트 초기화가 지원되지 않는 버전입니다.')}
+   try{await runCode();const values=readList('센서값목록')||[];const expect=[4.2,3.1,2.8];const ok=values.length===3&&values.every((v,i)=>Math.abs(Number(v)-expect[i])<1e-6);details.push('엔트리 실행 후 센서값목록 = ['+values.join(', ')+']');details.push(ok?'3개 센서값이 올바른 순서로 저장되었습니다.':'수위 → 유속 → 진동 순서와 리스트 크기를 확인해 주세요.');return {ok,details}}finally{stopCode()}
+ }
+ return {ok:false,details:['현재 미션 3~5는 실제 엔트리 런타임과의 자동 검사 기능 개발 전입니다.']};
+}
+function loadScript(src){return new Promise((resolve,reject)=>{let s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(Error('외부 라이브러리 로딩 실패: '+src));document.head.appendChild(s)})}
+async function boot(){try{
+  for(let i=0;i<sources.length;i++){statusEl.textContent=`엔트리 라이브러리 로딩 중 ${i+1}/${sources.length}`;await loadScript(sources[i]);}
+  if(!window.Entry?.init)throw Error('EntryJS 라이브러리를 읽었지만 Entry.init을 찾지 못했습니다.');
+  const E=window.Entry;
+  if(E.Event)E.creationChangedEvent=new E.Event(window);
+  E.init(document.getElementById('workspace'),{
+    type:'workspace',libDir:'https://playentry.org/lib',
+    projectsaveable:true,variableEnable:true,listEnable:true,
+    hardwareEnable:false,textCodingEnable:false,expansionDisable:true,
+    fonts:[{name:'나눔고딕',family:'Nanum Gothic',url:'https://fonts.googleapis.com/earlyaccess/nanumgothic.css'}]
+  });
+  await Promise.resolve(E.loadProject());await wait(750);
+  // Teacher-provided measurement inputs. Student-created solution variables are NOT precreated.
+  const seed=teacherVariables.filter(([,name])=>!getVar(name)).map(([id,name,value])=>({id,name,value,variableType:'variable',visible:true,object:null}));
+  if(seed.length)E.variableContainer.appendVariables(seed);
+  window.__entryReady=true;statusEl.textContent='✅ 실제 엔트리 편집기 준비 완료';notify('ENTRY_READY');
+ }catch(e){fail(e.message||String(e));}}
+window.addEventListener('message',async e=>{
+ if(e.source!==window.parent || e.origin!==location.origin)return;
+ if(e.data?.type!=='NEPAL_TEST')return;
+ try{const result=await check(Number(e.data.mission));notify('ENTRY_CHECK_RESULT',result)}
+ catch(error){notify('ENTRY_CHECK_RESULT',{ok:false,details:['엔트리 실행 또는 검사 오류: '+String(error.message||error),'브라우저 개발자 도구 콘솔을 확인해 주세요.']})}
+});
+boot();
+</script></body></html>
