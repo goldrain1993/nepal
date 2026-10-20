@@ -1,5 +1,5 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>네팔 경보 시스템 | EntryJS 편집기 v0.9</title>
+<title>네팔 경보 시스템 | EntryJS 편집기 v1.0</title>
 <link href="https://entry-cdn.pstatic.net/lib/entry-tool/dist/entry-tool.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://playentry.org/lib/entry-tool/dist/entry-tool.css'"/>
 <link href="https://entry-cdn.pstatic.net/lib/entry-js/dist/entry.min.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://playentry.org/lib/entry-js/dist/entry.min.css'"/>
 <style>
@@ -7,9 +7,36 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f3f5fa;fon
 #workspace{height:calc(100vh - 48px);width:100%;overflow:hidden;position:relative;background:#fff}
 #top{height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#e9f1e6;color:#21431d;font-size:13px;font-weight:800;border-bottom:1px solid #c1d9bc;box-sizing:border-box}
 #status{color:#396b32;font-size:12px}#fatal{position:absolute;inset:48px 0 0;background:#131b15;color:white;padding:20px;line-height:1.8;overflow:auto;display:none;z-index:99999}#fatal strong{font-size:20px;color:#ffb3a4}
+
+/* v1.0 standalone EntryJS sprite chooser: EntryJS dispatches events but does not open its catalog. */
+#nepalSpriteChooser[hidden]{display:none!important}
+#nepalSpriteChooser{position:fixed;inset:0;z-index:2147483000;background:rgba(8,21,18,.80);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;font-family:system-ui,'Malgun Gothic',sans-serif}
+#nepalSpriteChooser .npdialog{background:#fff;width:min(720px,96vw);max-height:88vh;overflow-y:auto;border-radius:15px;box-shadow:0 25px 60px #0008;color:#20332c;border:2px solid #89b66e}
+#nepalSpriteChooser .nphead{display:flex;align-items:center;justify-content:space-between;padding:17px 21px;border-bottom:1px solid #d9e7dc;background:#f3faf4}
+#nepalSpriteChooser .nphead strong{font-size:19px}
+#nepalSpriteChooser button{font:inherit;cursor:pointer}
+#nepalSpriteChooser .npclose{border:1px solid #c4d5cb;border-radius:8px;padding:6px 12px;background:#fff;font-size:20px}
+#nepalSpriteChooser .npcontent{padding:20px}
+#nepalSpriteChooser .nphint{font-size:13px;color:#526658;margin:0 0 16px;line-height:1.55}
+#nepalSpriteChooser .npgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+#nepalSpriteChooser .npsprite{background:#f5faf7;border:2px solid #d7e5dc;border-radius:11px;padding:12px 5px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;color:#21352b;font-size:13px;font-weight:700}
+#nepalSpriteChooser .npsprite:hover,#nepalSpriteChooser .npsprite:focus-visible{border-color:#38a65b;background:#effbed;outline:none}
+#nepalSpriteChooser .npsprite img{height:86px;width:90px;object-fit:contain}
+#nepalSpriteChooser .npfooter{margin-top:20px;padding:14px 0 0;border-top:1px solid #dde5df;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#nepalSpriteChooser .npupload{background:#e0f5e4;border:1px solid #73b787;border-radius:9px;padding:9px 14px;color:#123820;cursor:pointer;font-size:13px;font-weight:700}
+#nepalSpriteChooser .npmsg{margin-top:12px;font-size:13px;min-height:18px;color:#b13d2b}
+@media(max-width:660px){#nepalSpriteChooser .npgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style></head><body>
-<div id="top"><span>🟢 실제 엔트리(EntryJS) 블록 편집기 · v0.9</span><span style="display:flex;align-items:center;gap:12px"><span id="assets-status" role="button" tabindex="0" title="클릭하면 이미지 오류 진단을 볼 수 있습니다" style="font-size:11px;cursor:pointer">이미지 리소스 경로 확인 중</span><span id="status">외부 라이브러리를 불러오는 중…</span></span></div>
+<div id="top"><span>🟢 실제 엔트리(EntryJS) 블록 편집기 · v1.0</span><span style="display:flex;align-items:center;gap:12px"><span id="assets-status" role="button" tabindex="0" title="클릭하면 이미지 오류 진단을 볼 수 있습니다" style="font-size:11px;cursor:pointer">이미지 리소스 경로 확인 중</span><span id="status">외부 라이브러리를 불러오는 중…</span></span></div>
 <div id="workspace"></div><div id="assets-report" style="position:fixed;right:14px;top:58px;z-index:999998;width:min(600px,92vw);max-height:65vh;overflow:auto;background:#16241a;color:white;border:2px solid #86c85d;border-radius:10px;padding:16px;display:none;box-shadow:0 12px 30px #0005"><div style="display:flex;justify-content:space-between;align-items:center"><strong>엔트리 이미지 리소스 진단</strong><button id="close-assets" style="padding:6px 10px">닫기</button></div><pre id="assets-report-text" style="font-size:12px;white-space:pre-wrap;word-break:break-all"></pre><button id="copy-assets" style="padding:6px 10px;background:#a4e06b;border:0">진단 내용 복사하기</button></div><div id="fatal"><strong>엔트리 편집기를 불러오지 못했습니다</strong><p id="fatal-msg" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px"></p><div style="display:flex;flex-wrap:wrap;gap:12px"><button onclick="navigator.clipboard.writeText(document.getElementById('fatal-msg').textContent).then(()=>this.textContent='오류 내용 복사됨').catch(()=>this.textContent='복사 실패: 문구를 직접 선택하세요')" style="font-size:15px;padding:10px;background:#b6e874;color:#11200b;border:0;border-radius:6px;cursor:pointer">오류 내용 복사하기</button><button onclick="location.reload()" style="font-size:15px;padding:10px;background:#234a29;color:#fff;border:1px solid #4b8556;border-radius:6px;cursor:pointer">다시 시도</button></div></div>
+
+<div id="nepalSpriteChooser" hidden role="dialog" aria-modal="true" aria-labelledby="nepalSpriteTitle">
+ <section class="npdialog"><div class="nphead"><strong id="nepalSpriteTitle">오브젝트 추가하기</strong><button type="button" class="npclose" id="nepalSpriteClose" aria-label="닫기">×</button></div>
+ <div class="npcontent"><p class="nphint">실제 엔트리 프로젝트에 오브젝트가 추가됩니다. 미션에 사용할 기본 오브젝트를 고르거나 PNG/JPG 이미지를 선택하세요.</p>
+ <div class="npgrid" id="nepalSpriteGrid"></div>
+ <div class="npfooter"><label class="npupload" for="nepalImageUpload">＋ 내 이미지 선택 (PNG/JPG)</label><input type="file" id="nepalImageUpload" accept="image/png,image/jpeg,image/webp" hidden><span style="font-size:12px;color:#66766a">선택한 이미지는 현재 브라우저 프로젝트에만 추가됩니다.</span></div>
+ <div id="nepalSpriteMessage" role="status" class="npmsg"></div></div></section>
+</div>
 <script>
 /* EntryJS is loaded from its publisher and independently hosted fallbacks below. It is NOT an imitation block editor. */
 const statusEl=document.getElementById('status');
@@ -23,7 +50,7 @@ window.addEventListener('error',(e)=>{if(!window.__entryReady)console.warn('Entr
  * We first try well-known vendor CDN URLs (for third-party libs), then
  * the Entry CDN and original playentry paths. Do not silently fake EntryJS.
  */
-// v0.9: The script element's onload does NOT mean its JavaScript executed
+// v1.0: The script element's onload does NOT mean its JavaScript executed
 // successfully. Capture runtime errors to distinguish script load vs script eval.
 const bootNotes=[];
 const executionErrors=[];
@@ -170,7 +197,7 @@ async function loadDependency(path,key,required,index,total){
 function debugReport(problem){
   const entryObj=window.Entry;
   return [
-    `NEPAL × ENTRY v0.9 오류 진단`,
+    `NEPAL × ENTRY v1.0 오류 진단`,
     `문제: ${problem}`,
     `Entry: ${typeof entryObj} / Entry.init: ${typeof entryObj?.init}`,
     `module globals: EntryStatic=${typeof window.EntryStatic}; EntryTool=${typeof window.EntryTool}; EntryPaint=${typeof window.EntryPaint}; soundEditor=${typeof window.SoundEditor}; legacyVideo=${typeof window.LegacyVideo}; createjs=${typeof window.createjs}; React=${typeof window.React}; ReactDOM=${typeof window.ReactDOM}`,
@@ -221,7 +248,7 @@ async function check(mission){
  return {ok:false,details:['현재 미션 3~5는 실제 엔트리 런타임과의 자동 검사 기능 개발 전입니다.']};
 }
 
-/* v0.9: Asset-path bridge for EntryJS hosted under /nepal/ on GitHub Pages.
+/* v1.0: Asset-path bridge for EntryJS hosted under /nepal/ on GitHub Pages.
  * EntryJS uses BOTH /images/* and /lib/entry-js/images/* regardless of libDir.
  * Do not change mission logic or substitute mock block icons.
  * Restrict rewrites to EntryJS's own images; students' external images untouched.
@@ -339,12 +366,100 @@ const NEPAL_ASSET_RESCUE = (() => {
     updateUI();
   }
   function diagnostic(){
-    return `NEPAL × ENTRY 이미지 진단 v0.9\n자동 연결 시도: ${report.redirected}회\n로딩 완료: ${report.recovered}회\n복구 실패: ${report.exhausted.length}건\n` +
+    return `NEPAL × ENTRY 이미지 진단 v1.0\n자동 연결 시도: ${report.redirected}회\n로딩 완료: ${report.recovered}회\n복구 실패: ${report.exhausted.length}건\n` +
       report.lastFailures.map((o,i)=>`${i+1}. ${o.original} → ${o.filename}`).join('\n') +
       '\n공식 CDN이 차단되었다면 이미지 파일을 저장소에 직접 설치해야 합니다.';
   }
   return {install,report,diagnostic};
 })();
+
+
+/* v1.0: Real EntryJS object integration.
+   EntryJS deliberately dispatches openSpriteManager; the host app must wire a popup.
+   This site hosts a small mission-specific picker, while blocks/objects execute in real EntryJS.
+*/
+const NEPAL_SPRITE_IMAGE = {"sensor":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAFhElEQVR4nO3dPZITRxgG4A+XI5cjrkDGNZw4dILLBBShY4WcgHBjh5QDKEgInXANMq5ARDlyFQ5ARuXdGfXMdM/0z/NEsCu1emfed7olpCUCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgO3uHT2Bkk4f338+eg69uLn/sMusdPdDCX15PZWhix9E6I/Tehm+O3oCWwn/sVo//s22t/UD36MWV4MmVwDhr1OL56W5xi45yC9Ob0pOZShPbx4l37allaCZiUakh1/wy0ktQislaGKSEWnhF/z9pBShhRJUP8GI6+EX/ONcK0LtJWjySfAl4T9W68e/+gLMXf1bP/i9mDsPtb8yVHUBhL8drZag6gJAaU0WwNW/Ti2el++PnsCUnMvmp3dvcw01nB9/+iXLOKeP7z/X+IpQcyvAkqvMp3dvhX+jpcewtVWguQKkEvy8ej2eVRZgavuTenXp9WQdLfW4Tp2nGl8NqrIAWwh/Wb0d3+4KAEt0VYDerk616uk4V/syKLedPjz/7883D54dOJN+dLUC9Owy/Hf9nXUUoAFTYVeC7RSgcUqwjQJULiXgSrCeAlRsSbCVYB0FqNSaQJ8+PFeEhbwMutJdQdvrpcmbB89mg3768NzLpImsACuUflVmbpxzsG8ePJsNuZUgjQIskLLF2Bq8lPBf+1quuYxAARLt8YR07f2UYD0FSFDDE9Jre3olWEcBZuQIcer9l259lt5OCe6mABNSAnPtiWjqWDnCn3J7JbhNAf4n9ap/GbSUIuz5fp5rJVCEbxTgQmowpgK2tgRLHyfHfZXgCwX4KteWZ0nwcm59psawJZo3fAHWbHm23vbaY+b+V1wlmDZ0AXI+0b3rfjVZu23r3dAF2Lqd2Tp+icdcMvbo4Y8YvAAR5a+MS1aQPQJ5+V4iFOCWtVuelHG3fD8n4f9GAWK/q6Lg1UcBvtrzvfxHPTa3+UDMAQS+HlYAhqYADE0BGJoCMDQFYGgKwNAUgKEpAEPrqgC5/k9b5vV0nLsqACzVXQF6ujrVqLfj210BIvo7SbXo8bh2WYCIPk/WkXo9nl2/G/R80nr6bz331mvwz7ouwFnvJ5H1ut0CQQoFYGgKwNAUgKEpAENTAIamAAxNARiaAjA0BWBoCsDQFIChKQBDUwCGpgAMbYjPA9Tk5R+Pr97m8e8vd5gJEQqwi5TQT91eGcpSgIKWBn9uDEUow3OAQnKEv+R4fKEABZQKqxLkZwuUWUpIn7x+Nfm9P3/97er4tkP5KEBGc+GfC/3U7abKoAT52AJlkiP8S+5nO5SHAmQwFcYnr1+tDn/KGEqwnQJsNBf+nJSgDAVgaAqwwV5X/2vjWgXWU4DMSoV/r/FHowAMTQFWqm3bUdt8WqEAGe21PbENykcBGJoCMDQFYGgKwNAUgKEpAEOrsgA39x/eu+vrT28e7T2VRa59mKW1x1lr6jxNndcjVVmAFtT2gZTa5tOK5gpQ+yowutbOT7UFqHG5TFF6e1L79mdKreez2gLMqeUqM7XtKBXSqXFr2f7Ucl6WaLIAkEvVBZhbNmu52uy1CrR89a91+xMRUe3ELp0+vv889b0Xpzd7TmVSid8KETFfJOHfruoVIEXtK0HE+tWg9fC3oOp2XppbBc5qWA1K/2a4iDrCnxL82q/+EQ0VICKtBBHHF6Hkp7OODn/qFb+F8Ec0VoCI9BJEHFuEEiU4MvxLtjqthD+iwQJELCvBkX7+Id+vXv3r73+yjVVSS+GPaLQAEe2UIGJbEVoJfkR74Y9ouABnLRUhIq0MLYU+os3gnzU78UutlaAnLYc/opMCXFKG8loP/aVufpC7KEM+PYUeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAivgX4HYSiWLo2UwAAAAASUVORK5CYII=","alarm":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAFYUlEQVR4nO3dvW0UXRSH8bMIUYAbQbIcA7ETCqAEREAFiAocWJRAASTEhthCohEKIFkCa9F6PF935n6cc//PL3xf0N6ZOc/M7LIfZgAAAAAAAAAAAAAAAAAABHdovQA1x7t3x7n/f3jzlWNS0bPWCwBaIgBIIwBIIwBIIwBIIwBIIwBIIwBIIwBIIwBIIwBIIwBIIwBIIwBIIwBIIwBIIwBIIwBIIwBIIwBIIwBIIwAAwEZL33MDeLbrFug0/ESAFnLM3eYAhg9OBKgp18l3UwBTD0oEqCHnyTc5gKUHIwKUlPvkmxTA2gchApRQ4uSbFEDKNxcTAXIqdfJNvgUiAtSWMkepXy+/6UkwEaCWksNvtuNlUCJAaaWH32znP4QRAUqpMfxmGd4MRwTIrdbwm2V6NygRIJeaw2+W8e3QRIC9ag+/WebPAxABtmox/GYFPhBDBEjVavjNCn0ijAiwVsvhNyv4kUgiwJLWw29W4ZfiPWxkCcdfH91Fe7i8ibP/nMxFlR22ZmMjDL/HoZ/iOQYvw29WKQCz+Y32PPyRhn6Kxxi8nBSr7pixjfY6/D0M/pC3EDycFKt+L9Bwoxj+urxt19TxrzkXTQbwePfu6HH4Uwfk/sPvUktJdnX7MunPe7oanF8Jas+Fm53Q2prh9zTwS9YE4S2CFidFNzugpaXhjzT4Q0sheIqgBemNN5sf/siDPzQXgnIE0l+OqzL8ZvPb4+3JcU2yASgN/wkRPCV56Zs62KUH/+r6YvWfvf/+p+BKpm+J1G6HnrdeQO9Shn7q75WOQZlU7Wb1zv5bB39O7hC4CogFUGP4Swz+UM4Q1COQfRJ8kmv4r64vqgx/7sfq9Qn/WjIBlHyVo9bg13xclVeFZAIYk+Ps12r4cz6+8lVAOoC9Wg//iZd1RCQRwNjlfO9Zz9vQ7V3P2P5QuA2SCCA3b8N/4nVdnhFAIu9D5n193nQfQM7LeJThyrnO3m+Dug9gjPKrHnMU94tkAFtEOfufRFtvKwQAaQSwQtSzadR110QAkEYAkEYAC6LfRkRff2kEAGkEAGkEAGkEAGkEAGkEAGkEAGkEAGkEAGkEsCD61xJGX39pBABpBABpBLBC1NuIqOuuiQAgjQBWinY2jbbeVggA0gggQZSzapR1ekAAibwPl/f1eUMAG3gdMq/r8owANvI2bN7WEwUB7OBl6LysIyIC2Kn18LV+/OgIIINWQ8jw78cPZWdyGsZoP5OqjgAyKxkCg58fARSSMwQGvxwCKOx8eFNiYOjrOLReQGlTP/Gj+GsoS65uX47+98PlTbdz0v2rQD0fvBp633/dBwDMIQBIkwhg7DI+db+ramx/9H77YyYSADBFOgCuAg+U94NMAAqX85xU9pdMAFOUz35mbL9UAFNnNdUhUPyHryGpAMyI4IThfyAXAHBOqvZzU+8RMuv7fUJzVzq1s7+Z8BVg7mD3ejvE8D8lG4CZVgQM/zjZDT83dztkFvuWaClk5eE3I4D/liIwixXCmiuY+vCbEcAjayI45ymI1Fs2hv8BO2FEagiRMPiPST8JntLrkPS6XXuwQxb0cDVg8KeF3TGv3r6vPpg/Pr2o/ZCbvf78t/pj/vz2Jdw8hVuwWZvhH/IYQ4uhH4oWQajFmvkYfsyLFEGoJ8EMfwyRjlOYACLtVMQ5XmECAEogAEgjAEgjAEgjAEgjAEgjAEgjAEgjAEgjAEgjAEgjAEgjAEgjAEgLE0CkD1kgzvEKE4BZnJ2qLtJxChWAWaydqyja8QkXgFm8nayC4wIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgH7sSJJuCYyZ1AAAAAElFTkSuQmCC","village":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAELElEQVR4nO3cP44cRRjGYRsROIGMI/gIHMARARKyuIAhAIl8yQghQDhHjoAbICQCIg7AEXwDyCAhMwFqeTX2eqZ7qru+qvd5co+rZt/ftNZ/9t49AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANjk2eePXvQ+A8d7q/cBKljGL4I88QGcjl4EWaIDuGvsIsgRG8C5kYsgQ2QAl45bBPOLC2DtqEUwt6gAjJlTMQFcM/7EcG4eZ9w5JoBrJUWwjD8hgogAWo03IYLT0c8ewfQBtB7tzBHcNfaZI5g6gL3GOmME50Y+awTTBrD3SGeK4NJxzxjBlAEcNc6ZIrjUbBFMF8DRoxw9gi2DnimCqQLoNcZRI7hmyLNEME0AvUfY+/dfq8WAZ4hgigCqjK/KOc5pOdzRIxg+gFFGV8Uegx05gqEDqDj+imda7DnUUSMYNoDKQ6t4tiMGOmIEQwZQcWCnKp3xyGGOFsFwAVQa1jkVztpjkCNFMFQAFQa1Vs8z9xziKBEMFcCoekRQYYAVznDOMAGM+Ol/2+jn36p6BEMEMMt4jrpHtdFVO89t5QOYZfyLve9TdWxVz1U6gNnGv9jrXlVHtqh4vrIBzDr+Rev7VRzX61Q7Z8kAZh9/a9VGdU6l85YLIGn8Le5aaUxrVDl3qQCSxr+45s5VRrRVhfOXCSBx/Istd68wnhZ636NEAMnjX6x5D3qPprWe9+kegPG/dMl7Mdv4F73u1TUA43/Vm96TWce/6HG/bgEY/92S35ujI+gSQPIX+FKn79Hsn/63HXnXwwMw/sst71XS+BdH3bn7N8G8WeL4F0fc/dAAfPqv8/zP3ifob+8IDgvA+Ncx/pf2jOCQAIx/HeN/1V4R7B6A8a9j/HfbI4JdAzD+dYz/vNYR7BaA8a9j/JdrGcH9Vi9029bxf/zZh62PMpRvv/m19xGG8vTn36/eb/MngE9+jtLiSbDLE2Crv/54Gh2PJ8A21zwJ/E0ww7vmSSAAprA1AgEwjS0RvL3HQWjr6+8+6X2EQ3315Y+bf+3N40cv1nxP4AnAdNY8CfwpUCHvvX/z2q/Hv89/inpfHjx8ctguPQGIJgCiCYBoAiCaAIgmAKIJgGgCIJoAiCYAovnHcIE+/e2d5q/5wwf/NH/NI3gCEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0aL+P8AXv7zb/DW//+jv5q/JcTwBiCYAogmAaAIgmgCIJgCiCYBoUX8PwP9G/Rk+e/AEIJoAiCYAogmAaAIgmgCIJgCiCYBoAiCaAIgmAKIJgGgCIJoAiCYAogmAaAIgmgCIJgCiCYBoAiCaAIgmAKIJgGh+MNYAHjx8cr/3GWblCUA0AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwP7+A6wDgqA24wFmAAAAAElFTkSuQmCC","robot":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAE0UlEQVR4nO3bsZnURhiA4cGPA6dugAaIXQCpCR1SA5e4DidHDYQOcUoBjmmABkid4eT28SFLWmlXo5l//vcNfYcZSf83s3u3lAIAAAAAAAAAAAAAENKL1gvI6J+/f/u29LWffvnTMzmRm32itcGfEsI5fmi9gCz2DP8t389tBHCCW4dZBPUJoLJ7h1gEdQmgoqOGVwT1CIDUBFDJ0bu2U6AOAZCaAEhNAKQmAFITAKkJgNQEUMnRH2bz4bg6BEBqAqjoqF3b7l+PACq7d3gNf10COMGtQ2z46xPASfYOs+E/h5vcgH8T3A83u4GXb97PBvDl4zvP42ReApGaAEhNAKQmAFITAKkJgNQEQGoCIDUBkJoASE0ApDb8Z0+WPnfDdiN/RmnICzP09YwWw1AXY/DPM0oIQ1yEwW8negjh3wQb/rai3//Q9W69+a9ev629lGF9/vRh0/dFPQlCLrqU68Nv6I93LYaIEYRbcCnrw2/w61sLIVoE4d4DGP721u5ztPcEoWpdurkGv52l0yDKSRDuBIAjhQnA7t+npfsf5aVQmADmGP4+RH4OIQKIspvwvQjPLUQAcyLvOiOK+jzCBgBH6D6ACMcoy3p/ft0HMCfqcTu6iM8lZABwFAGQmgBITQCkJgBSEwCpCYDUBEBqAiA1AZCaAEjtx9YL6N1fv//8v//26x9fG6xku4hrbkUAC+aGaPq13oYq4ppbE8DE2hAtfW/roYq45l54D/DMnkE64s8dIeKaeyIAUhPAk3t3xBY7asQ190YApCaActxOeOaOGnHNPRIAqQmA1ARAagIgNQGU434reuZvVyOuuUcCIDUBPLl3J2yxk0Zcc28EQGoCeObWHbHlThpxzT3xceiJy2Bs+Q1pL0MUcc29EMCCtaHqdYgirrk1AVwRcXAirrkV7wFITQCkJgBSEwCpCYDUBEBqfgxaSnl8mP8F0sPjWD9OzHKdezgBSE0ApCYAUhPAiqXXzBGNdC1HEkDJ/SYw87WXIgCSE8AVI7x0GOEaahHAk4wvBTJe85QANoi8g0Ze+xkE8EymHTHTta4RwEYRd9KIaz6bACbWdsZIA7W2Vrv/fwSwU4QIIqyxFwKYcW2H7HnArq3N7v89ASyIGIHh308AK7ZE0EMIW9Zh+OcJ4Iotg9MqhK1/r+FfJoANtg7QWSHs+XsM/zoBbLRnkGqFsPf/a/iv82+Cd3h4/LprAKffu3cg74nI8G8jgJ0ug3XLcJ7x8sjg7+Ml0I16HLQe19Q7J8Ad7jkNaqyD/QRwgOcDeFYMhv4YAjhYzRgM/fEEUNF0YPcGYeDrE8CJDHR/Qv4U6POnD62XwIyIz6X7AL58fPei9Rq4Xe/Pr/sAoKawAUQ8bkcW9XmECKD3Y5R5EZ5biACWRN11RhP5OYQJYGk3iXzzR7B0/yPs/qUECgBqCFHpcy/fvP+29LVXr9+euZTU1k7eKLt/KQFPgLWb6+XQOUYZ/lICngAXaydBKU6DGq5tMNGGv5TAAZRyPYILMdxu66kacfhLCR5AKdsjoJ6ow19KwPcAU5Fv/gii3//Qi59yGpwn+uBfDHERU0KoZ5TBvxjqYuaI4X6jDT0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALDfv3ZxmQQ113RWAAAAAElFTkSuQmCC"};
+const NEPAL_SPRITES = [
+ {key:'sensor',label:'센서 관측기'},
+ {key:'alarm',label:'경보 장치'},
+ {key:'village',label:'대피 마을'},
+ {key:'robot',label:'관측 로봇'}
+];
+let nepalSpriteMode = 'object';
+const nepalChooser=document.getElementById('nepalSpriteChooser');
+const nepalMsg=document.getElementById('nepalSpriteMessage');
+function nepalObjectPicture(name, uri, dims={width:192,height:192}) {
+  // EntryJS's Picture schema accepts a concrete fileurl; filename alone would use
+  // /uploads at the publisher's web root, inaccessible at /nepal/.
+  return {
+    id:Entry.generateHash(12), name, label:{ko:name,en:name},
+    imageType: uri.startsWith('data:image/jpeg')?'jpg':'png', fileurl:uri,
+    dimension:{width:dims.width,height:dims.height}, trimmed:null
+  };
+}
+function nepalAddSprite(name,uri,dims){
+ const picture=nepalObjectPicture(name,uri,dims);
+ if(nepalSpriteMode==='picture' && typeof Entry.playground?.addPicture==='function'){
+   Entry.playground.addPicture(picture,true,true);
+ }else{
+   if(typeof Entry.container?.addObject!=='function')throw Error('Entry.container.addObject를 찾지 못했습니다.');
+   Entry.container.addObject({id:Entry.generateHash(12),name,objectType:'sprite',sprite:{name,pictures:[picture],sounds:[],category:{}}},0);
+ }
+}
+function nepalOpenChooser(mode='object'){
+ nepalSpriteMode=mode;
+ document.getElementById('nepalSpriteTitle').textContent=mode==='picture'?'모양 추가하기':'오브젝트 추가하기';
+ nepalMsg.textContent='';nepalChooser.hidden=false;
+ document.getElementById('nepalSpriteClose').focus();
+}
+function nepalCloseChooser(){nepalChooser.hidden=true;}
+function nepalWireObjectEvents(E){
+ if(typeof E.addEventListener!=='function'){
+   console.warn('[NEPAL] Entry.addEventListener is missing');return;
+ }
+ E.addEventListener('openSpriteManager',()=>nepalOpenChooser('object'));
+ E.addEventListener('openPictureManager',()=>nepalOpenChooser('picture'));
+ // The original EntryJS workspace also broadcasts other manager events;
+ // we do not impersonate the official cloud catalog. They are outside this lesson.
+}
+function nepalRepairStarter(E){
+ // EntryJS start-project's default EntryBot often points to unreachable /uploads.
+ // Give the existing default object a self-contained picture when supported.
+ if(Array.isArray(E.container?.objects_) && E.container.objects_.length>0 && typeof E.playground?.addPicture==='function'){
+   try{E.playground.addPicture(nepalObjectPicture('관측 로봇',NEPAL_SPRITE_IMAGE.robot),true,true)}
+   catch(err){console.warn('[NEPAL] 기본 오브젝트 모양 추가 생략:',err)}
+ }
+ // Add a real mission sprite through the public Entry.container.addObject API.
+ // This remains visible even if the starter EntryBot has a broken asset filename.
+ try{nepalAddSprite('센서 관측기',NEPAL_SPRITE_IMAGE.sensor)}
+ catch(err){console.warn('[NEPAL] 센서 관측기 추가 실패:',err)}
+}
+function nepalInitPicker(){
+ const grid=document.getElementById('nepalSpriteGrid');
+ for(const item of NEPAL_SPRITES){
+  const button=document.createElement('button');button.type='button';button.className='npsprite';
+  const img=document.createElement('img');img.src=NEPAL_SPRITE_IMAGE[item.key];img.alt='';
+  const label=document.createElement('span');label.textContent=item.label;
+  button.append(img,label);button.addEventListener('click',()=>{
+    try{nepalAddSprite(item.label,NEPAL_SPRITE_IMAGE[item.key]);nepalCloseChooser()}
+    catch(err){nepalMsg.textContent='오브젝트 추가 실패: '+String(err?.message||err);console.error(err)}
+  });grid.appendChild(button);
+ }
+ document.getElementById('nepalSpriteClose').addEventListener('click',nepalCloseChooser);
+ nepalChooser.addEventListener('click',e=>{if(e.target===nepalChooser)nepalCloseChooser()});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!nepalChooser.hidden)nepalCloseChooser()});
+ document.getElementById('nepalImageUpload').addEventListener('change',async e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  if(!['image/png','image/jpeg','image/webp'].includes(file.type)){nepalMsg.textContent='PNG, JPG 또는 WEBP 이미지 파일을 선택하세요.';return;}
+  if(file.size>3*1024*1024){nepalMsg.textContent='이미지 크기는 3MB 이하여야 합니다.';return;}
+  try{
+    const uri=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(Error('파일을 읽을 수 없습니다.'));reader.readAsDataURL(file)});
+    const dims=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve({width:img.naturalWidth,height:img.naturalHeight});img.onerror=()=>reject(Error('이미지를 열 수 없습니다.'));img.src=uri});
+    nepalAddSprite(file.name.replace(/\.[^.]+$/,''),uri,dims);nepalCloseChooser();
+  }catch(err){nepalMsg.textContent='이미지 추가 실패: '+err.message}finally{e.target.value=''}
+ });
+}
+nepalInitPicker();
 
 async function boot(){try{
   for(let i=0;i<deps.length;i++){await loadDependency(deps[i][0],deps[i][1],deps[i][2],i+1,deps.length);}
@@ -353,17 +468,19 @@ async function boot(){try{
   statusEl.textContent='엔트리 실행 환경을 초기화하는 중…';
   if(E.Event)E.creationChangedEvent=new E.Event(window);
   E.init(document.getElementById('workspace'),{
-    type:'workspace',libDir:'https://entry-cdn.pstatic.net/lib',entryDir:'https://entry-cdn.pstatic.net/lib/entry-js',
+    type:'workspace',libDir:'https://entry-cdn.pstatic.net/lib',entryDir:'https://entry-cdn.pstatic.net/lib/entry-js',defaultDir:'https://playentry.org',soundDir:'https://playentry.org',
     projectsaveable:true,variableEnable:true,listEnable:true,
     hardwareEnable:false,textCodingEnable:false,expansionDisable:true,
     fonts:[{name:'나눔고딕',family:'Nanum Gothic',url:'https://fonts.googleapis.com/earlyaccess/nanumgothic.css'}]
   });
+  nepalWireObjectEvents(E);
   await Promise.resolve(E.loadProject());await wait(750);
+  nepalRepairStarter(E);
   // Teacher-provided measurement inputs. Student-created solution variables are NOT precreated.
   const seed=teacherVariables.filter(([,name])=>!getVar(name)).map(([id,name,value])=>({id,name,value,variableType:'variable',visible:true,object:null}));
   if(seed.length)E.variableContainer.appendVariables(seed);
-  window.__entryReady=true;statusEl.textContent='✅ 실제 엔트리 편집기 준비 완료';notify('ENTRY_READY');
- }catch(e){console.error('[NEPAL ENTRY v0.9] 부팅 실패',e,executionErrors,bootNotes);fail(e.message||String(e));}}
+  window.__entryReady=true;statusEl.textContent='✅ 실제 엔트리 편집기 및 오브젝트 준비 완료';notify('ENTRY_READY');
+ }catch(e){console.error('[NEPAL ENTRY v1.0] 부팅 실패',e,executionErrors,bootNotes);fail(e.message||String(e));}}
 window.addEventListener('message',async e=>{
  if(e.source!==window.parent || e.origin!==location.origin)return;
  if(e.data?.type!=='NEPAL_TEST')return;
