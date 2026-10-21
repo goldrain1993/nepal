@@ -18,9 +18,15 @@
   .ne-header button,.ne-side button{border:1px solid #4c7150;border-radius:9px;padding:9px 13px;background:#17331d;color:#ecffe2;cursor:pointer;font-weight:800}
   .ne-main{display:grid;grid-template-columns:minmax(285px,27%) minmax(0,1fr);flex:1;min-height:0}
   .ne-side{border-right:1px solid #2a5132;background:#101e16;overflow:auto;padding:18px}
-  .ne-mission-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:16px 0}
+  .ne-mission-list{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin:12px 0}
   .ne-mission-list button{padding:10px 3px;font-size:12px}
   .ne-mission-list button.current{background:#9fe761;color:#11240f}
+  .ne-modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+  .ne-modes button{font-size:12px;text-align:left;min-height:58px;padding:10px}
+  .ne-modes button.current{background:#a7eb6c;color:#11240f;border-color:#a7eb6c}
+  #ne-learning-note{font-size:12px;color:#d4edc3;line-height:1.55;padding:10px;background:#102919;border-left:3px solid #9cdb69;margin:7px 0}
+  #ne-saved-live{margin:7px 0;padding:9px 12px;background:#0a1416;border:1px solid #437060;border-radius:8px;color:#d5e9ed;font-size:13px;line-height:1.6}
+  #ne-saved-live b{color:#b4eefd}
   .ne-warning{background:#361b19;border:1px solid #e5795f;border-left:5px solid #ff8a6b;border-radius:9px;padding:16px 14px;margin:12px 0}
   .ne-warning h2{margin:3px 0 8px;font-size:22px;color:#ffbe94;line-height:1.3}
   .ne-warning p{color:#ffe4d4;font-size:13px;line-height:1.75;margin:0}
@@ -43,9 +49,17 @@
     {title:'경보 판단', fault:'대피 경보 판단 장치가 고장 났습니다!', description:'감지된 위험 센서 수에 따른 경보 발령 조건이 삭제되었습니다.', task:'감지개수가 2 이상이면 「경보결과」 변수를 1로, 그렇지 않으면 0으로 정하세요.', example:'감지개수 ≥ 2 → 경보결과 = 1', active:false},
     {title:'시스템 통합', fault:'자동 경보 시스템이 연결되지 않았습니다!', description:'개발한 기능을 전체 재난 시뮬레이션과 연결하여 검사해야 합니다.', task:'센서 데이터 저장부터 반복 검사, 경보 발령까지 통합하고 홍수·비홍수 상황에 시험하세요.', example:'실제 재난 시나리오 × 100회', active:false}
   ];
+  const loopCase = {
+    title:'반복 저장',
+    fault:'수위 센서값이 최초 한 번만 저장됩니다!',
+    description:'수위 센서는 계속 측정하고 있지만, 변수 저장 명령은 시작할 때 한 번만 실행됩니다. 값이 바뀌어도 변수에는 이전 값이 남습니다.',
+    task:'「흐름」 탭에서 「계속 반복하기」 블록을 가져오세요. 미션 01에서 만든 「수위센서값을 (수위 센서가 현재 측정하고 있는 실시간 값)으로 정하기」를 그 안으로 옮기세요. 계속 실행한 채로 값이 바뀌는지 확인하고 검사하세요. (필요하면 반복 안에 0.2초 기다리기를 넣어도 됩니다.)',
+    example:'시작하기 → 계속 반복하기 { 수위센서값을 (실시간 수위 센서 값)으로 정하기 }',active:true
+  };
+  const casesByMode={auto:cases,loop:[cases[0],loopCase,...cases.slice(1)]};
   const trigger = document.createElement('button'); trigger.id='nepal-entry-trigger'; trigger.textContent='🧩 엔트리 개발자 모드';
   const layer = document.createElement('section'); layer.id='nepal-entry-layer';
-  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">실제 EntryJS 편집기 연동 · 기술 검증 v1.8</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">엔트리 편집기를 불러오는 중입니다…</div><p id="ne-mini">※ 원본 홍수 4유형·비홍수 3유형과 재난 엔진은 수정하지 않습니다.<br>※ 현재 버전은 엔트리 편집기 내장 및 미션 1·2 연동 시험용입니다. 미션 3~5의 실전 판정은 아직 연결하지 않았습니다.</p></aside><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="./nepal_entry_editor.html"></iframe></main>`;
+  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">실제 EntryJS 편집기 연동 · 기술 검증 v1.9</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div class="ne-modes"><button id="ne-mode-auto" class="current" type="button">① 자동 갱신 방식<br><small>시스템이 대신 저장</small></button><button id="ne-mode-loop" type="button">② 반복문 방식<br><small>학생이 직접 구현</small></button></div><div id="ne-learning-note">방식 ①: 미션 01 검사를 통과하면 센서값을 시스템이 자동으로 변수에 반영합니다.</div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위센서값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">엔트리 편집기를 불러오는 중입니다…</div><p id="ne-mini">※ 원본 홍수 4유형·비홍수 3유형과 재난 엔진은 수정하지 않습니다.<br>※ 방식 ①은 교사 시스템이 측정값을 변수에 자동 복사하므로 반복문 학습을 평가하지 않습니다.<br>※ 방식 ②는 학생의 반복문이 갱신해야 통과합니다. 기존 재난 엔진·100회 평가 연결은 아직 개발 중입니다.</p></aside><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="./nepal_entry_editor.html"></iframe></main>`;
   const launch = () => { layer.classList.add('open'); trigger.style.display='none';};
   const close = () => { layer.classList.remove('open'); trigger.style.display='';};
   trigger.addEventListener('click',launch);
@@ -106,24 +120,77 @@
       try{iframe.contentWindow?.postMessage({type:'NEPAL_SENSOR_TELEMETRY',sensor:kind,...reading},location.origin)}catch(e){console.warn(e)}
     }
     const display=document.getElementById('ne-sensor-live');
-    if(display && (mission===0 || mission===1)){
+    if(display && (mission===0 || mission===1 || (learningMode==='loop' && mission===2))){
       const fmt=r=>r.value.toFixed(2);
-      display.innerHTML=mission===0
+      display.innerHTML=(mission===0 || (learningMode==='loop' && mission===1))
        ?'📡 '+readings.water.source+'<br><strong>'+fmt(readings.water)+' m</strong> · 센서는 계속 측정 중'
        :'📡 센서 측정값 (미리 만들어진 변수 아님)<br><strong>수위 '+fmt(readings.water)+' · 유속 '+fmt(readings.flow)+' · 진동 '+fmt(readings.vibration)+'</strong>';
     }
   }
   setInterval(pushSensorMeasurement,700);
 
-  let mission=0, ready=false;
+  let mission=0, ready=false, learningMode='auto';
   const missionBtns=document.getElementById('ne-missions');
-  cases.forEach((m,i)=>{const b=document.createElement('button'); b.textContent=String(i+1).padStart(2,'0');b.onclick=()=>changeMission(i);missionBtns.appendChild(b)});
-  function changeMission(i){mission=i;const m=cases[i];document.getElementById('ne-sensor-live').style.display=i<=1?'block':'none'; [...missionBtns.children].forEach((b,n)=>b.classList.toggle('current',i===n));document.getElementById('ne-fault').textContent=m.fault;document.getElementById('ne-why').textContent=m.description;document.getElementById('ne-task').textContent=m.task;document.getElementById('ne-example').textContent=m.example;document.getElementById('ne-check').disabled=!m.active;document.getElementById('ne-check').textContent=m.active?'▶ 엔트리 실행 결과 검사':'연동 개발 중 · 검사 준비 중';status.textContent=m.active?'미션을 읽고 엔트리 편집기에서 실제 블록을 조립하세요.':'이 미션은 연동 계획 단계이며 자동 검사 기능이 아직 없습니다.';}
-  changeMission(0);
-  document.getElementById('ne-check').addEventListener('click',()=>{if(!ready){status.textContent='엔트리 편집기 로딩이 완료되지 않았습니다. 네트워크와 외부 라이브러리를 확인해 주세요.';return;} status.textContent='엔트리 실행을 요청했습니다. 검사 결과를 기다리는 중입니다…';iframe.contentWindow.postMessage({type:'NEPAL_TEST',mission},location.origin)});
+  const autoBtn=document.getElementById('ne-mode-auto'),loopBtn=document.getElementById('ne-mode-loop');
+  const checkBtn=document.getElementById('ne-check');
+  function activeCases(){return casesByMode[learningMode]}
+  function renderMissionButtons(){
+    missionBtns.replaceChildren();
+    activeCases().forEach((m,i)=>{
+      const b=document.createElement('button');b.textContent=String(i+1).padStart(2,'0');
+      b.onclick=()=>changeMission(i);missionBtns.appendChild(b);
+    });
+  }
+  function changeMission(i){
+    mission=i;const m=activeCases()[i];
+    document.getElementById('ne-sensor-live').style.display=(learningMode==='loop'?i<=2:i<=1)?'block':'none';
+    document.getElementById('ne-saved-live').style.display=(learningMode==='loop'?i<=2:i<=1)?'block':'none';
+    [...missionBtns.children].forEach((b,n)=>b.classList.toggle('current',i===n));
+    document.getElementById('ne-fault').textContent=m.fault;
+    document.getElementById('ne-why').textContent=m.description;
+    document.getElementById('ne-task').textContent=m.task;
+    document.getElementById('ne-example').textContent=m.example;
+    checkBtn.disabled=!m.active;
+    checkBtn.textContent=m.active?'▶ 엔트리 실행 결과 검사':'연동 개발 중 · 검사 준비 중';
+    status.textContent=m.active?'미션을 읽고 엔트리 편집기에서 실제 블록을 조립하세요.':'이 미션은 연동 계획 단계이며 자동 검사 기능이 아직 없습니다.';
+  }
+  function changeLearningMode(mode){
+    if(mode!== 'auto' && mode!=='loop')return;
+    learningMode=mode;
+    autoBtn.classList.toggle('current',mode==='auto');
+    loopBtn.classList.toggle('current',mode==='loop');
+    document.getElementById('ne-learning-note').textContent= mode==='auto'
+      ? '방식 ①: 학생이 처음 저장하는 프로그램을 만든 뒤, 검사 통과 후에는 시스템이 자동으로 값을 갱신합니다.'
+      : '방식 ②: 첫 미션은 한 번 저장하고, 두 번째 미션에서 계속 반복하기를 직접 구현해야 값이 지속적으로 바뀝니다.';
+    renderMissionButtons();changeMission(0);
+    document.getElementById('ne-saved-live').innerHTML='💾 엔트리 변수 수위센서값: <b>실행 대기</b>';
+    if(ready)iframe.contentWindow.postMessage({type:'NEPAL_SET_MODE',mode},location.origin);
+  }
+  autoBtn.addEventListener('click',()=>changeLearningMode('auto'));
+  loopBtn.addEventListener('click',()=>changeLearningMode('loop'));
+  changeLearningMode('auto');
+  checkBtn.addEventListener('click',()=>{
+    if(!ready){status.textContent='엔트리 편집기 로딩이 완료되지 않았습니다. 네트워크와 외부 라이브러리를 확인해 주세요.';return;}
+    checkBtn.disabled=true;
+    status.textContent='엔트리 실행을 요청했습니다. 검사 결과를 기다리는 중입니다…';
+    iframe.contentWindow.postMessage({type:'NEPAL_TEST',mission},location.origin);
+  });
   window.addEventListener('message',(event)=>{if(event.source!==iframe.contentWindow || event.origin!==location.origin)return; const d=event.data||{};
-    if(d.type==='ENTRY_READY'){ready=true;pushSensorMeasurement();status.textContent='실제 엔트리 편집기 준비 완료. 자료 탭에서 변수를 직접 만들고 센서값 블록을 연결해 보세요.';}
+    if(d.type==='ENTRY_READY'){ready=true;pushSensorMeasurement();iframe.contentWindow.postMessage({type:'NEPAL_SET_MODE',mode:learningMode},location.origin);status.textContent='실제 엔트리 편집기 준비 완료. 자료 탭에서 변수를 직접 만들고 센서값 블록을 연결해 보세요.';}
     if(d.type==='ENTRY_ERROR'){ready=false;status.textContent='엔트리 로딩 오류: '+String(d.message||'알 수 없는 오류')+'\n하단 설치 안내를 참고해 주세요.';}
-    if(d.type==='ENTRY_CHECK_RESULT'){status.textContent=(d.ok?'✅ 복구 검사 통과!':'❌ 복구 검사 실패')+'\n'+(Array.isArray(d.details)?d.details.join('\n'):String(d.message||''));}
+    if(d.type==='ENTRY_CHECK_RESULT'){
+      checkBtn.disabled=!activeCases()[mission]?.active;
+      status.textContent=(d.ok?'✅ 복구 검사 통과!':'❌ 복구 검사 실패')+'\n'+(Array.isArray(d.details)?d.details.join('\n'):String(d.message||''));
+    }
+    if(d.type==='ENTRY_MODE_READY'){
+      if(d.mode===learningMode)status.textContent='비교 방식 변경 완료. 기존 프로젝트 코드는 그대로 유지됩니다. 필요하면 엔트리의 시작 버튼을 눌러 다시 실행하세요.';
+    }
+    if(d.type==='ENTRY_VAR_SNAPSHOT'){
+      if(d.mode!==learningMode)return;
+      const target=document.querySelector('#ne-saved-live b');
+      if(target){target.textContent=d.value===null?'아직 변수값이 없음':Number.isFinite(d.value)?d.value.toFixed(2)+' m'+(d.running?' · 실행 중':' · 정지 상태'):'저장값 오류';}
+      const box=document.getElementById('ne-saved-live');
+      if(box){box.title=d.autosync?'방식 ①: 시스템 자동 동기화가 활성화됨':'방식 ②: 학생 엔트리 코드의 실행 결과 또는 미저장값';}
+    }
   });
 })();
