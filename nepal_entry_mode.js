@@ -37,7 +37,7 @@
   `;
   document.head.appendChild(css);
   const cases = [
-    {title:'수위 센서', fault:'수위 센서값을 저장하는 변수가 삭제되었습니다!', description:'수위 센서는 정상적으로 작동하고 실시간으로 값을 측정하고 있습니다. 하지만 측정값을 기억할 변수가 삭제되어 값을 저장하지 못합니다.', task:'엔트리의 자료 탭에서 「수위센서값」 변수를 직접 만들고, 자료 탭의 타원형 「수위 센서가 현재 측정하고 있는 실시간 값」 블록을 이용해 센서의 측정값을 수위센서값 변수에 저장하는 프로그램을 만드세요.', example:'수위센서값을 (수위 센서가 현재 측정하고 있는 실시간 값)으로 정하기', active:true},
+    {title:'수위 센서', fault:'수위 센서값을 저장하는 변수가 삭제되었습니다!', description:'수위 센서는 정상적으로 작동하고 실시간으로 값을 측정하고 있습니다. 하지만 측정값을 기억할 변수가 삭제되어 값을 저장하지 못합니다.', task:'엔트리의 자료 탭에서 「수위센서값」 변수를 직접 만들고, 자료 탭의 타원형 「수위 센서가 현재 측정하고 있는 실시간 값」 블록을 값 입력 칸에 끼워 넣어 저장하세요. 내부 실시간 측정값은 변수 목록에 없으며 읽기 전용입니다.', example:'수위센서값을 (수위 센서가 현재 측정하고 있는 실시간 값)으로 정하기', active:true},
     {title:'센서값 목록', fault:'유속·진동 센서값을 저장하는 변수와 센서값목록이 삭제되었습니다!', description:'수위 외에 유속·진동 센서도 측정하고 있지만 측정값을 저장할 변수가 없습니다. 세 센서의 데이터를 한데 모아 둘 리스트도 삭제되었습니다.', task:'① 「유속센서값」과 「진동센서값」 변수를 직접 만드세요. ② 자료 탭의 유속·진동 실시간 측정 블록으로 각 변수에 값을 저장하세요. ③ 「센서값목록」 리스트를 만들고 수위센서값 → 유속센서값 → 진동센서값 순서로 넣으세요.', example:'수위센서값, 유속센서값, 진동센서값 → 센서값목록 [수위, 유속, 진동]', active:true},
     {title:'반복 검사', fault:'다중 센서 자동 검사 장치가 고장 났습니다!', description:'센서값 목록을 하나씩 검사하는 반복 과정이 삭제되었습니다.', task:'리스트 크기만큼 반복하고, 반복번호를 사용해 현재 센서값을 꺼내 위험 기준과 비교하여 감지개수를 증가시키세요.', example:'반복번호 = 1, 2, 3 → 감지개수 계산', active:false},
     {title:'경보 판단', fault:'대피 경보 판단 장치가 고장 났습니다!', description:'감지된 위험 센서 수에 따른 경보 발령 조건이 삭제되었습니다.', task:'감지개수가 2 이상이면 「경보결과」 변수를 1로, 그렇지 않으면 0으로 정하세요.', example:'감지개수 ≥ 2 → 경보결과 = 1', active:false},
@@ -45,7 +45,7 @@
   ];
   const trigger = document.createElement('button'); trigger.id='nepal-entry-trigger'; trigger.textContent='🧩 엔트리 개발자 모드';
   const layer = document.createElement('section'); layer.id='nepal-entry-layer';
-  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">실제 EntryJS 편집기 연동 · 기술 검증 v1.3</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">엔트리 편집기를 불러오는 중입니다…</div><p id="ne-mini">※ 원본 홍수 4유형·비홍수 3유형과 재난 엔진은 수정하지 않습니다.<br>※ 현재 버전은 엔트리 편집기 내장 및 미션 1·2 연동 시험용입니다. 미션 3~5의 실전 판정은 아직 연결하지 않았습니다.</p></aside><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="./nepal_entry_editor.html"></iframe></main>`;
+  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">실제 EntryJS 편집기 연동 · 기술 검증 v1.8</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">엔트리 편집기를 불러오는 중입니다…</div><p id="ne-mini">※ 원본 홍수 4유형·비홍수 3유형과 재난 엔진은 수정하지 않습니다.<br>※ 현재 버전은 엔트리 편집기 내장 및 미션 1·2 연동 시험용입니다. 미션 3~5의 실전 판정은 아직 연결하지 않았습니다.</p></aside><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="./nepal_entry_editor.html"></iframe></main>`;
   const launch = () => { layer.classList.add('open'); trigger.style.display='none';};
   const close = () => { layer.classList.remove('open'); trigger.style.display='';};
   trigger.addEventListener('click',launch);
@@ -55,6 +55,17 @@
   // Bridge the *actual* installed flood simulator water-level sensor to the
   // EntryJS reporter. While no sensor/scenario exists, provide changing demo
   // observations and explicitly label them as simulation training data.
+  // Internal measurement values are intentionally NOT Entry variables.
+  // Change once per broadcast; both the sidebar and Entry reporter see the
+  // identical sample. Math.random is used only for the training sensors.
+  const nepalTrainingReadings={water:4.2,flow:3.1,vibration:2.8};
+  function advanceTrainingReadings(){
+    const limits={water:[1.0,9.5,.36],flow:[.4,6.8,.27],vibration:[.2,5.6,.23]};
+    for(const [key,[min,max,delta]] of Object.entries(limits)){
+      const next=nepalTrainingReadings[key]+(Math.random()*2-1)*delta;
+      nepalTrainingReadings[key]=Math.round(Math.max(min,Math.min(max,next))*100)/100;
+    }
+  }
   function getNepalWaterMeasurement(){
     try{
       if(typeof scenario!=='undefined' && scenario &&
@@ -67,8 +78,7 @@
         }
       }
     }catch(err){console.warn('수위 센서 연결 대기',err)}
-    const v=4.2+0.38*Math.sin(Date.now()/1350);
-    return {value:Math.round(v*100)/100,source:'실습용 가상 수위 센서'};
+    return {value:nepalTrainingReadings.water,source:'실습용 가상 수위 센서 (난수 측정)'};
   }
   function getNepalSensorMeasurement(kind){
     if(kind==='water')return getNepalWaterMeasurement();
@@ -84,13 +94,11 @@
         }
       }
     }catch(err){console.warn(label+' 연결 대기',err)}
-    const base=kind==='flow'?3.1:2.8;
-    const swing=kind==='flow'?.19:.16;
-    const v=base+swing*Math.sin(Date.now()/(kind==='flow'?1510:1080));
-    return {value:Math.round(v*100)/100,source:'실습용 가상 '+label};
+    return {value:nepalTrainingReadings[kind],source:'실습용 가상 '+label+' (난수 측정)'};
   }
   function pushSensorMeasurement(){
     if(!layer.classList.contains('open'))return;
+    advanceTrainingReadings();
     const readings={};
     for(const kind of ['water','flow','vibration']){
       const reading=getNepalSensorMeasurement(kind);
