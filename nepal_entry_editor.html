@@ -370,7 +370,7 @@ function renderNepalBlockMenuDiagnostic(){
   const info=reportNepalBlockMenu(E);
   const names=nepalReporterDefs.map(([id,label])=>`${label} (${id})`);
   document.getElementById('nepal-block-diagnostic').textContent=[
-    '버전: v2.0',
+    '버전: v2.2',
     'EntryJS 준비: '+(window.__entryReady?'예':'아니요'),
     '블록 정의: '+info.definitions.length+'/3',
     '정적 목록: '+info.menuIds.length+'/3',
@@ -490,10 +490,82 @@ async function checkRealtimeLoopMission(){
   return {ok:allPassed,details};
 }
 
+/* 미션 03 — 한 번 시작한 엔트리 프로그램에서 3개 센서값을 계속 갱신하는지 검사.
+ * 리스트를 계속 append하지 말고, 기존 1/2/3번 항목을 덮어써야 통과한다.
+ * 테스트 도중 EntryJS의 실행/정지를 반복하면 순간값 복사만으로도 통과하므로,
+ * 센서값 3세트를 하나의 연속 실행에서 시험한다.
+ */
+async function checkLiveSensorListMission(){
+  if(!window.__entryReady)throw Error('엔트리 편집기 준비가 아직 끝나지 않았습니다.');
+  const names=['수위센서값','유속센서값','진동센서값'];
+  for(const name of names){
+    if(!getVar(name))return {ok:false,details:[`「${name}」 변수를 직접 만드세요.`]};
+  }
+  if(!getList('센서값목록'))return {ok:false,details:['「센서값목록」 리스트를 직접 만드세요.']};
+  if(!codeHasTypes(['repeat_inf','set_variable','change_value_list_index',
+    ...nepalReporterDefs.map(d=>d[0])])){
+    return {ok:false,details:[
+      '실시간 센서 블록 3개로 각 변수의 값을 저장해야 합니다.',
+      '「자료」 탭에서 리스트의 정해진 위치의 값을 바꾸는 블록을 찾아 보세요.',
+      '반복 실행 도중 센서값이 변해도 목록의 항목은 3개로 유지되어야 합니다.'
+    ]};
+  }
+  const samples=[
+    {water:4.2,flow:3.1,vibration:2.8},
+    {water:6.8,flow:4.35,vibration:1.9},
+    {water:2.15,flow:5.6,vibration:4.4}
+  ];
+  const details=[];
+  let allPassed=true;
+  try{
+    await stopCode();
+    Object.assign(nepalTestValues,samples[0]);
+    for(const name of names)setVar(name,'');
+    // 학생의 초기 리스트는 보존: 직접 항목 3개를 준비했는지,
+    // 혹은 시작 코드를 이용해 한 번만 3개를 추가했는지 모두 허용한다.
+    // test에서 clearList()를 쓰면 사용자가 만든 초기 항목까지 삭제된다.
+    await startCode();
+    for(let i=0;i<samples.length;i++){
+      const sample=samples[i];
+      Object.assign(nepalTestValues,sample);
+      const expected=[sample.water,sample.flow,sample.vibration];
+      const valid=()=>{
+        const saved=names.map(readVar);
+        const list=readList('센서값목록')||[];
+        return list.length===3 &&
+          expected.every((v,j)=>numericMatches(saved[j],v) && numericMatches(list[j],v));
+      };
+      const passed=await waitForValues(valid,3200);
+      const saved=names.map(readVar);
+      const list=readList('센서값목록')||[];
+      details.push(`${i+1}차 측정 [${expected.join(', ')}] → 변수 [${saved.map(v=>v===''?'미저장':v).join(', ')}] · 리스트 [${list.join(', ')}] (${list.length}개) ${passed?'✓':'✗'}`);
+      if(!passed){allPassed=false;break;}
+    }
+    details.push(allPassed
+      ?'프로그램을 재시작하지 않고도 현재 센서값 3개가 목록의 같은 자리에 갱신됐습니다!'
+      :'센서 측정값이 변한 뒤에도 세 변수와 리스트 1·2·3번 값이 모두 바뀌는지 확인하세요. 목록에 값을 계속 추가하면 길이가 3개를 초과해 실패합니다.');
+  }finally{
+    await stopCode();
+    resetTestReadings();
+  }
+  if(allPassed){
+    try{
+      await startCode();
+      await waitForValues(()=>{
+        const list=readList('센서값목록')||[];
+        return list.length===3 && list.every((v,i)=>numericMatches(v,
+          [nepalSensorValue('water'),nepalSensorValue('flow'),nepalSensorValue('vibration')][i]));
+      },2200);
+      details.push('실습용 실시간 센서와 학생의 엔트리 코드를 다시 연결했습니다. 수정할 때는 엔트리 ■ 정지를 누르세요.');
+    }catch(err){details.push('실습 재실행 안내: '+String(err.message||err));}
+  }
+  return {ok:allPassed,details};
+}
+
 async function check(mission){
- // 01 = one-time snapshot, 02 = ongoing repeat. Original list mission moves to 03.
+ // 01: 변수 한 번 저장 / 02: 반복 저장 / 03: 3개 항목의 실시간 리스트 갱신
  if(mission===1)return checkRealtimeLoopMission();
- if(mission>=2)mission-=1;
+ if(mission===2)return checkLiveSensorListMission();
  if(!window.__entryReady)throw new Error('엔트리 편집기 초기화가 끝나지 않았습니다.');
  const details=[];
  if(mission===0){
@@ -539,48 +611,7 @@ async function check(mission){
    }
    return {ok:allPassed,details};
  }
- if(mission===1){
-   for(const name of ['수위센서값','유속센서값','진동센서값']){
-     if(!getVar(name))return {ok:false,details:[`「${name}」 변수를 직접 생성해 주세요.`]};
-   }
-   if(!getList('센서값목록'))return {ok:false,details:['「센서값목록」 리스트를 직접 만들어 주세요.']};
-   if(!codeHasTypes(['set_variable','add_value_to_list',...nepalReporterDefs.map(x=>x[0])])){
-     return {ok:false,details:['3개 실시간 센서값 블록으로 각 변수를 저장한 뒤, 변수값 3개를 리스트에 추가하는 블록을 작성하세요.']};
-   }
-   const samples=[{water:4.2,flow:3.1,vibration:2.8},{water:6.8,flow:4.35,vibration:1.9}];
-   let allPassed=true;
-   try{
-     for(const sample of samples){
-       await stopCode();
-       Object.assign(nepalTestValues,sample);
-       for(const name of ['수위센서값','유속센서값','진동센서값'])setVar(name,'');
-       clearList('센서값목록');
-       await startCode();
-       const expected=[sample.water,sample.flow,sample.vibration];
-       const success=()=>{
-         const vals=readList('센서값목록')||[];
-         const vars=['수위센서값','유속센서값','진동센서값'].map(readVar);
-         return vals.length===3 && vals.every((v,i)=>numericMatches(v,expected[i])) && vars.every((v,i)=>numericMatches(v,expected[i]));
-       };
-       const passed=await waitForValues(success);
-       const values=readList('센서값목록')||[];
-       const vars=['수위센서값','유속센서값','진동센서값'].map(readVar);
-       allPassed=allPassed&&passed;
-       details.push(`입력 [${expected.join(', ')}] → 변수 [${vars.map(v=>v===''?'미저장':v).join(', ')}], 리스트 [${values.join(', ')}] ${passed?'✓':'✗'}`);
-       await stopCode();
-     }
-     details.push(allPassed?'세 변수를 직접 만들고, 순서대로 리스트에 저장했습니다.':'세 변수에 센서값이 저장되는지, 리스트에 수위 → 유속 → 진동 순서대로 넣었는지 확인하세요.');
-   }finally{resetTestReadings();await stopCode()}
-   if(allPassed){
-     try{
-       await startCode();
-       await waitForValues(()=>Boolean(readList('센서값목록')?.length),1800);
-       details.push('실제 센서 측정값으로 학생의 엔트리 코드를 재실행했습니다. 편집하려면 엔트리 ■ 정지를 누르세요.');
-     }catch(err){details.push('실시간 재실행 안내: '+String(err.message||err));}
-   }
-   return {ok:allPassed,details};
- }
- return {ok:false,details:['미션 3~5는 실제 엔트리 실행과 연동하는 작업이 아직 남아 있습니다.']};
+ return {ok:false,details:['미션 04~06은 실제 재난 시스템과 자동 검사 연동을 개발 중입니다.']};
 }
 
 /* v1.4: Asset-path bridge for EntryJS hosted under /nepal/ on GitHub Pages.
@@ -854,7 +885,7 @@ async function boot(){try{
   }
   [200,650,1300].forEach(ms=>setTimeout(verifyReporterRender,ms));
   notify('ENTRY_READY');
- }catch(e){console.error('[NEPAL ENTRY v2.0] 부팅 실패',e,executionErrors,bootNotes);fail(e.message||String(e));}}
+ }catch(e){console.error('[NEPAL ENTRY v2.2] 부팅 실패',e,executionErrors,bootNotes);fail(e.message||String(e));}}
 window.addEventListener('message',e=>{
   if(e.source!==window.parent || e.origin!==location.origin)return;
   if(e.data?.type!=='NEPAL_SENSOR_TELEMETRY')return;
@@ -890,6 +921,8 @@ setInterval(()=>{
  const actual=readVar('수위센서값');
  notify('ENTRY_VAR_SNAPSHOT',{
    value:actual===null||actual===''?null:Number(actual),
+   variables:{water:readVar('수위센서값'),flow:readVar('유속센서값'),vibration:readVar('진동센서값')},
+   list:readList('센서값목록'),
    running:nepalIsRunning()
  });
 },700);

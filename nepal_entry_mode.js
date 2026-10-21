@@ -45,7 +45,7 @@
   document.head.appendChild(css);
   const cases = [
     {title:'수위 센서', fault:'수위 센서값을 저장하는 변수가 삭제되었습니다!', description:'수위 센서는 계속 측정 중이지만, 측정값을 기억할 변수가 삭제되었습니다. 이번 미션에서는 측정값을 딱 한 번만 저장해도 성공합니다.', task:'엔트리의 자료 탭에서 「수위센서값」 변수를 직접 만들고, 자료 탭의 타원형 「수위 센서가 현재 측정하고 있는 실시간 값」 블록을 값 입력 칸에 끼워 넣어 저장하세요. 측정값 하나를 저장하면 통과합니다.', example:'수위센서값을 (수위 센서가 현재 측정하고 있는 실시간 값)으로 정하기 · 한 번 저장', active:true},
-    {title:'센서값 목록', fault:'유속·진동 센서값을 저장하는 변수와 센서값목록이 삭제되었습니다!', description:'수위 외에 유속·진동 센서도 측정하고 있지만 측정값을 저장할 변수가 없습니다. 세 센서의 데이터를 한데 모아 둘 리스트도 삭제되었습니다.', task:'① 「유속센서값」과 「진동센서값」 변수를 직접 만드세요. ② 자료 탭의 유속·진동 실시간 측정 블록으로 각 변수에 값을 저장하세요. ③ 「센서값목록」 리스트를 만들고 수위센서값 → 유속센서값 → 진동센서값 순서로 넣으세요.', example:'수위센서값, 유속센서값, 진동센서값 → 센서값목록 [수위, 유속, 진동]', active:true},
+    {title:'실시간 센서값 목록', fault:'다중 센서값 목록이 최신 측정값으로 갱신되지 않습니다!', description:'수위 센서 외에 유속·진동 센서도 계속 측정하고 있지만, 세 센서의 현재 값을 모아서 관리하는 목록이 없습니다. 값이 변할 때마다 목록의 같은 자리를 갱신해야 다음 미션에서 센서들을 한꺼번에 검사할 수 있습니다.', task:'① 「유속센서값」과 「진동센서값」 변수를 직접 만들고, 각 센서의 현재 측정값을 계속 저장하세요. ② 「센서값목록」 리스트를 만들고, 반복이 시작되기 전에 수위·유속·진동용 항목 3개를 준비하세요. ③ 새로운 측정값이 들어올 때마다 1번은 수위, 2번은 유속, 3번은 진동 값으로 갱신하세요. 리스트에 쌓이는 데이터 개수는 항상 3개여야 합니다. 힌트: 「자료」 탭의 리스트 항목 바꾸기 기능을 살펴보세요.', example:'측정 시점 A: [4.20, 3.10, 2.80] → 측정 시점 B: [6.80, 4.35, 1.90] (항목은 계속 3개)', active:true},
     {title:'반복 검사', fault:'다중 센서 자동 검사 장치가 고장 났습니다!', description:'센서값 목록을 하나씩 검사하는 반복 과정이 삭제되었습니다.', task:'리스트 크기만큼 반복하고, 반복번호를 사용해 현재 센서값을 꺼내 위험 기준과 비교하여 감지개수를 증가시키세요.', example:'반복번호 = 1, 2, 3 → 감지개수 계산', active:false},
     {title:'경보 판단', fault:'대피 경보 판단 장치가 고장 났습니다!', description:'감지된 위험 센서 수에 따른 경보 발령 조건이 삭제되었습니다.', task:'감지개수가 2 이상이면 「경보결과」 변수를 1로, 그렇지 않으면 0으로 정하세요.', example:'감지개수 ≥ 2 → 경보결과 = 1', active:false},
     {title:'시스템 통합', fault:'자동 경보 시스템이 연결되지 않았습니다!', description:'개발한 기능을 전체 재난 시뮬레이션과 연결하여 검사해야 합니다.', task:'센서 데이터 저장부터 반복 검사, 경보 발령까지 통합하고 홍수·비홍수 상황에 시험하세요.', example:'실제 재난 시나리오 × 100회', active:false}
@@ -60,7 +60,7 @@
   const missions=[cases[0],loopCase,...cases.slice(1)];
   const trigger = document.createElement('button'); trigger.id='nepal-entry-trigger'; trigger.textContent='🧩 엔트리 개발자 모드';
   const layer = document.createElement('section'); layer.id='nepal-entry-layer';
-  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">실제 EntryJS 편집기 연동 · v2.1 · 미션 단계별 잠금</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>MISSION 01</b> — 센서 측정값 한 번 저장하기 → <b>MISSION 02</b> — 실시간 센서 기록 복구<br>한 번 저장한 값은 자동으로 바뀌지 않습니다. 다음 미션에서 직접 해결해 보세요.</div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위센서값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">엔트리 편집기를 불러오는 중입니다…</div><p id="ne-mini">※ 원본 홍수 4유형·비홍수 3유형과 재난 엔진은 수정하지 않습니다.<br>※ 미션 01: 값을 한 번만 저장해도 통과합니다.<br>※ 미션 02: 센서값이 변해도 계속 저장되어야 통과합니다.<br>※ 미션 03~06의 실전 판정은 아직 연결 개발 중입니다.</p></aside><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html"></iframe></main>`;
+  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">실제 EntryJS 편집기 연동 · v2.2 · 미션 단계별 잠금</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>MISSION 01</b> — 센서 측정값 한 번 저장하기 → <b>MISSION 02</b> — 실시간 센서 기록 복구<br>한 번 저장한 값은 자동으로 바뀌지 않습니다. 다음 미션에서 직접 해결해 보세요.</div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위센서값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">엔트리 편집기를 불러오는 중입니다…</div><p id="ne-mini">※ 원본 홍수 4유형·비홍수 3유형과 재난 엔진은 수정하지 않습니다.<br>※ 미션 01: 값을 한 번만 저장해도 통과합니다.<br>※ 미션 02: 센서값이 변해도 계속 저장되어야 통과합니다.<br>※ 미션 03: 리스트 길이 3 유지 + 센서값 연속 갱신 검사.<br>※ 미션 04~06은 실전 판정 개발 중입니다.</p></aside><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html"></iframe></main>`;
   // Pause the original simulator's background animation loops without altering index.html.
   // The two named rAF loops are global function declarations in the original page.
   // Their drawing work is skipped while EntryJS covers the simulator; their ordinary
@@ -234,6 +234,7 @@
     mission=i;const m=missions[i];
     document.getElementById('ne-sensor-live').style.display=i<=2?'block':'none';
     document.getElementById('ne-saved-live').style.display=i<=2?'block':'none';
+    document.getElementById('ne-saved-live').innerHTML=i===2?'💾 학생 변수와 센서값목록: <b>실행 결과 대기 중</b>':'💾 엔트리 변수 수위센서값: <b>실행 결과 대기 중</b>';
     document.getElementById('ne-fault').textContent=m.fault;
     document.getElementById('ne-why').textContent=m.description;
     document.getElementById('ne-task').textContent=m.task;
@@ -264,9 +265,18 @@
     }
     if(d.type==='ENTRY_VAR_SNAPSHOT'){
       const target=document.querySelector('#ne-saved-live b');
-      if(target){target.textContent=d.value===null?'아직 변수값이 없음':Number.isFinite(d.value)?d.value.toFixed(2)+' m'+(d.running?' · 실행 중':' · 정지 상태'):'저장값 오류';}
+      if(target){
+        if(mission===2){
+          const v=d.variables||{};
+          const fmt=n=>n===null||n===undefined||n===''||!Number.isFinite(Number(n))?'미저장':Number(n).toFixed(2);
+          const list=Array.isArray(d.list)?d.list:[];
+          target.textContent='수위 '+fmt(v.water)+'m / 유속 '+fmt(v.flow)+'m/s / 진동 '+fmt(v.vibration)+' · 리스트 '+(list.length?'['+list.map(fmt).join(', ')+']':'비어 있음')+' ('+list.length+'개)';
+        }else{
+          target.textContent=d.value===null?'아직 변수값이 없음':Number.isFinite(d.value)?d.value.toFixed(2)+' m'+(d.running?' · 실행 중':' · 정지 상태'):'저장값 오류';
+        }
+      }
       const box=document.getElementById('ne-saved-live');
-      if(box){box.title='값은 학생 엔트리 코드가 실행될 때만 저장됩니다. 미션 02에서 반복문을 사용하세요.';}
+      if(box){box.title=mission===2?'세 센서값이 바뀔 때 리스트의 같은 3개 자리가 갱신되는지 확인하세요.':'값은 학생 엔트리 코드가 실행될 때만 저장됩니다.';}
     }
   });
 })();
