@@ -32,7 +32,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f3f5fa;fon
 #nepalSpriteChooser .npmsg{margin-top:12px;font-size:13px;min-height:18px;color:#b13d2b}
 @media(max-width:660px){#nepalSpriteChooser .npgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style></head><body>
-<div id="top"><span>🟢 실제 엔트리(EntryJS) 블록 편집기 · v2.0</span><span style="display:flex;align-items:center;gap:12px"><button id="nepal-block-inspector" type="button" title="센서 블록 메뉴 재등록 및 진단">🧩 센서 블록 점검</button><span id="nepal-sensor-preview" style="font-size:11px;color:#356a48;white-space:nowrap" title="수위 센서 내부 측정값(읽기 전용) · 자료의 타원형 센서 블록으로만 접근">📡 수위 측정 중…</span><span id="assets-status" role="button" tabindex="0" title="클릭하면 이미지 오류 진단을 볼 수 있습니다" style="font-size:11px;cursor:pointer">이미지 리소스 경로 확인 중</span><span id="status">외부 라이브러리를 불러오는 중…</span></span></div>
+<div id="top"><span>🟢 실제 엔트리(EntryJS) 블록 편집기 · v2.1</span><span style="display:flex;align-items:center;gap:12px"><button id="nepal-block-inspector" type="button" title="센서 블록 메뉴 재등록 및 진단">🧩 센서 블록 점검</button><span id="nepal-sensor-preview" style="font-size:11px;color:#356a48;white-space:nowrap" title="수위 센서 내부 측정값(읽기 전용) · 자료의 타원형 센서 블록으로만 접근">📡 수위 측정 중…</span><span id="assets-status" role="button" tabindex="0" title="클릭하면 이미지 오류 진단을 볼 수 있습니다" style="font-size:11px;cursor:pointer">이미지 리소스 경로 확인 중</span><span id="status">외부 라이브러리를 불러오는 중…</span></span></div>
 <div id="workspace"></div><div id="nepal-block-panel" role="dialog" aria-label="센서 블록 진단"><strong>NEPAL × ENTRY 블록 등록 진단</strong><pre id="nepal-block-diagnostic"></pre><button id="nepal-block-refresh" type="button">자료 블록 다시 등록</button><button id="nepal-block-close" type="button">닫기</button></div><div id="assets-report" style="position:fixed;right:14px;top:58px;z-index:999998;width:min(600px,92vw);max-height:65vh;overflow:auto;background:#16241a;color:white;border:2px solid #86c85d;border-radius:10px;padding:16px;display:none;box-shadow:0 12px 30px #0005"><div style="display:flex;justify-content:space-between;align-items:center"><strong>엔트리 이미지 리소스 진단</strong><button id="close-assets" style="padding:6px 10px">닫기</button></div><pre id="assets-report-text" style="font-size:12px;white-space:pre-wrap;word-break:break-all"></pre><button id="copy-assets" style="padding:6px 10px;background:#a4e06b;border:0">진단 내용 복사하기</button></div><div id="fatal"><strong>엔트리 편집기를 불러오지 못했습니다</strong><p id="fatal-msg" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px"></p><div style="display:flex;flex-wrap:wrap;gap:12px"><button onclick="navigator.clipboard.writeText(document.getElementById('fatal-msg').textContent).then(()=>this.textContent='오류 내용 복사됨').catch(()=>this.textContent='복사 실패: 문구를 직접 선택하세요')" style="font-size:15px;padding:10px;background:#b6e874;color:#11200b;border:0;border-radius:6px;cursor:pointer">오류 내용 복사하기</button><button onclick="location.reload()" style="font-size:15px;padding:10px;background:#234a29;color:#fff;border:1px solid #4b8556;border-radius:6px;cursor:pointer">다시 시도</button></div></div>
 
 <div id="nepalSpriteChooser" hidden role="dialog" aria-modal="true" aria-labelledby="nepalSpriteTitle">
@@ -833,6 +833,7 @@ async function boot(){try{
     fonts:[{name:'나눔고딕',family:'Nanum Gothic',url:'https://fonts.googleapis.com/earlyaccess/nanumgothic.css'}]
   });
   nepalWireObjectEvents(E);
+  try{window.createjs?.Sound?.setMute?.(true)}catch(_){}
   await Promise.resolve(E.loadProject());await wait(750);
   nepalRepairStarter(E);
   removeOldTeacherSeeds(E);
@@ -869,9 +870,23 @@ window.addEventListener('message',e=>{
     }
   }
 });
+// The parent overlay is the source of truth for active/hidden developer state.
+// Never keep an EntryJS infinite-repeat script running behind the simulator.
+window.addEventListener('message',e=>{
+  if(e.source!==window.parent || e.origin!==location.origin)return;
+  if(e.data?.type==='NEPAL_DEV_RESUME'){
+    nepalDeveloperVisible=true;
+  }else if(e.data?.type==='NEPAL_DEV_PAUSE'){
+    nepalDeveloperVisible=false;
+    if(window.__entryReady && !nepalChecking){
+      Promise.resolve(stopCode()).catch(error=>console.warn('엔트리 일시정지:',error));
+    }
+  }
+});
 // Read-only comparison of the student variable and the privately measured value.
+let nepalDeveloperVisible=false;
 setInterval(()=>{
- if(!window.__entryReady)return;
+ if(!window.__entryReady || !nepalDeveloperVisible || nepalChecking)return;
  const actual=readVar('수위센서값');
  notify('ENTRY_VAR_SNAPSHOT',{
    value:actual===null||actual===''?null:Number(actual),
@@ -885,7 +900,12 @@ window.addEventListener('message',async e=>{
  nepalChecking=true;
  try{const result=await check(Number(e.data.mission));notify('ENTRY_CHECK_RESULT',result)}
  catch(error){notify('ENTRY_CHECK_RESULT',{ok:false,details:['엔트리 실행 또는 검사 오류: '+String(error.message||error),'브라우저 개발자 도구 콘솔을 확인해 주세요.']})}
- finally{nepalChecking=false}
+ finally{
+  nepalChecking=false;
+  if(!nepalDeveloperVisible && window.__entryReady){
+    try{await stopCode()}catch(err){console.warn('숨김 상태 엔트리 정지',err)}
+  }
+ }
 });
 document.getElementById('assets-status').addEventListener('click',()=>{document.getElementById('assets-report-text').textContent=NEPAL_ASSET_RESCUE.diagnostic();document.getElementById('assets-report').style.display='block';});
 document.getElementById('assets-status').addEventListener('keydown',(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.target.click();}});
