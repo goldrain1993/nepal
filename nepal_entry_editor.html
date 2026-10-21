@@ -1,12 +1,17 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>네팔 경보 시스템 | EntryJS 편집기 v1.2</title>
+<title>네팔 경보 시스템 | EntryJS 편집기 v1.4</title>
 <link href="https://entry-cdn.pstatic.net/lib/entry-tool/dist/entry-tool.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://playentry.org/lib/entry-tool/dist/entry-tool.css'"/>
 <link href="https://entry-cdn.pstatic.net/lib/entry-js/dist/entry.min.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://playentry.org/lib/entry-js/dist/entry.min.css'"/>
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f3f5fa;font-family:system-ui,'Malgun Gothic',sans-serif}
 #workspace{height:calc(100vh - 48px);width:100%;overflow:hidden;position:relative;background:#fff}
 #top{height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#e9f1e6;color:#21431d;font-size:13px;font-weight:800;border-bottom:1px solid #c1d9bc;box-sizing:border-box}
-#status{color:#396b32;font-size:12px}#fatal{position:absolute;inset:48px 0 0;background:#131b15;color:white;padding:20px;line-height:1.8;overflow:auto;display:none;z-index:99999}#fatal strong{font-size:20px;color:#ffb3a4}
+#status{color:#396b32;font-size:12px}
+#nepal-block-inspector{font-size:11px;background:#fff;border:1px solid #aacba2;border-radius:7px;padding:5px 7px;color:#22552d;cursor:pointer}
+#nepal-block-inspector:hover{background:#e3f6dd}
+#nepal-block-panel{position:fixed;right:18px;top:56px;z-index:2147482000;background:#172b1b;border:2px solid #82c367;border-radius:10px;color:#f2ffef;padding:16px;width:min(600px,90vw);max-height:70vh;overflow:auto;box-shadow:0 15px 36px #0008;display:none}
+#nepal-block-panel pre{white-space:pre-wrap;word-break:break-all;font-size:12px;line-height:1.65}
+#nepal-block-panel button{cursor:pointer;border:0;border-radius:6px;background:#b0ee90;color:#173219;padding:7px 12px;font-weight:bold;margin-right:9px}#fatal{position:absolute;inset:48px 0 0;background:#131b15;color:white;padding:20px;line-height:1.8;overflow:auto;display:none;z-index:99999}#fatal strong{font-size:20px;color:#ffb3a4}
 
 /* v1.0 standalone EntryJS sprite chooser: EntryJS dispatches events but does not open its catalog. */
 #nepalSpriteChooser[hidden]{display:none!important}
@@ -27,8 +32,8 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f3f5fa;fon
 #nepalSpriteChooser .npmsg{margin-top:12px;font-size:13px;min-height:18px;color:#b13d2b}
 @media(max-width:660px){#nepalSpriteChooser .npgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style></head><body>
-<div id="top"><span>🟢 실제 엔트리(EntryJS) 블록 편집기 · v1.2</span><span style="display:flex;align-items:center;gap:12px"><span id="assets-status" role="button" tabindex="0" title="클릭하면 이미지 오류 진단을 볼 수 있습니다" style="font-size:11px;cursor:pointer">이미지 리소스 경로 확인 중</span><span id="status">외부 라이브러리를 불러오는 중…</span></span></div>
-<div id="workspace"></div><div id="assets-report" style="position:fixed;right:14px;top:58px;z-index:999998;width:min(600px,92vw);max-height:65vh;overflow:auto;background:#16241a;color:white;border:2px solid #86c85d;border-radius:10px;padding:16px;display:none;box-shadow:0 12px 30px #0005"><div style="display:flex;justify-content:space-between;align-items:center"><strong>엔트리 이미지 리소스 진단</strong><button id="close-assets" style="padding:6px 10px">닫기</button></div><pre id="assets-report-text" style="font-size:12px;white-space:pre-wrap;word-break:break-all"></pre><button id="copy-assets" style="padding:6px 10px;background:#a4e06b;border:0">진단 내용 복사하기</button></div><div id="fatal"><strong>엔트리 편집기를 불러오지 못했습니다</strong><p id="fatal-msg" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px"></p><div style="display:flex;flex-wrap:wrap;gap:12px"><button onclick="navigator.clipboard.writeText(document.getElementById('fatal-msg').textContent).then(()=>this.textContent='오류 내용 복사됨').catch(()=>this.textContent='복사 실패: 문구를 직접 선택하세요')" style="font-size:15px;padding:10px;background:#b6e874;color:#11200b;border:0;border-radius:6px;cursor:pointer">오류 내용 복사하기</button><button onclick="location.reload()" style="font-size:15px;padding:10px;background:#234a29;color:#fff;border:1px solid #4b8556;border-radius:6px;cursor:pointer">다시 시도</button></div></div>
+<div id="top"><span>🟢 실제 엔트리(EntryJS) 블록 편집기 · v1.4</span><span style="display:flex;align-items:center;gap:12px"><button id="nepal-block-inspector" type="button" title="센서 블록 메뉴 재등록 및 진단">🧩 센서 블록 점검</button><span id="assets-status" role="button" tabindex="0" title="클릭하면 이미지 오류 진단을 볼 수 있습니다" style="font-size:11px;cursor:pointer">이미지 리소스 경로 확인 중</span><span id="status">외부 라이브러리를 불러오는 중…</span></span></div>
+<div id="workspace"></div><div id="nepal-block-panel" role="dialog" aria-label="센서 블록 진단"><strong>NEPAL × ENTRY 블록 등록 진단</strong><pre id="nepal-block-diagnostic"></pre><button id="nepal-block-refresh" type="button">자료 블록 다시 등록</button><button id="nepal-block-close" type="button">닫기</button></div><div id="assets-report" style="position:fixed;right:14px;top:58px;z-index:999998;width:min(600px,92vw);max-height:65vh;overflow:auto;background:#16241a;color:white;border:2px solid #86c85d;border-radius:10px;padding:16px;display:none;box-shadow:0 12px 30px #0005"><div style="display:flex;justify-content:space-between;align-items:center"><strong>엔트리 이미지 리소스 진단</strong><button id="close-assets" style="padding:6px 10px">닫기</button></div><pre id="assets-report-text" style="font-size:12px;white-space:pre-wrap;word-break:break-all"></pre><button id="copy-assets" style="padding:6px 10px;background:#a4e06b;border:0">진단 내용 복사하기</button></div><div id="fatal"><strong>엔트리 편집기를 불러오지 못했습니다</strong><p id="fatal-msg" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px"></p><div style="display:flex;flex-wrap:wrap;gap:12px"><button onclick="navigator.clipboard.writeText(document.getElementById('fatal-msg').textContent).then(()=>this.textContent='오류 내용 복사됨').catch(()=>this.textContent='복사 실패: 문구를 직접 선택하세요')" style="font-size:15px;padding:10px;background:#b6e874;color:#11200b;border:0;border-radius:6px;cursor:pointer">오류 내용 복사하기</button><button onclick="location.reload()" style="font-size:15px;padding:10px;background:#234a29;color:#fff;border:1px solid #4b8556;border-radius:6px;cursor:pointer">다시 시도</button></div></div>
 
 <div id="nepalSpriteChooser" hidden role="dialog" aria-modal="true" aria-labelledby="nepalSpriteTitle">
  <section class="npdialog"><div class="nphead"><strong id="nepalSpriteTitle">오브젝트 추가하기</strong><button type="button" class="npclose" id="nepalSpriteClose" aria-label="닫기">×</button></div>
@@ -197,7 +202,7 @@ async function loadDependency(path,key,required,index,total){
 function debugReport(problem){
   const entryObj=window.Entry;
   return [
-    `NEPAL × ENTRY v1.3 오류 진단`,
+    `NEPAL × ENTRY v1.4 오류 진단`,
     `문제: ${problem}`,
     `Entry: ${typeof entryObj} / Entry.init: ${typeof entryObj?.init}`,
     `module globals: EntryStatic=${typeof window.EntryStatic}; EntryTool=${typeof window.EntryTool}; EntryPaint=${typeof window.EntryPaint}; soundEditor=${typeof window.SoundEditor}; legacyVideo=${typeof window.LegacyVideo}; createjs=${typeof window.createjs}; React=${typeof window.React}; ReactDOM=${typeof window.ReactDOM}`,
@@ -225,7 +230,7 @@ function nepalSensorValue(sensor){
   return Number.isFinite(Number(reading))?Number(reading):0;
 }
 const nepalReporterDefs=[
-  ['nepal_live_water_sensor','센서가 현재 측정하고 있는 실시간 값','water'],
+  ['nepal_live_water_sensor','수위 센서가 현재 측정하고 있는 실시간 값','water'],
   ['nepal_live_flow_sensor','유속 센서가 현재 측정하고 있는 실시간 값','flow'],
   ['nepal_live_vibration_sensor','진동 센서가 현재 측정하고 있는 실시간 값','vibration']
 ];
@@ -273,6 +278,72 @@ function installNepalSensorReporters(E){
     }
   }
 }
+/* v1.4: EntryJS builds its toolbox before project load is finished.  Registering
+ * new Entry.block definitions and wrapping getAllBlocks alone is not sufficient;
+ * reinitialize the REAL built-in Entry toolbox after the project finishes loading.
+ * Entry.playground.setBlockMenu() is the official EntryJS menu refresh API.
+ */
+const nepalBlockMenuLog=[];
+function reportNepalBlockMenu(E){
+  let menu=[];
+  try {menu=EntryStatic.getAllBlocks()}catch(err){nepalBlockMenuLog.push('getAllBlocks 예외: '+String(err))}
+  const cat=Array.isArray(menu)?menu.find(item=>item.category==='variable'):null;
+  const ids=nepalReporterDefs.map(item=>item[0]);
+  const definitions=ids.filter(id=>Boolean(E?.block?.[id]));
+  const menuIds=ids.filter(id=>Boolean(cat?.blocks?.includes(id)));
+  return {definitions,menuIds,expected:ids,categoryFound:!!cat,
+      setBlockMenu:typeof E?.playground?.setBlockMenu,
+      reloadPlayground:typeof E?.playground?.reloadPlayground,
+      editorReady:!!window.__entryReady};
+}
+function refreshNepalBlockMenu(E,source='manual'){
+  // An EntryJS upgrade or a project load may replace its block registry.
+  installNepalSensorReporters(E);
+  const info=reportNepalBlockMenu(E);
+  if(info.definitions.length!==3 || info.menuIds.length!==3){
+    throw new Error('센서 블록 정의/메뉴 등록 누락: '+JSON.stringify(info));
+  }
+  const pg=E.playground;
+  if(typeof pg?.setBlockMenu==='function'){
+    pg.setBlockMenu();
+    nepalBlockMenuLog.push(source+': Entry.playground.setBlockMenu() 호출');
+  }else if(typeof pg?.reloadPlayground==='function'){
+    pg.reloadPlayground();
+    nepalBlockMenuLog.push(source+': Entry.playground.reloadPlayground() 호출');
+  }else{
+    nepalBlockMenuLog.push(source+': 메뉴 새로고침 API 없음');
+  }
+  const final=reportNepalBlockMenu(E);
+  document.getElementById('nepal-block-inspector').textContent=
+      final.menuIds.length===3?'🧩 센서 블록 등록 3/3':'⚠ 센서 블록 확인 필요';
+  return final;
+}
+function renderNepalBlockMenuDiagnostic(){
+  const E=window.Entry;
+  const info=reportNepalBlockMenu(E);
+  const names=nepalReporterDefs.map(([id,label])=>`${label} (${id})`);
+  document.getElementById('nepal-block-diagnostic').textContent=[
+    '버전: v1.4',
+    'EntryJS 준비: '+(window.__entryReady?'예':'아니요'),
+    '블록 정의: '+info.definitions.length+'/3',
+    '자료 메뉴 등록: '+info.menuIds.length+'/3',
+    '자료 카테고리: '+(info.categoryFound?'확인':'없음'),
+    'setBlockMenu API: '+info.setBlockMenu,
+    'reloadPlayground API: '+info.reloadPlayground,
+    '등록 대상:',...names,
+    '최근 메뉴 처리:',...nepalBlockMenuLog.slice(-12)
+  ].join('\n');
+  document.getElementById('nepal-block-panel').style.display='block';
+}
+document.getElementById('nepal-block-inspector').addEventListener('click',renderNepalBlockMenuDiagnostic);
+document.getElementById('nepal-block-close').addEventListener('click',()=>{
+  document.getElementById('nepal-block-panel').style.display='none';
+});
+document.getElementById('nepal-block-refresh').addEventListener('click',()=>{
+  try{refreshNepalBlockMenu(window.Entry,'사용자 재시도')}
+  catch(err){nepalBlockMenuLog.push('사용자 재시도 오류: '+String(err));console.error(err)}
+  renderNepalBlockMenuDiagnostic();
+});
 // Remove only the three legacy teacher-seeded variables (identified by their
 // original internal IDs). Never remove student-created variables with similar names.
 function removeOldTeacherSeeds(E){
@@ -328,7 +399,7 @@ async function check(mission){
  const details=[];
  if(mission===0){
    if(!getVar('수위센서값'))return {ok:false,details:['「수위센서값」 변수를 먼저 직접 만드세요.']};
-   if(!codeHasTypes(['set_variable','nepal_live_water_sensor']))return {ok:false,details:['수위센서값 변수를 만들었습니다.','「수위센서값을 (센서가 현재 측정하고 있는 실시간 값)으로 정하기」를 시작 블록 아래에 연결하세요.']};
+   if(!codeHasTypes(['set_variable','nepal_live_water_sensor']))return {ok:false,details:['수위센서값 변수를 만들었습니다.','「수위센서값을 (수위 센서가 현재 측정하고 있는 실시간 값)으로 정하기」를 시작 블록 아래에 연결하세요.']};
    const samples=[4.2,6.8,1.35];
    let allPassed=true;
    try{
@@ -385,7 +456,7 @@ async function check(mission){
  return {ok:false,details:['미션 3~5는 실제 엔트리 실행과 연동하는 작업이 아직 남아 있습니다.']};
 }
 
-/* v1.2: Asset-path bridge for EntryJS hosted under /nepal/ on GitHub Pages.
+/* v1.4: Asset-path bridge for EntryJS hosted under /nepal/ on GitHub Pages.
  * EntryJS uses BOTH /images/* and /lib/entry-js/images/* regardless of libDir.
  * Do not change mission logic or substitute mock block icons.
  * Restrict rewrites to EntryJS's own images; students' external images untouched.
@@ -638,9 +709,17 @@ async function boot(){try{
   await Promise.resolve(E.loadProject());await wait(750);
   nepalRepairStarter(E);
   removeOldTeacherSeeds(E);
+  // Refresh the EntryJS toolbox AFTER loadProject and starter objects have been prepared.
+  // The v1.3 version registered the reporters too early; they were absent from '자료'.
+  let blockMenuStatus;
+  try{blockMenuStatus=refreshNepalBlockMenu(E,'프로젝트 로드 후');}
+  catch(menuError){nepalBlockMenuLog.push('자동 메뉴 등록 오류: '+String(menuError));console.error('[NEPAL] 센서 블록 메뉴',menuError)}
   // Do NOT pre-create any student variable: creating all three is the learning task.
-  window.__entryReady=true;statusEl.textContent='✅ 실제 엔트리 편집기 및 오브젝트 준비 완료';notify('ENTRY_READY');
- }catch(e){console.error('[NEPAL ENTRY v1.3] 부팅 실패',e,executionErrors,bootNotes);fail(e.message||String(e));}}
+  window.__entryReady=true;
+  statusEl.textContent=blockMenuStatus?.menuIds.length===3?
+       '✅ 엔트리 편집기 준비 완료 · 자료 탭을 확인하세요':'⚠ 엔트리 준비 완료 · 센서 블록 점검 버튼 확인';
+  notify('ENTRY_READY');
+ }catch(e){console.error('[NEPAL ENTRY v1.4] 부팅 실패',e,executionErrors,bootNotes);fail(e.message||String(e));}}
 window.addEventListener('message',e=>{
   if(e.source!==window.parent || e.origin!==location.origin)return;
   if(e.data?.type!=='NEPAL_SENSOR_TELEMETRY')return;
