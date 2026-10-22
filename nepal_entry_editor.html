@@ -837,7 +837,7 @@ async function checkChosenAlarmN(requireList=false){
  if(!n)return {ok:false,details:['학생 코드가 「4개 센서 중 N개 이상 위험하면 경보」를 구현해야 합니다. N은 1~4입니다.']};
  const rules=Object.fromEntries(ruleInfo.map(({sensor,op,th})=>[sensor,{op,th}]));
  return {ok:true,threshold:n,alarmTable:observations,rules,details:[
-   requireList?'리스트·반복문을 활용해 4개 위험신호를 정상 처리했습니다.':'리스트 없이 4개 센서의 위험신호를 종합했습니다.',
+   requireList?'리스트·반복문을 활용해 4개 위험신호를 정상 처리했습니다.':'4개 센서의 위험신호를 종합했습니다.',
    '4개 센서의 임계값과 비교 방향을 학생이 작성한 엔트리 실행 결과에서 판별했습니다.',
    ...ruleInfo.map(rule=>`${rule.label} ${rule.op==='ge'?'이상':'이하'} ${rule.th}`),
    `학생 코드의 경보 기준: ${n}개 이상 · 16가지 위험신호 조합 검증 완료`,
