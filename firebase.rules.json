@@ -201,6 +201,33 @@
               }
             }
           }
+        },
+        "teacherWork": {
+          "$uid": {
+            ".read": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.uid === $uid && auth.uid === 'GIoPe92By9esQ6H0KcJjvYoPiyN2' && auth.token.email.toLowerCase() === 'goldrain1993@gmail.com'",
+            ".write": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.uid === $uid && auth.uid === 'GIoPe92By9esQ6H0KcJjvYoPiyN2' && auth.token.email.toLowerCase() === 'goldrain1993@gmail.com'",
+            "code": {
+              ".validate": "newData.hasChildren(['payload','updatedAt','updatedBy']) && newData.child('payload').isString() && newData.child('payload').val().length > 0 && newData.child('payload').val().length <= 1250000 && newData.child('updatedBy').val() === auth.uid"
+            },
+            "design": {
+              ".validate": "newData.hasChildren(['version','payload','updatedAt','updatedBy']) && newData.child('version').val() === 1 && newData.child('payload').isString() && newData.child('payload').val().length > 0 && newData.child('payload').val().length <= 12000 && newData.child('updatedBy').val() === auth.uid"
+            },
+            "progressV3": {
+              ".validate": "newData.hasChildren(['completed','schemaVersion','updatedAt']) && newData.child('schemaVersion').val() === 3 && newData.child('completed').isNumber() && newData.child('completed').val() >= 0 && newData.child('completed').val() <= 7 && (!data.child('completed').exists() || newData.child('completed').val() >= data.child('completed').val())"
+            },
+            "floodBest": {
+              ".validate": "newData.hasChildren(['score','rank','updatedBy','updatedAt']) && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 100 && (newData.child('rank').val() === 'LEGEND' || newData.child('rank').val() === 'S' || newData.child('rank').val() === 'A' || newData.child('rank').val() === 'B' || newData.child('rank').val() === 'C' || newData.child('rank').val() === 'F') && newData.child('updatedBy').val() === auth.uid && (!data.child('score').exists() || newData.child('score').val() > data.child('score').val())"
+            },
+            "mission5NoListBest": {
+              ".validate": "newData.hasChildren(['score','rank','n','updatedBy','updatedAt']) && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 100 && (newData.child('rank').val() === 'LEGEND' || newData.child('rank').val() === 'S' || newData.child('rank').val() === 'A' || newData.child('rank').val() === 'B' || newData.child('rank').val() === 'C' || newData.child('rank').val() === 'F') && newData.child('n').isNumber() && newData.child('n').val() >= 1 && newData.child('n').val() <= 4 && newData.child('updatedBy').val() === auth.uid && (!data.child('score').exists() || newData.child('score').val() > data.child('score').val()) && (!data.child('score').exists() || newData.child('score').val() > data.child('score').val())"
+            },
+            "finalBest": {
+              ".validate": "newData.hasChildren(['score','rank','n','updatedBy','updatedAt']) && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 100 && (newData.child('rank').val() === 'LEGEND' || newData.child('rank').val() === 'S' || newData.child('rank').val() === 'A' || newData.child('rank').val() === 'B' || newData.child('rank').val() === 'C' || newData.child('rank').val() === 'F') && newData.child('n').isNumber() && newData.child('n').val() >= 1 && newData.child('n').val() <= 4 && newData.child('updatedBy').val() === auth.uid && (!data.child('score').exists() || newData.child('score').val() > data.child('score').val()) && (!data.child('score').exists() || newData.child('score').val() > data.child('score').val())"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
         }
       }
     },
