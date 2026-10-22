@@ -520,10 +520,10 @@
       return '확인할 부분: 이번 미션에서 사용할 「위험목록」 리스트가 아직 없어요.';
     if(raw.includes('「위험목록」 리스트')&&raw.includes('만들'))
       return '확인할 부분: 「위험목록」 리스트가 아직 만들어지지 않았어요.';
-    if(raw.includes('변수')&&raw.includes('찾지 못했습니다'))
-      return '확인할 부분: 미션에 필요한 변수 중 아직 만들어지지 않은 것이 있어요. 변수 이름을 비교해 보세요.';
     if(raw.includes('센서의 측정값이')||raw.includes('측정값')&&raw.includes('변수로 전달'))
       return '확인할 부분: 센서가 읽은 값이 「수위값」에 제대로 저장되지 않고 있어요.';
+    if(raw.includes('변수')&&raw.includes('찾지 못했습니다'))
+      return '확인할 부분: 미션에 필요한 변수 중 아직 만들어지지 않은 것이 있어요. 변수 이름을 비교해 보세요.';
     if(raw.includes('반복')&&(raw.includes('안')||raw.includes('계속')||raw.includes('갱신'))){
       if(stage===1)return '확인할 부분: 수위가 바뀐 뒤에도 「수위값」이 최신 값으로 달라지지 않았어요.';
       if(stage===2)return '확인할 부분: 수위가 달라질 때마다 측정값과 위험 판단이 함께 바뀌지 않고 있어요.';
@@ -535,7 +535,10 @@
     if(stage===1)
       return '확인할 부분: 센서의 수위가 바뀌어도 「수위값」이 그 변화를 계속 따라가지 못해요.';
     if(stage===2){
-      if(raw.includes('조건문')||raw.includes('판단'))return '확인할 부분: 수위가 바뀔 때 안전과 위험을 다시 판단하는 과정이 제대로 작동하지 않아요.';
+      if(raw.includes('수위 측정은 맞지만')||raw.includes('기대 위험'))
+        return '확인할 부분: 수위 측정은 맞았지만 「수위위험」의 안전·위험 결과가 실습 기준과 다릅니다.';
+      if(raw.includes('조건문')||raw.includes('판단'))
+        return '확인할 부분: 수위가 바뀔 때 안전과 위험을 다시 판단하는 과정이 제대로 작동하지 않아요.';
       return '확인할 부분: 수위 측정과 「수위위험」의 결과 중 일부가 실습 기준과 맞지 않아요.';
     }
     if(stage===3)
