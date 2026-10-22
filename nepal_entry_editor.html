@@ -225,6 +225,14 @@ const nepalPrivateTelemetry = {
   rain: {value:21.0,source:'실습용 가상 강수 센서'}
 };
 const nepalTestValues = {water:null, flow:null, vibration:null, rain:null};
+// Mission 05: the team's REAL sensor thresholds, received from the original
+// simulator. No hard-coded lesson threshold substitutes for this configuration.
+const nepalMission5Rules={water:null,flow:null,vibration:null,rain:null};
+const NEPAL_SENSOR_ORDER=['water','flow','vibration','rain'];
+function mission5RuleValue(sensor){
+  const rule=nepalMission5Rules[sensor];
+  return rule&&Number.isFinite(rule.th)?rule.th:0;
+}
 /* 학생 엔트리 코드만 변수를 수정합니다. 시스템의 자동 갱신은 제공하지 않습니다. */
 let nepalChecking=false;
 function nepalIsRunning(){return window.Entry?.engine?.state==='run'}
@@ -238,7 +246,11 @@ const nepalReporterDefs=[
   ['nepal_live_water_sensor','수위 센서가 현재 측정하고 있는 실시간 값','water'],
   ['nepal_live_flow_sensor','유속 센서가 현재 측정하고 있는 실시간 값','flow'],
   ['nepal_live_vibration_sensor','진동 센서가 현재 측정하고 있는 실시간 값','vibration'],
-  ['nepal_live_rain_sensor','강수 센서가 현재 측정하고 있는 실시간 값','rain']
+  ['nepal_live_rain_sensor','강수 센서가 현재 측정하고 있는 실시간 값','rain'],
+  ['nepal_limit_water','시뮬레이션에서 설정한 수위 위험 기준값','water'],
+  ['nepal_limit_flow','시뮬레이션에서 설정한 유속 위험 기준값','flow'],
+  ['nepal_limit_vibration','시뮬레이션에서 설정한 진동 위험 기준값','vibration'],
+  ['nepal_limit_rain','시뮬레이션에서 설정한 강수 위험 기준값','rain']
 ];
 function installNepalSensorReporters(E){
   if(!window.EntryStatic || typeof EntryStatic.getAllBlocks!=='function'){
@@ -260,7 +272,7 @@ function installNepalSensorReporters(E){
       events:{},
       def:{params:[null],type:id},
       class:'variable',isNotFor:[],
-      func:function(sprite,script){return nepalSensorValue(sensor)},
+      func:function(sprite,script){return id.startsWith('nepal_limit_')?mission5RuleValue(sensor):nepalSensorValue(sensor)},
       syntax:{js:[],py:[{water:'nepal_water_sensor()',flow:'nepal_flow_sensor()',vibration:'nepal_vibration_sensor()',rain:'nepal_rain_sensor()'}[sensor]]}
     };
   }
@@ -638,6 +650,64 @@ async function checkIntegratedList(){
  if(allPassed)details.push('네 센서 가운데 둘 이상 위험한 경우에만 경보를 내리도록 정확히 구현했습니다!');
  return {ok:allPassed,details};
 }
+/* Mission 05: test the student's ACTUAL EntryJS program against the four
+ * threshold/op values saved by their team in the flood simulator.
+ * Evaluate ALL 16 sensor-risk combinations (not merely inferred N) and send
+ * the student's observed alarm truth table to the original disaster engine.
+ * The parent reuses that table at EACH time step of each of 100 disasters.
+ */
+async function checkChosenAlarmN(){
+ const labels=['수위','유속','진동','강수'];
+ const missing=NEPAL_SENSOR_ORDER.filter(k=>!nepalMission5Rules[k]||!Number.isFinite(nepalMission5Rules[k].th));
+ if(missing.length)return {ok:false,details:['네팔 홍수 시뮬레이션에서 네 종류의 센서를 설치하고 위험 기준을 설정해 주세요.','센서 설치 화면에서 저장한 값과 비교 방향(이상/이하)을 그대로 사용합니다.']};
+ const required=['수위위험','유속위험','진동위험','강수위험','위험개수','경보결과','반복번호'];
+ for(const name of required)if(!getVar(name))return {ok:false,details:[`「${name}」 변수가 없습니다. 기존 코드를 확인하세요.`]};
+ if(!getList('위험목록'))return {ok:false,details:['「위험목록」 리스트가 필요합니다.']};
+ if(!codeHasTypes(['value_of_index_from_list','change_variable'])||!(codeHasTypes(['repeat_basic'])||codeHasTypes(['repeat_inf'])))
+   return {ok:false,details:['리스트와 반복문으로 위험 신호 네 개를 읽고 위험개수를 계산해야 합니다.']};
+ const ruleInfo=NEPAL_SENSOR_ORDER.map((sensor,i)=>({sensor,label:labels[i],...nepalMission5Rules[sensor]}));
+ const makeReading=(rule,bit)=>{
+   const d=Math.max(0.4,Math.abs(rule.th)*0.15);
+   return Number((rule.op==='ge' ? rule.th+(bit?d:-d) : rule.th+(bit?-d:d)).toFixed(5));
+ };
+ const observations=Array(16).fill(null),byCount=Array.from({length:5},()=>new Set()),details=[];
+ try{
+  for(let mask=0;mask<16;mask++){
+   const bits=NEPAL_SENSOR_ORDER.map((_,i)=>(mask>>i)&1);
+   const synthetic={};ruleInfo.forEach((rule,i)=>synthetic[rule.sensor]=makeReading(rule,bits[i]));
+   await stopCode();Object.assign(nepalTestValues,synthetic);
+   // Isolated runs: infinite-loop programs must be stopped between cases.
+   const lst=getList('위험목록');if(lst)lst.getArray().splice(0);
+   for(const name of required)if(getVar(name))setVar(name,'');
+   await startCode();
+   const count=bits.reduce((a,b)=>a+b,0);
+   const stable=await waitForValues(()=>{
+     const list=readList('위험목록')||[];
+     return list.length===4 && list.every((v,i)=>numericMatches(v,bits[i])) &&
+       NEPAL_SENSOR_ORDER.every((key,i)=>numericMatches(readVar(labels[i]+'위험'),bits[i])) &&
+       numericMatches(readVar('위험개수'),count) && [0,1].includes(Number(readVar('경보결과')));
+   },2900);
+   if(!stable){
+     details.push(`${mask+1}/16: 센서 위험 판단이 시뮬레이션 설정과 다르거나 리스트/반복문 오류가 있습니다.`);
+     details.push('자료 탭의 「시뮬레이션에서 설정한 ○○ 위험 기준값」 블록을 사용하거나, 시뮬레이션에서 정한 기준과 비교 방향을 코드에 똑같이 반영해 주세요.');
+     details.push(ruleInfo.map(r=>`${r.label}: ${r.op==='ge'?'이상':'이하'} ${r.th}`).join(' / '));
+     return {ok:false,details};
+   }
+   const alarm=Number(readVar('경보결과'));
+   observations[mask]=alarm;byCount[count].add(alarm);
+  }
+ }finally{await stopCode();resetTestReadings()}
+ if(byCount.some(s=>s.size!==1))return {ok:false,details:['동일한 위험 센서 개수에서는 어떤 센서가 위험하든 경보 여부가 같아야 합니다. 센서 종류별로만 판단하는 코드를 수정하세요.']};
+ const vals=byCount.map(s=>[...s][0]);
+ const n=[1,2,3,4].find(k=>vals.every((v,i)=>v===Number(i>=k)));
+ if(!n)return {ok:false,details:['실행된 코드는 「4개 중 N개 이상 위험하면 경보」 조건을 만족하지 않습니다. N은 1~4입니다.']};
+ return {ok:true,threshold:n,alarmTable:observations,details:[
+   `학생 코드가 실행한 경보 기준: ${n}개 이상 감지`,
+   '시뮬레이션에서 설정한 센서 임계값·비교 방향으로 16개 위험 신호 조합을 모두 검증했습니다.',
+   '이제 이 코드의 경보 판단표를 원본 재난 시뮬레이션의 100회 평가에 적용합니다.'
+ ]};
+}
+
 async function check(mission){
  if(!window.__entryReady)throw Error('엔트리 편집기 준비가 아직 끝나지 않았습니다.');
  switch(mission){
@@ -645,6 +715,7 @@ async function check(mission){
  case 1:return checkWaterRisk();
  case 2:return checkOtherRisk();
  case 3:return checkIntegratedList();
+ case 4:return checkChosenAlarmN();
  default:return {ok:false,details:['등록되지 않은 미션입니다.']};
  }
 }
@@ -934,6 +1005,19 @@ window.addEventListener('message',e=>{
       const el=document.getElementById('nepal-sensor-preview');
       if(el)el.textContent='📡 수위 '+v.toFixed(2)+' m · 읽기 전용';
     }
+  }
+});
+// A team may use any threshold and either >= or <=. These values come from
+// its saved simulator design; this changes only Mission 05 grading inputs.
+window.addEventListener('message',event=>{
+  if(event.source!==window.parent||event.origin!==location.origin)return;
+  if(event.data?.type!=='NEPAL_MISSION5_RULES')return;
+  const incoming=event.data.rules;
+  if(!incoming||typeof incoming!=='object')return;
+  for(const key of NEPAL_SENSOR_ORDER){
+    const v=incoming[key];
+    nepalMission5Rules[key]=(v&&Number.isFinite(Number(v.th))&&['ge','le'].includes(v.op))?
+      {th:Number(v.th),op:v.op}:null;
   }
 });
 // The parent overlay is the source of truth for active/hidden developer state.
