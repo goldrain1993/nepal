@@ -161,7 +161,7 @@
   }
   const trigger = document.createElement('button'); trigger.id='nepal-entry-trigger'; trigger.textContent='🧩 엔트리 개발자 모드';trigger.style.display='none';
   const layer = document.createElement('section'); layer.id='nepal-entry-layer';
-  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">7단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 실시간 반복 갱신</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 경보 알고리즘</b> → <b>⑥ 리스트 학습</b> → <b>🏆 FINAL</b></div><div id="ne-missions" class="ne-mission-list"></div><div id="ne-teacher-records" hidden></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 <span id="ne-grade-title">경보 성능평가</span></div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button></aside><div class="ne-editor-stage"><div id="ne-workspace-toolbar"><span id="ne-workspace-heading">🧩 엔트리 코딩 편집기</span><div id="ne-audio-actions"><button id="ne-entry-audio-toggle" type="button" aria-pressed="true">♫ 아리오소 ON</button><a id="ne-arioso-credit" href="https://commons.wikimedia.org/wiki/File:Violinist_CARRIE_REHKOPF-BACH_ARIOSO.ogg" target="_blank" rel="noopener noreferrer" title="연주 Carrie Rehkopf · CC BY-SA 3.0 · 음원 출처">ⓘ</a></div><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button></div><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=42"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
+  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">7단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 실시간 반복 갱신</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 경보 알고리즘</b> → <b>⑥ 리스트 학습</b> → <b>🏆 FINAL</b></div><div id="ne-missions" class="ne-mission-list"></div><div id="ne-teacher-records" hidden></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 <span id="ne-grade-title">경보 성능평가</span></div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button></aside><div class="ne-editor-stage"><div id="ne-workspace-toolbar"><span id="ne-workspace-heading">🧩 엔트리 코딩 편집기</span><div id="ne-audio-actions"><button id="ne-entry-audio-toggle" type="button" aria-pressed="true">♫ 아리오소 ON</button><a id="ne-arioso-credit" href="https://commons.wikimedia.org/wiki/File:Violinist_CARRIE_REHKOPF-BACH_ARIOSO.ogg" target="_blank" rel="noopener noreferrer" title="연주 Carrie Rehkopf · CC BY-SA 3.0 · 음원 출처">ⓘ</a></div><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button></div><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=43"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
   // Pause the original simulator's background animation loops without altering index.html.
   // The two named rAF loops are global function declarations in the original page.
   // Their drawing work is skipped while EntryJS covers the simulator; their ordinary
@@ -360,7 +360,7 @@
     }
     const warm=()=>{
       const urls=[
-        './nepal_entry_editor.html?v=42',
+        './nepal_entry_editor.html?v=43',
         './lib/vendor/jquery-3.7.1.min.js',
         './lib/vendor/jquery-ui-1.13.3.min.js',
         './lib/vendor/codemirror-5.65.20-show-hint.js',
@@ -500,6 +500,9 @@
   // This progress belongs to the current browser page, not to a student account.
   // Reloading resets it so a different student does not inherit another's marks.
   const passed=Array(missions.length).fill(false);
+  // EntryJS clears runtime variable values when a mission check stops the engine.
+  // Preserve only the value VERIFIED during the check, not an old live snapshot.
+  const verifiedWaterByMission=Array(missions.length).fill(null);
   const missionBtns=document.getElementById('ne-missions');
   const checkBtn=document.getElementById('ne-check');
   const nextBtn=document.getElementById('ne-next');
@@ -626,6 +629,15 @@
       const tested=pendingMission;
       checking=false;pendingMission=null;
       if(tested===null)return;
+      if(tested===0||tested===1){
+        const checked=Number(d.verifiedWater);
+        verifiedWaterByMission[tested]=d.ok && d.verifiedWater!==null &&
+          d.verifiedWater!==undefined && Number.isFinite(checked)?checked:null;
+        if(d.ok && mission===tested){
+          const cell=document.querySelector('#ne-saved-live b');
+          if(cell)cell.textContent='최근 검사 확인 · 수위값 '+checked.toFixed(2)+'m ✓ (현재 실행 정지)';
+        }
+      }
       if(d.ok && (tested===4||tested===6)){
         checking=true;
         status.textContent='✅ 엔트리 경보 조건 확인! 이제 실제 네팔 재난 100회 평가를 실행합니다.';
@@ -655,10 +667,16 @@
       const target=document.querySelector('#ne-saved-live b');
       if(target){
         const val=x=>x===null||x===undefined||x===''||!Number.isFinite(Number(x))?'미저장':Number(x).toFixed(2);
+        const withUnit=(x,unit)=>{const number=val(x);return number==='미저장'?number:number+unit};
         const v=d.variables||{},r=d.risks||{};
-        if(mission===0||mission===1)target.textContent='수위값 '+val(v.water)+'m';
-        else if(mission===2)target.textContent='수위값 '+val(v.water)+'m · 수위위험 '+val(r.water);
-        else if(mission===3)target.textContent='유속값 '+val(v.flow)+'m/s · 진동값 '+val(v.vibration)+' · 강수값 '+val(v.rain)+'mm/h · 위험 '+val(r.flow)+' / '+val(r.vibration)+' / '+val(r.rain);
+        if(mission===0||mission===1){
+          const stored=verifiedWaterByMission[mission];
+          if(d.running)target.textContent='실행 중 · 수위값 '+withUnit(v.water,'m');
+          else if(stored!==null)target.textContent='최근 검사 확인 · 수위값 '+stored.toFixed(2)+'m ✓ (현재 실행 정지)';
+          else target.textContent='현재 실행 정지 · 수위값 '+withUnit(v.water,'m');
+        }
+        else if(mission===2)target.textContent='수위값 '+withUnit(v.water,'m')+' · 수위위험 '+val(r.water);
+        else if(mission===3)target.textContent='유속값 '+withUnit(v.flow,'m/s')+' · 진동값 '+val(v.vibration)+' · 강수값 '+withUnit(v.rain,'mm/h')+' · 위험 '+val(r.flow)+' / '+val(r.vibration)+' / '+val(r.rain);
         else target.textContent='위험목록 ['+(Array.isArray(d.list)?d.list.map(val).join(', '):'')+'] · 위험개수 '+val(d.dangerCount)+' · 경보결과 '+val(d.alarm);
       }
     }
@@ -960,7 +978,7 @@
         ready=false;checking=false;pendingMission=null;navigating=false;
         if(missionStopPending)clearTimeout(missionStopPending.timeout);
         missionStopPending=null; iframe.src='about:blank';iframe.dataset.loaded='no';
-        exitMission5Setup();passed.fill(false);applyMission(0);projectRestoring=false;
+        exitMission5Setup();passed.fill(false);verifiedWaterByMission.fill(null);applyMission(0);projectRestoring=false;
         if(layer.classList.contains('open'))showEditorLoading();
       }
     });
