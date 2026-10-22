@@ -479,12 +479,10 @@ async function waitForValues(checker,timeout=2500){
   }while(Date.now()-started<timeout);
   return checker();
 }
-/* NEPAL × ENTRY v2.5 — four fixed educational sensor thresholds:
- * water >= 2 m, flow >= 2 m/s, vibration >= 13 (virtual index), rain >= 22 mm/h.
- * Mission 4 issues an alarm whenever at least TWO OF FOUR sensors indicate risk.
- * These are learning thresholds, not real-world disaster warning criteria.
+/* Missions 1-4 use independent, fictional classroom thresholds;
+ * Mission 5, list-only Mission 6 and FINAL use thresholds the student writes.
  */
-const NEPAL_THRESHOLDS=Object.freeze({water:2,flow:2,vibration:13,rain:22});
+const NEPAL_THRESHOLDS=Object.freeze({water:4,flow:3,vibration:16,rain:35});
 function hasConditionBlocks(){
  return codeHasTypes(['boolean_basic_operator']) &&
    (codeHasTypes(['if_else']) || codeHasTypes(['_if']));
@@ -637,7 +635,7 @@ async function checkWaterRisk(){
    '반복문 바깥의 조건문은 수위를 한 번만 판단하므로 실시간 경보 시스템의 정답이 아닙니다.'
   ]};
  }
- const samples=[1.35,2.8,1.99,2,3.1,1.1];
+ const samples=[2.35,4.8,3.99,4,5.2,3.1];
  const details=[];
  let allPassed=true;
  try{
@@ -671,83 +669,31 @@ async function checkWaterRisk(){
 async function checkOtherRisk(){
  const vars=['유속값','진동값','강수값','유속위험','진동위험','강수위험'];
  for(const n of vars)if(!getVar(n))return {ok:false,details:[`「${n}」 변수를 만들어 주세요. 아직 리스트는 필요하지 않습니다.`]};
- if(!codeHasTypes(['set_variable','nepal_live_flow_sensor','nepal_live_vibration_sensor','nepal_live_rain_sensor'])||!hasConditionBlocks())return {ok:false,details:['미션 03의 조건문을 응용해 유속·진동·강수를 각각 측정하고 위험 여부를 판정하세요. 리스트는 사용하지 않습니다.']};
+ if(!codeHasTypes(['set_variable','nepal_live_flow_sensor','nepal_live_vibration_sensor','nepal_live_rain_sensor'])||!hasConditionBlocks())return {ok:false,details:['미션 03의 조건문을 응용해 유속·진동·강수를 측정하고 위험 여부를 각각 판정하세요.']};
  if(!liveSensorsAssignedInsideForever(['water','flow','vibration','rain']))
    return {ok:false,details:[realTimeSensorHint(['water','flow','vibration','rain'])]};
  const cases=[
-  {water:1.5,flow:1.5,vibration:12.5,rain:20}, // all safe
-  {water:1.5,flow:2.6,vibration:12.5,rain:20}, // flow only
-  {water:1.5,flow:1.5,vibration:14.2,rain:20}, // vibration only
-  {water:1.5,flow:1.5,vibration:12.5,rain:24}, // rain only
-  {water:1.5,flow:2,vibration:13,rain:22}, // all three exactly threshold
-  {water:1.5,flow:1.99,vibration:12.99,rain:21.99}, // just below threshold
-  {water:1.5,flow:2.8,vibration:14.2,rain:25}
+  {water:3.5,flow:2.5,vibration:15,rain:30},
+  {water:3.5,flow:3.6,vibration:15,rain:30},
+  {water:3.5,flow:2.5,vibration:17.2,rain:30},
+  {water:3.5,flow:2.5,vibration:15,rain:40},
+  {water:3.5,flow:3,vibration:16,rain:35},
+  {water:3.5,flow:2.99,vibration:15.99,rain:34.99},
+  {water:3.5,flow:3.8,vibration:18.2,rain:45}
  ];
- const result=await testContinuousRiskScenarios(cases,s=>({
-  '수위값':s.water,'수위위험':Number(s.water>=NEPAL_THRESHOLDS.water),
-  '유속값':s.flow,'진동값':s.vibration,'강수값':s.rain,
-  '유속위험':Number(s.flow>=NEPAL_THRESHOLDS.flow),
-  '진동위험':Number(s.vibration>=NEPAL_THRESHOLDS.vibration),
-  '강수위험':Number(s.rain>=NEPAL_THRESHOLDS.rain)
+ const result=await testContinuousRiskScenarios(cases,v=>({
+  '수위값':v.water,'수위위험':Number(v.water>=NEPAL_THRESHOLDS.water),
+  '유속값':v.flow,'진동값':v.vibration,'강수값':v.rain,
+  '유속위험':Number(v.flow>=NEPAL_THRESHOLDS.flow),
+  '진동위험':Number(v.vibration>=NEPAL_THRESHOLDS.vibration),
+  '강수위험':Number(v.rain>=NEPAL_THRESHOLDS.rain)
  }),'유속·진동·강수 연속 판정');
- if(result.ok)result.details.push('유속 2m/s 이상, 진동 13 이상, 강수 22mm/h 이상을 정확히 판정했습니다.');
+ if(result.ok)result.details.push('유속 3m/s 이상, 진동 16 이상, 강수 35mm/h 이상을 정확히 판정했습니다.');
  return result;
 }
-async function checkIntegratedList(){
- const vars=['수위값','유속값','진동값','강수값','수위위험','유속위험','진동위험','강수위험','위험개수','경보결과','반복번호'];
- for(const n of vars)if(!getVar(n))return {ok:false,details:[`「${n}」 변수를 먼저 만들어 주세요.`]};
- if(!getList('위험목록'))return {ok:false,details:['「위험목록」 리스트를 직접 만들어 주세요. 리스트에는 위험 여부 0·1 값만 넣습니다.']};
- if(!liveSensorsAssignedInsideForever(['water','flow','vibration','rain']))return {ok:false,details:[realTimeSensorHint(['water','flow','vibration','rain'])]};
- const hasLoop=codeHasTypes(['repeat_basic']) || codeHasTypes(['repeat_inf']);
- if(!hasLoop || !codeHasTypes(['value_of_index_from_list','get_variable','change_variable']) || !hasConditionBlocks()){
-  return {ok:false,details:[
-   '「위험목록」에 수위위험·유속위험·진동위험·강수위험을 1·2·3·4번 순서로 넣어 보세요.',
-   '힌트 ① 「위험목록」에 0을 네 번 추가해 4칸을 먼저 만들어 보세요. 매 반복마다 항목을 추가하면 길이가 늘어납니다.',
-   '힌트 ② 「n번째 항목 바꾸기」로 네 칸을 현재 위험 신호로 갱신한 뒤, 「반복번호」를 1부터 4까지 움직여 값을 읽어보세요.',
-   '힌트 ③ 위험개수는 매 검사 시작에 0으로 초기화하고, 리스트 항목이 1일 때만 1씩 더해 보세요.'
-  ]};
- }
- const scenarios=[
-  {water:1.5,flow:1.5,vibration:12,rain:18}, // 0000
-  {water:2.5,flow:1.5,vibration:12,rain:18}, // 1000
-  {water:1.5,flow:2.5,vibration:12,rain:18}, // 0100
-  {water:1.5,flow:1.5,vibration:14,rain:18}, // 0010
-  {water:1.5,flow:1.5,vibration:12,rain:24}, // 0001
-  {water:2.5,flow:2.5,vibration:12,rain:18}, // 1100
-  {water:2.5,flow:1.5,vibration:14,rain:18}, // 1010
-  {water:1.5,flow:1.5,vibration:14,rain:24}, // 0011
-  {water:1.5,flow:2.5,vibration:12,rain:24}, // 0101
-  {water:2.5,flow:2.5,vibration:14,rain:18}, // 1110
-  {water:2.5,flow:2.5,vibration:14,rain:24}, // 1111
-  {water:2,flow:2,vibration:13,rain:22}, // equality on four conditions
-  {water:1.99,flow:1.99,vibration:12.99,rain:21.99} // all just safe
- ];
- const details=[];let allPassed=true;
- try{
-  await stopCode();
-  Object.assign(nepalTestValues,scenarios[0]);
-  clearList('위험목록');
-  await startCode();
-  for(let i=0;i<scenarios.length;i++){
-   const s=scenarios[i];
-   const expected=[Number(s.water>=NEPAL_THRESHOLDS.water),Number(s.flow>=NEPAL_THRESHOLDS.flow),Number(s.vibration>=NEPAL_THRESHOLDS.vibration),Number(s.rain>=NEPAL_THRESHOLDS.rain)];
-   const dangerCount=expected.reduce((a,v)=>a+v,0);
-   // One uninterrupted run: changing every sensor must replace the FOUR list items.
-   Object.assign(nepalTestValues,s);
-   const pass=await waitForValues(()=>{
-    const list=readList('위험목록')||[];
-    return list.length===4 && list.every((v,j)=>numericMatches(v,expected[j])) &&
-      numericMatches(readVar('위험개수'),dangerCount) &&
-      numericMatches(readVar('경보결과'),Number(dangerCount>=2));
-   },2500);
-   const list=readList('위험목록')||[];
-   details.push(`${i+1}차: 위험목록 기대 [${expected.join(',')}] → [${list.join(',')}] (${list.length}개), 위험개수 ${readVar('위험개수')}, 경보 ${readVar('경보결과')} ${pass?'✓':'✗'}`);
-   if(!pass){allPassed=false;details.push('위험목록에는 4개의 위험 판정값만 순서대로 넣고, 반복문에서 1번부터 4번까지 확인해 위험개수를 계산하세요.');break;}
-  }
- }finally{await stopCode();resetTestReadings();}
- if(allPassed)details.push('4개 센서 가운데 둘 이상 위험한 경우에만 경보를 내리도록 정확히 구현했습니다!');
- return {ok:allPassed,details};
-}
+/* Mission 6 now learns LISTS only. The shared sensor-code check below
+ * tests list population and counting but does not trigger a 100-run grade.
+ */
 /* Mission 06: the simulator supplies only sensor positions and data.
  * Infer monotonic per-sensor thresholds directly from the student's running
  * EntryJS code, on the same one continuously running session, using 0.1-grid
@@ -755,16 +701,16 @@ async function checkIntegratedList(){
  * threshold/compare operator is read from simulator settings.
  * Then test all 16 risk combinations using the student's own EntryJS logic.
  */
-async function checkChosenAlarmN(){
+async function checkChosenAlarmN(requireList=false){
  const labels=['수위','유속','진동','강수'];
  const riskVars=labels.map(label=>label+'위험');
  const valueVars=labels.map(label=>label+'값');
- const required=[...valueVars,...riskVars,'위험개수','경보결과','반복번호'];
+ const required=[...valueVars,...riskVars,'위험개수','경보결과',...(requireList?['반복번호']:[])];
  for(const name of required)if(!getVar(name))return {ok:false,details:[`「${name}」 변수가 없습니다. 엔트리 코드에 직접 만들어 주세요.`]};
- if(!getList('위험목록'))return {ok:false,details:['「위험목록」 리스트가 필요합니다.']};
+ if(requireList&&!getList('위험목록'))return {ok:false,details:['이번 미션에서는 「위험목록」 리스트를 만들고 위험신호 4개를 저장해 주세요.']};
  if(!liveSensorsAssignedInsideForever(NEPAL_SENSOR_ORDER))return {ok:false,details:[realTimeSensorHint(NEPAL_SENSOR_ORDER)]};
- if(!codeHasTypes(['value_of_index_from_list','change_variable']) || !(codeHasTypes(['repeat_basic'])||codeHasTypes(['repeat_inf'])))
-   return {ok:false,details:['리스트와 반복문으로 4개의 위험신호를 읽고 위험개수를 계산해야 합니다.']};
+ if(requireList&&(!codeHasTypes(['value_of_index_from_list','change_variable']) || !codeHasTypes(['repeat_basic'])))
+   return {ok:false,details:['리스트의 항목을 반복해서 검사하고 위험개수를 계산하도록 「반복하기」·「리스트 n번째 값」·「변수 더하기」 블록을 사용해 보세요.']};
  const savedScripts=JSON.stringify((saveProject().objects||[]).map(o=>o.script||''));
  if(savedScripts.includes('nepal_limit_'))return {ok:false,details:[
    '예전 「시뮬레이션에서 설정한 위험 기준값」 블록이 남아 있습니다.',
@@ -791,7 +737,7 @@ async function checkChosenAlarmN(){
  try{
    await stopCode();
    Object.assign(nepalTestValues,lows);
-   const lst=getList('위험목록');if(lst)lst.getArray().splice(0);
+   if(requireList){const lst=getList('위험목록');if(lst)lst.getArray().splice(0);}
    for(const name of required)if(getVar(name))setVar(name,'');
    await startCode();
    const a=await probe(lows),b=await probe(highs);
@@ -844,16 +790,16 @@ async function checkChosenAlarmN(){
      Object.assign(nepalTestValues,synthetic);
      const count=bits.reduce((acc,bit)=>acc+bit,0);
      const stable=await waitForValues(()=>{
-       const list=readList('위험목록')||[];
+       const list=requireList?(readList('위험목록')||[]):[];
        return NEPAL_SENSOR_ORDER.every((key,i)=>numericMatches(readVar(valueVars[i]),synthetic[key])) &&
-         list.length===4 && list.every((v,i)=>numericMatches(v,bits[i])) &&
+         (!requireList||(list.length===4&&list.every((v,i)=>numericMatches(v,bits[i])))) &&
          riskVars.every((name,i)=>numericMatches(readVar(name),bits[i])) &&
          numericMatches(readVar('위험개수'),count) &&
          [0,1].includes(Number(readVar('경보결과'))) && readVar('경보결과')!=='';
      },4500);
      if(!stable){
-       details.push(`${mask+1}/16: 4개의 위험신호와 리스트·반복문·경보결과가 연동되지 않았습니다.`);
-       details.push('센서값·위험신호·위험목록을 계속 갱신하고, 반복문으로 위험개수를 계산해 주세요.');
+       details.push(`${mask+1}/16: 4개의 위험신호와 위험개수·경보결과가 연동되지 않았습니다.`);
+       details.push(requireList?'「위험목록」 리스트 4칸을 최신 위험신호로 갱신하고, 반복문으로 위험개수를 세어 보세요.':'리스트 없이 「수위위험」·「유속위험」·「진동위험」·「강수위험」을 더해 「위험개수」와 경보를 계산해 보세요.');
        return {ok:false,details};
      }
      await wait(120);
@@ -869,6 +815,7 @@ async function checkChosenAlarmN(){
  if(!n)return {ok:false,details:['학생 코드가 「4개 센서 중 N개 이상 위험하면 경보」를 구현해야 합니다. N은 1~4입니다.']};
  const rules=Object.fromEntries(ruleInfo.map(({sensor,op,th})=>[sensor,{op,th}]));
  return {ok:true,threshold:n,alarmTable:observations,rules,details:[
+   requireList?'리스트·반복문을 활용해 4개 위험신호를 정상 처리했습니다.':'리스트 없이 4개 센서의 위험신호를 종합했습니다.',
    '4개 센서의 임계값과 비교 방향을 학생이 작성한 엔트리 실행 결과에서 판별했습니다.',
    ...ruleInfo.map(rule=>`${rule.label} ${rule.op==='ge'?'이상':'이하'} ${rule.th}`),
    `학생 코드의 경보 기준: ${n}개 이상 · 16가지 위험신호 조합 검증 완료`,
@@ -882,8 +829,9 @@ async function check(mission){
  case 1:return checkContinuousWaterVariable();
  case 2:return checkWaterRisk();
  case 3:return checkOtherRisk();
- case 4:return checkIntegratedList();
- case 5:return checkChosenAlarmN();
+ case 4:return checkChosenAlarmN(false); // Mission 5: no list, graded
+ case 5:return checkChosenAlarmN(true);  // Mission 6: list only, no graded 100-run
+ case 6:return checkChosenAlarmN(true);  // FINAL: list + full disaster evaluation
  default:return {ok:false,details:['등록되지 않은 미션입니다.']};
  }
 }
