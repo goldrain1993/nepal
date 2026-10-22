@@ -261,6 +261,23 @@ const NEPAL_SENSOR_ORDER=['water','flow','vibration','rain'];
 function legacyRuleValue(){return 0}
 /* 학생 엔트리 코드만 변수를 수정합니다. 시스템의 자동 갱신은 제공하지 않습니다. */
 let nepalChecking=false;
+let nepalAlarmProbe=null; // only the verification engine supplies a probe
+let nepalLastAlarmAt=0;
+function nepalAlarmCommand(){
+  if(nepalAlarmProbe){
+    const probe=nepalAlarmProbe;
+    // Discard pulses from the PREVIOUS test case while sensors/flags are
+    // catching up. The alarm command must run with this test's sensor state.
+    if(NEPAL_SENSOR_ORDER.every((key,i)=>numericMatches(readVar(probe.valueVars[i]),probe.readings[key])) &&
+      probe.riskVars.every((name,i)=>numericMatches(readVar(name),probe.bits[i])) &&
+      numericMatches(readVar('위험개수'),probe.count)){
+      probe.fired=true;
+    }
+  }else if(!nepalChecking && nepalIsRunning() && Date.now()-nepalLastAlarmAt>1600){
+    nepalLastAlarmAt=Date.now();
+    notify('NEPAL_ENTRY_ALARM');
+  }
+}
 function nepalIsRunning(){return window.Entry?.engine?.state==='run'}
 
 function nepalSensorValue(sensor){
@@ -305,7 +322,17 @@ function installNepalSensorReporters(E){
       syntax:{js:[],py:[{water:'nepal_water_sensor()',flow:'nepal_flow_sensor()',vibration:'nepal_vibration_sensor()',rain:'nepal_rain_sensor()'}[sensor]]}
     };
   }
-  // Extend the built-in EntryJS '자료' (variable) category.
+  // A genuine sequential command, not a reporter or a disguised variable.
+  // The learner can place it under their own alarm condition in '시작'.
+  if(window.Lang?.template)Lang.template.nepal_alarm_sound='🚨 경보 울리기';
+  E.block.nepal_alarm_sound={
+    color:'#E53C4B',outerLine:'#B62232',fontColor:'#FFFFFF',
+    skeleton:'basic',template:'🚨 경보 울리기',
+    statements:[],params:[],events:{},
+    def:{type:'nepal_alarm_sound'},class:'start',isNotFor:[],
+    func:function(){nepalAlarmCommand()}
+  };
+  // Extend the built-in EntryJS categories without changing original blocks.
   const original=EntryStatic.getAllBlocks;
   if(!original.__nepalSensorWrapped){
     const wrapped=function(...args){
@@ -317,6 +344,11 @@ function installNepalSensorReporters(E){
           for(const [id] of nepalReporterDefs){
             if(!cat.blocks.includes(id))cat.blocks.splice(insertAt++,0,id);
           }
+        }
+        const start=menus.find(m=>m.category==='start');
+        if(start && Array.isArray(start.blocks) && !start.blocks.includes('nepal_alarm_sound')){
+          const position=start.blocks.indexOf('when_run_button_click');
+          start.blocks.splice(position>=0?position+1:start.blocks.length,0,'nepal_alarm_sound');
         }
       }
       return menus;
@@ -385,12 +417,15 @@ function refreshNepalBlockMenu(E,source='manual'){
   const bm=pg?.blockMenu;
   if(!bm){throw Error('Entry.playground.blockMenu를 찾지 못했습니다. 오브젝트 선택 후 다시 시도하세요.');}
   const catalog=EntryStatic.getAllBlocks().map(item=>({...item, blocks:[...(item.blocks||[])]}));
+  if(!catalog.find(item=>item.category==='start')?.blocks?.includes('nepal_alarm_sound'))
+    throw Error('「시작」 탭의 빨간 경보 울리기 블록 등록에 실패했습니다.');
   if(typeof bm.setCategoryData==='function'){
     // This actually creates Entry BlockMenu threads and SVG category views.
     bm.setCategoryData(catalog);
     nepalBlockMenuLog.push(source+': blockMenu.setCategoryData() 완료');
   }else if(typeof bm.addCategoryData==='function'){
     for(const [id] of nepalReporterDefs)bm.addCategoryData('variable',id);
+    bm.addCategoryData('start','nepal_alarm_sound');
     bm.setMenu?.();
     nepalBlockMenuLog.push(source+': blockMenu.addCategoryData() 3종 호출');
   }else if(typeof pg?.setBlockMenu==='function'){
@@ -403,6 +438,9 @@ function refreshNepalBlockMenu(E,source='manual'){
   // rendering cached, which is the reason the screenshot still showed old items.
   if(typeof bm.selectMenu==='function')bm.selectMenu('variable',true);
   const actual=updateNepalBlockStatus(E);
+  if(!bm.getThreadByBlockKey?.('nepal_alarm_sound')){
+    nepalBlockMenuLog.push(source+': 빨간 경보 블록 스레드 생성 여부를 확인해 주세요.');
+  }
   if(actual.threadIds.length!==nepalReporterDefs.length){
     nepalBlockMenuLog.push(source+': 생성된 블록 스레드 '+actual.threadIds.length+'/'+nepalReporterDefs.length);
     console.warn('[NEPAL] 센서 블록 실제 스레드 누락', actual);
@@ -726,9 +764,15 @@ async function checkChosenAlarmN(requireList=false){
  const labels=['수위','유속','진동','강수'];
  const riskVars=labels.map(label=>label+'위험');
  const valueVars=labels.map(label=>label+'값');
- const required=[...valueVars,...riskVars,'위험개수','경보결과',...(requireList?['반복번호']:[])];
- for(const name of required)if(!getVar(name))return {ok:false,details:[`「${name}」 변수가 없습니다. 엔트리 코드에 직접 만들어 주세요.`]};
+ const required=[...valueVars,...riskVars,'위험개수','N',...(requireList?['반복번호']:[])];
+ for(const name of required)if(!getVar(name))return {ok:false,details:[
+   name==='N'||name==='위험개수'?'「N」과 「위험개수」는 경보 기준을 판단할 때 꼭 필요한 변수입니다. 현재 「'+name+'」를 찾지 못했습니다.':
+   `「${name}」 변수가 없습니다. 필요한 변수 이름을 확인해 주세요.`
+ ]};
  if(requireList&&!getList('위험목록'))return {ok:false,details:['이번 미션에서는 「위험목록」 리스트를 만들고 위험신호 4개를 저장해 주세요.']};
+ if(!codeHasTypes(['nepal_alarm_sound']))return {ok:false,details:[
+   '경보 조건에 따라 실행되어야 할 빨간색 「경보 울리기」 블록을 찾지 못했습니다.'
+ ]};
  if(!liveSensorsAssignedInsideForever(NEPAL_SENSOR_ORDER))return {ok:false,details:[realTimeSensorHint(NEPAL_SENSOR_ORDER)]};
  if(requireList&&(!codeHasTypes(['value_of_index_from_list','change_variable']) || !codeHasTypes(['repeat_basic'])))
    return {ok:false,details:['리스트에 들어 있는 위험신호를 차례대로 살펴보고 개수를 세는 과정이 아직 완성되지 않았습니다.']};
@@ -761,6 +805,8 @@ async function checkChosenAlarmN(requireList=false){
    if(requireList){const lst=getList('위험목록');if(lst)lst.getArray().splice(0);}
    for(const name of required)if(getVar(name))setVar(name,'');
    await startCode();
+   if(!await waitForValues(()=>Number.isInteger(Number(readVar('N')))&&Number(readVar('N'))>=1&&Number(readVar('N'))<=4,2400))
+     throw Error('「N」에 설정된 경보 기준 개수를 확인하지 못했습니다. 1~4의 숫자인지 확인해 보세요.');
    const a=await probe(lows),b=await probe(highs);
    const state=NEPAL_SENSOR_ORDER.map((key,i)=>{
      if(a[i]===b[i])throw Error(labels[i]+' 센서의 위험 판정이 측정값 변화에 반응하지 않습니다. 센서값과 비교 연산을 확인하세요.');
@@ -810,38 +856,51 @@ async function checkChosenAlarmN(requireList=false){
      const synthetic={};ruleInfo.forEach((rule,i)=>synthetic[rule.sensor]=bits[i]?danger[rule.sensor]:safe[rule.sensor]);
      Object.assign(nepalTestValues,synthetic);
      const count=bits.reduce((acc,bit)=>acc+bit,0);
+     // This probe is NOT a latch: each new situation begins with no alarm.
+     // Only a real student alarm command during this sensor state can fire.
+     const alarmCase={readings:synthetic,bits,count,valueVars,riskVars,fired:false};
+     nepalAlarmProbe=alarmCase;
      const stable=await waitForValues(()=>{
        const list=requireList?(readList('위험목록')||[]):[];
        return NEPAL_SENSOR_ORDER.every((key,i)=>numericMatches(readVar(valueVars[i]),synthetic[key])) &&
          (!requireList||(list.length===4&&list.every((v,i)=>numericMatches(v,bits[i])))) &&
          riskVars.every((name,i)=>numericMatches(readVar(name),bits[i])) &&
          numericMatches(readVar('위험개수'),count) &&
-         [0,1].includes(Number(readVar('경보결과'))) && readVar('경보결과')!=='';
+         Number.isInteger(Number(readVar('N'))) && Number(readVar('N'))>=1 && Number(readVar('N'))<=4;
      },4500);
      if(!stable){
        details.push(requireList?
-         '센서의 위험신호가 바뀌어도 리스트·위험개수·경보결과 중 일부가 그 변화와 일치하지 않습니다.':
-         '4개 센서의 위험신호와 위험개수·경보결과 중 일부가 서로 맞지 않습니다.');
+         '센서의 위험신호가 바뀌어도 리스트·위험개수·경보 울리기 실행 중 일부가 그 변화와 일치하지 않습니다.':
+         '4개 센서의 위험신호와 위험개수 중 일부가 서로 맞지 않습니다.');
        return {ok:false,details};
      }
-     await wait(120);
-     const alarm=Number(readVar('경보결과'));
+     // A forever loop may have a brief delay. Give the new command time to
+     // execute if the student's N threshold says this case needs an alarm.
+     const declaredN=Number(readVar('N'));
+     if(count>=declaredN)await waitForValues(()=>alarmCase.fired,900);
+     else await wait(180);
+     const alarm=Number(alarmCase.fired);
+     nepalAlarmProbe=null;
      observations[mask]=alarm;byCount[count].add(alarm);
    }
  }catch(error){
-   return {ok:false,details:['미션 6 코드 검사: '+String(error.message||error)]};
- }finally{await stopCode();resetTestReadings()}
+   return {ok:false,details:['경보 알고리즘 검사: '+String(error.message||error)]};
+ }finally{nepalAlarmProbe=null;await stopCode();resetTestReadings()}
  if(byCount.some(set=>set.size!==1))return {ok:false,details:['같은 위험신호 개수에서는 어떤 센서가 위험하든 경보 결과가 같아야 합니다.']};
  const vals=byCount.map(set=>[...set][0]);
  const n=[1,2,3,4].find(k=>vals.every((v,i)=>v===Number(i>=k)));
- if(!n)return {ok:false,details:['학생 코드가 「4개 센서 중 N개 이상 위험하면 경보」를 구현해야 합니다. N은 1~4입니다.']};
+ const chosenN=Number(readVar('N'));
+ if(!n || n!==chosenN)return {ok:false,details:[
+   '위험신호가 「N」개 이상인 상황과 그렇지 않은 상황에서 빨간 「경보 울리기」 블록의 실행 여부가 일치하지 않았습니다.',
+   '센서 판단과 위험개수, 경보 조건을 다시 확인해 보세요.'
+ ]};
  const rules=Object.fromEntries(ruleInfo.map(({sensor,op,th})=>[sensor,{op,th}]));
  return {ok:true,threshold:n,alarmTable:observations,rules,details:[
    requireList?'리스트·반복문을 활용해 4개 위험신호를 정상 처리했습니다.':'4개 센서의 위험신호를 종합했습니다.',
    '4개 센서의 임계값과 비교 방향을 학생이 작성한 엔트리 실행 결과에서 판별했습니다.',
    ...ruleInfo.map(rule=>`${rule.label} ${rule.op==='ge'?'이상':'이하'} ${rule.th}`),
    `학생 코드의 경보 기준: ${n}개 이상 · 16가지 위험신호 조합 검증 완료`,
-   '이제 원본 재난 시뮬레이션의 100회 평가에 적용합니다.'
+   requireList?'리스트 검사에 성공했습니다.':'이제 원본 재난 시뮬레이션의 100회 평가에 적용합니다.'
  ]};
 }
 async function check(mission){
@@ -1189,7 +1248,7 @@ setInterval(()=>{
    value:actual===null||actual===''?null:Number(actual),
    variables:{water:readVar('수위값'),flow:readVar('유속값'),vibration:readVar('진동값'),rain:readVar('강수값')},
    risks:{water:readVar('수위위험'),flow:readVar('유속위험'),vibration:readVar('진동위험'),rain:readVar('강수위험')},
-   dangerCount:readVar('위험개수'),alarm:readVar('경보결과'),
+   dangerCount:readVar('위험개수'),alarm:null,
    list:readList('위험목록'),
    running:nepalIsRunning()
  });
