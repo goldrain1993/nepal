@@ -1,4 +1,4 @@
-/** NEPAL × ENTRY v3.2 — three-button start page with role-specific Google authentication, 2/3-person groups, flood scores.
+/** NEPAL × ENTRY v3.3 — native Nepal simulator start page with role-based buttons with role-specific Google authentication, 2/3-person groups, flood scores.
  * Public board = signed-in school accounts only; code/progress = group members only.
  * Firebase rules are the authorization boundary, not this browser code.
  */
@@ -43,6 +43,22 @@ css.textContent=`
 .np-progress-message{min-height:24px;margin-top:12px;font-size:13px;color:#e4ffcd;white-space:pre-wrap}
 @media(max-width:760px){.np-form{grid-template-columns:1fr}.np-boardgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.np-wrap{padding:16px}.np-landing-choices{grid-template-columns:1fr}.np-landing-btn{min-height:84px;flex-direction:row}.np-landing-hint{display:none}#np-gate .np-gate-hero{min-height:auto;padding:25px 20px}}
 @media(max-width:470px){.np-boardgrid{grid-template-columns:1fr}}
+/* v3.3: Retain the original Nepal start card, animations and background. */
+#startScreen.np-student-active{overflow-y:auto}
+#np-gate{display:none!important}
+#startScreen .startMenu #np-student-panel{width:min(420px,100%);color:#edf7ea;text-align:left;margin:0}
+#startScreen .startMenu #np-student-panel[hidden]{display:none!important}
+#startScreen .startMenu #np-student-panel .np-student-title{font-size:18px;text-align:center;margin:0 0 7px}
+#startScreen .startMenu #np-student-panel .np-student-description{font-size:12px;text-align:center;margin:0 0 10px}
+#startScreen .startMenu #np-student-panel .np-form{grid-template-columns:repeat(2,minmax(0,1fr));margin:8px 0;gap:8px}
+#startScreen .startMenu #np-student-panel .np-field{font-size:12px}
+#startScreen .startMenu #np-student-panel .np-field:nth-child(3){grid-column:1/-1}
+#startScreen .startMenu #np-student-panel .np-field input,
+#startScreen .startMenu #np-student-panel .np-field select{height:40px;min-height:40px}
+#startScreen .startMenu #np-student-panel .np-student-footer{margin-top:10px}
+#startScreen .startMenu #np-student-panel .np-student-footer button{flex:1;min-width:0}
+#np-home-error{color:#ffd6b4;font-size:12px;text-align:center;max-width:420px;white-space:pre-wrap}
+@media(max-width:470px){#startScreen .startMenu #np-student-panel .np-form{grid-template-columns:1fr}#startScreen .startMenu #np-student-panel .np-field:nth-child(3){grid-column:auto}}
 `;
 document.head.appendChild(css);
 const gate=document.createElement('section'),board=document.createElement('section');gate.id='np-gate';gate.dataset.page='landing';board.id='np-board';document.body.append(gate,board);gate.classList.add('show');
@@ -76,6 +92,10 @@ function src(url){return new Promise((resolve,reject)=>{const s=document.createE
 let fb=null,db=null,auth=null,user=null,schoolDomain='',teacherUids=[],initError='',initDone=false;
 let requestedRole='student',authRole=null,loginBusy=false;
 let guestActive=false;
+let sessionActive=false; // a retained Google credential is NOT a classroom login until this session chooses a role.
+let nativeStart=null,nativeButtons=[],nativeStudentPanel=null;
+const loginCaptions=['🎒 학생 로그인','🧑‍🏫 교사 로그인','🌐 게스트 입장'];
+const simulatorCaptions=['시작하기','형성평가 바로가기','이용 방법 보기'];
 let team=null,role=null,editorLockHeld=false,codeListener=null,boardListener=null,projectToRestore=null;
 let progress=0,missionTotal=4,callbacks={},saveBusy=false,queued=false,readyToSave=false,restoring=false,importPending=null,exportPending=null,rpcId=0,headerStatus=null,lastSaved='',autosave=null,lockRefresh=null,lockedTeamPath='';
 function teamPath(c,g){return `${ROOT}/c${c}/teams/g${g}`}
@@ -83,7 +103,52 @@ function workPath(c,g){return `${PRIVATE}/c${c}/teams/g${g}`}
 function backupKey(){return !guestActive&&team&&user?BACKUP+user.uid+':c'+team.c+'g'+team.g:null}
 function localBackUp(project){const key=backupKey();if(!key)return;try{localStorage.setItem(key,JSON.stringify({project,updatedAt:Date.now()}))}catch(e){console.warn('로컬 보조 백업 공간 부족',e)}}
 function localRestore(){try{return JSON.parse(localStorage.getItem(backupKey())||'null')}catch(_){return null}}
-function note(m){if(headerStatus)headerStatus.textContent=m;const el=$('np-gate-msg');if(el)el.textContent=m}
+function updateNativeCaptions(){
+ if(nativeButtons.length!==3)return;
+ const names=sessionActive?simulatorCaptions:loginCaptions;
+ nativeButtons.forEach((button,i)=>{button.textContent=names[i];button.style.display=nativeStudentPanel&&!nativeStudentPanel.hidden?'none':'';});
+}
+function showNativeHome(active){
+ sessionActive=!!active;
+ gate.classList.remove('show');
+ if(nativeStart){nativeStart.classList.remove('hiddenStart');nativeStart.classList.remove('np-student-active');}
+ if(nativeStudentPanel)nativeStudentPanel.hidden=true;
+ const error=$('np-home-error');if(error)error.textContent='';
+ updateNativeCaptions();refreshButtons();
+}
+function showNativeStudent(){
+ if(sessionActive)return;
+ gate.classList.remove('show');
+ if(nativeStart){nativeStart.classList.remove('hiddenStart');nativeStart.classList.add('np-student-active');}
+ if(nativeStudentPanel)nativeStudentPanel.hidden=false;
+ const error=$('np-home-error');if(error)error.textContent='';
+ updateNativeCaptions();$('np-name')?.focus();refreshButtons();
+}
+function setupNativeHome(){
+ nativeStart=document.getElementById('startScreen');
+ nativeButtons=['enterLabBtn','enterAssessmentBtn','enterHowBtn'].map(id=>document.getElementById(id));
+ if(!nativeStart||nativeButtons.some(b=>!b)){console.error('NEPAL 원본 시작 버튼을 찾지 못했습니다.');return;}
+ const menu=nativeStart.querySelector('.startMenu');
+ if(!menu)return;
+ nativeStudentPanel=$('np-student-panel');
+ menu.appendChild(nativeStudentPanel);nativeStudentPanel.hidden=true;
+ const error=document.createElement('div');error.id='np-home-error';error.setAttribute('role','alert');menu.appendChild(error);
+ nativeButtons.forEach(button=>button.disabled=false);
+ nativeButtons.forEach((button,index)=>button.addEventListener('click',e=>{
+   if(sessionActive)return; // hand over to the ORIGINAL simulator start/assessment/help handlers.
+   e.preventDefault();e.stopImmediatePropagation();
+   if(index===0)showNativeStudent();
+   if(index===1)teacherSubmit();
+   if(index===2)enterGuest();
+ },true));
+ showNativeHome(false);
+}
+function note(m){
+ if(headerStatus)headerStatus.textContent=m;
+ const el=$('np-gate-msg');if(el)el.textContent=m;
+ const error=$('np-home-error');if(error&&!sessionActive){error.textContent=nativeStudentPanel&&!nativeStudentPanel.hidden?'':m;}
+}
+
 function sayAuth(m){note(m)}
 function requireSchool(u){return !!(u&&u.emailVerified&&u.providerData.some(p=>p.providerId==='google.com')&&u.email?.toLowerCase().endsWith('@'+schoolDomain))}
 function requireTeacher(u){return !!(u&&u.emailVerified&&u.providerData.some(p=>p.providerId==='google.com')&&u.email?.toLowerCase()===TEACHER_EMAIL&&teacherUids.includes(u.uid))}
@@ -100,9 +165,9 @@ function syncAuth(u){
 function selectRole(role){
  if(role!=='student')return;
  requestedRole='student';gate.dataset.page='student';note('');
- $('np-name').focus();
+ showNativeStudent();
 }
-function landing(){requestedRole='student';gate.dataset.page='landing';note('');const err=$('np-landing-error');if(err)err.textContent='';refreshButtons()}
+function landing(){requestedRole='student';gate.dataset.page='landing';note('');const err=$('np-landing-error');if(err)err.textContent='';showNativeHome(false)}
 async function init(){
  try{
   await src('./nepal_firebase_config.js?v=31');
@@ -120,16 +185,16 @@ async function init(){
 }
 const initReady=init();
 function refreshButtons(){
- const sessionVisible=!gate.classList.contains('show');
+ const sessionVisible=sessionActive;
  const signedIn=!guestActive&&sessionVisible&&!!((team&&user)||(!team&&requireTeacher(user)));
  const editorActive=sessionVisible&&!!(team||guestActive||requireTeacher(user));
  const save=$('np-save'),boardButton=$('np-board-button'),changeButton=$('np-change');
- if(save){save.disabled=guestActive||!team;save.style.display=team?'':'none';save.textContent='💾 저장'}
+ if(save){save.disabled=guestActive||!team;save.style.display=sessionVisible&&team?'':'none';save.textContent='💾 저장'}
  if(boardButton){boardButton.disabled=guestActive;boardButton.style.display=signedIn?'':'none'}
- if(changeButton){changeButton.style.display=editorActive?'':'none';changeButton.textContent=guestActive?'↩ 게스트 종료':'🚪 로그아웃'}
+ if(changeButton){changeButton.style.display=signedIn?'':'none';changeButton.textContent='🚪 로그아웃'}
  const floatingBoard=$('nepal-class-board'),floatingLogout=$('nepal-class-switch'),trigger=$('nepal-entry-trigger');
  if(floatingBoard)floatingBoard.style.display=signedIn?'':'none';
- if(floatingLogout){floatingLogout.style.display=editorActive?'':'none';floatingLogout.textContent=guestActive?'↩ 게스트 종료':'🚪 로그아웃'}
+ if(floatingLogout){floatingLogout.style.display=signedIn?'':'none';floatingLogout.textContent='🚪 로그아웃'}
  if(trigger)trigger.style.display=(editorActive&&!board.classList.contains('show'))?'':'none';
  const boardLogout=$('np-board-signout');if(boardLogout)boardLogout.style.display=user?'':'none';
  const status=$('np-save-label');if(status&&!editorActive)status.textContent='';
@@ -148,6 +213,7 @@ async function googlePopup(kind){
 }
 async function studentSubmit(){
  if(loginBusy)return;
+ await initReady;
  const c=Number($('np-class').value),g=Number($('np-group').value),name=cleanName($('np-name').value);
  if(!valid(c,g)||!name){note('반, 조, 이름을 모두 입력해 주세요.');return}
  if(!auth){note('Firebase 연결 확인 필요: '+(initError||'초기화 중입니다.'));return}
@@ -163,7 +229,7 @@ async function teacherSubmit(){
  try{await googlePopup('teacher');enterTeacher()}
  catch(e){requestedRole='student';console.warn('NEPAL 교사 로그인:',e);landing();gate.dataset.page='landing';
   // Show errors briefly on landing only when authentication fails.
-  const el=document.getElementById('np-landing-error');if(el)el.textContent='교사 로그인 실패: '+String(e.message||e);
+  const msg='교사 로그인 실패: '+String(e.message||e);const el=document.getElementById('np-landing-error');if(el)el.textContent=msg;const homeError=$('np-home-error');if(homeError)homeError.textContent=msg;
  }
  finally{loginBusy=false;refreshButtons()}
 }
@@ -174,7 +240,7 @@ async function signout(){
  if(auth)await auth.signOut();
  user=null;authRole=null;role=null;team=null;projectToRestore=null;readyToSave=false;
  callbacks.resetEditor?.();callbacks.closeEditor?.();callbacks.restoreProgress?.(0);
- landing();gate.classList.add('show');refreshButtons();
+ landing();refreshButtons();
 }
 function identify(members){if(!user)return null;for(const key of memberKeys)if(members?.[key]?.uid===user.uid)return key;return null}
 function memberNames(members,c,g){return memberKeys.slice(0,groupCapacity(c,g)).map((slot,i)=>members?.[slot]?.displayName||`${i+1}번 조원 미등록`).join(' · ')}
@@ -254,7 +320,7 @@ function endGuest(){
  callbacks.resetEditor?.();callbacks.closeEditor?.();callbacks.restoreProgress?.(0);
  if(typeof global.resetRank==='function')global.resetRank();
  note('게스트 체험을 종료했습니다. 진행 기록과 코드가 저장되지 않았습니다.');
- refreshButtons();
+ sessionActive=false;refreshButtons();
 }
 function enterTeacher(){
  if(!user||!requireTeacher(user)){note('등록된 교사 Google 계정으로 로그인해 주세요.');return}
@@ -323,7 +389,7 @@ async function recordFloodResult(result){
  }catch(e){note('⚠ 네팔 홍수 점수 저장 오류: '+e.message)}
 }
 let boardFromGate=true;
-function showBoard(fromGate){if(guestActive){note('게스트 모드에서는 학급 현황판을 이용할 수 없습니다.');return}if(!user||!db){note('먼저 학교 계정으로 로그인하세요.');gate.classList.add('show');return}
+function showBoard(fromGate){if(guestActive){note('게스트 모드에서는 학급 현황판을 이용할 수 없습니다.');return}if(!user||!db){note('먼저 학교 계정으로 로그인하세요.');landing();return}
  boardFromGate=fromGate||gate.classList.contains('show');$('np-board-class').value=String(team?.c||$('np-class').value||1);gate.classList.remove('show');board.classList.add('show');loadBoard();refreshButtons()}
 function boardCards(data,c){let html='';for(let g=1;g<=GROUP_COUNT;g++){
  const d=data?.['g'+g]||{},mem=d.members||{};const value=Math.max(0,Math.min(missionTotal,Number(d.progress?.completed)||0));const best=d.floodBest||null;const score=best&&Number.isFinite(Number(best.score))?Number(best.score):null;const mine=team?.c===c&&team?.g===g;
@@ -336,11 +402,13 @@ function loadBoard(){if(!user||!db)return;$('np-board-msg').textContent='현황�
  $('np-board-info').textContent='학교 학생/등록 교사 Google 계정으로만 조회 · '+c+'반 15개 조 · 홍수 평가 최고 점수/등급';
 }
 function closeBoard(){board.classList.remove('show');clearBoard();if(boardFromGate&&!team){
-  if(requireTeacher(user)){enterTeacherSimulator();}else{landing();gate.classList.add('show');}
+  if(requireTeacher(user)){enterTeacherSimulator();}else{landing();}
  }refreshButtons()}
-function showGate(){if(guestActive){showLogin();return}if(team){openEditor();return}if(requireTeacher(user)){enterTeacher();return}landing();gate.classList.add('show');refreshButtons()}
-function showLogin(){if(guestActive){endGuest();landing();gate.classList.add('show');refreshButtons();return}if(team||requireTeacher(user)){signout();return}landing();gate.classList.add('show');refreshButtons()}
+function showGate(){if(guestActive||team||requireTeacher(user)){openEditor();return}landing()}
+function showLogin(){if(guestActive){endGuest();landing();return}if(team||requireTeacher(user)){signout();return}landing()}
 function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
+ const originalEnterSimulator=callbacks.enterSimulator;
+ callbacks.enterSimulator=()=>{showNativeHome(true);originalEnterSimulator?.()};
  const buttons=document.createElement('div');buttons.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto';
  buttons.innerHTML='<span id="np-save-label" class="np-saveinfo"></span><button id="np-save">💾 저장</button><button id="np-board-button">📊 현황판</button><button id="np-change">🚪 로그아웃</button>';
  opts.header.insertBefore(buttons,opts.header.lastElementChild);headerStatus=$('np-save-label');
@@ -353,8 +421,8 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
  $('np-board-signout').onclick=signout;
  $('np-teacher-sim').onclick=()=>{if(requireTeacher(user))enterTeacherSimulator();else if(team){board.classList.remove('show');clearBoard()}else note('학생은 반·조에 먼저 등록해야 합니다.');refreshButtons()};
  if(!autosave)autosave=setInterval(()=>{if(team&&readyToSave&&!restoring&&opts.isLayerOpen?.()&&!opts.isBusy?.())saveNow('auto')},18000);
- refreshButtons();landing();gate.classList.add('show');
- return{showGate,showBoard,onEntryReady,saveNow,saveProgress,recordFloodResult,openEditor,closeEditing,enterTeacherSimulator,showLogin,signout,receiveFrameMessage,getTeam:()=>team,isGuest:()=>guestActive};
+ setupNativeHome();refreshButtons();
+ return{refreshUI:refreshButtons,showGate,showBoard,onEntryReady,saveNow,saveProgress,recordFloodResult,openEditor,closeEditing,enterTeacherSimulator,showLogin,signout,receiveFrameMessage,getTeam:()=>team,isGuest:()=>guestActive};
 }
 global.NepalClassroom={setup};
 })(window);

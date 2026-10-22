@@ -1,5 +1,5 @@
 /**
- * NEPAL FLOOD × EntryJS - integration v3.2 native simulator landing · role login · flood score · 3-person groups
+ * NEPAL FLOOD × EntryJS - integration v3.3 native simulator menu login · role login · flood score · 3-person groups
  * Add <script src="./nepal_entry_mode.js" defer></script> to the original index.html.
  * Keep original simulator unchanged. This overlay mounts a real EntryJS editor page in a same-origin iframe.
  * Four staged missions: water variable, water risk condition, independent flow/vibration/rain risk, list+loop alarm.
@@ -54,9 +54,18 @@
     {title:'유속·진동·강수 확장',fault:'유속·진동·강수 센서의 위험 판단 기능이 없습니다!',description:'수위 위험을 판단하는 방법을 배웠습니다. 이번에는 같은 방법을 유속·진동·강수 센서에 스스로 적용해 보세요. 리스트는 아직 사용하지 않습니다.',task:'「유속값」·「진동값」·「강수값」 변수와 「유속위험」·「진동위험」·「강수위험」 변수를 직접 만드세요. 유속 2m/s 이상, 진동 13 이상, 강수 22mm/h 이상이면 각각 위험(1), 미만이면 안전(0)이 되도록 만드세요.',example:'유속 2.60 → 위험 1 / 진동 12.50 → 위험 0 / 강수 24mm/h → 위험 1',active:true},
     {title:'리스트·반복문 통합',fault:'네 센서의 위험 신호를 종합하지 못합니다!',description:'이제 수위·유속·진동·강수의 위험 여부가 각각 0 또는 1로 계산됩니다. 네 신호를 리스트에 모으고 반복해서 검사해 위험한 센서의 수를 세어 보세요.',task:'「위험목록」 리스트에 수위위험, 유속위험, 진동위험, 강수위험을 1·2·3·4번 순서로 넣으세요. 반복문으로 네 항목을 검사해 「위험개수」를 구하고, 4개 중 2개 이상 위험하면 「경보결과」를 1, 아니면 0으로 정하세요. 「반복번호」 변수도 활용하세요.',example:'위험목록 [1, 0, 1, 0] → 위험개수 2 → 경보결과 1',active:true}
   ];
-  const trigger = document.createElement('button'); trigger.id='nepal-entry-trigger'; trigger.textContent='🧩 엔트리 개발자 모드';
+  // Login lives IN the original simulator start menu, not in a new overlay.
+  // Prevent its original simulation actions before the classroom module is ready.
+  const preAuthButtons=['enterLabBtn','enterAssessmentBtn','enterHowBtn'].map(id=>document.getElementById(id));
+  if(preAuthButtons.every(Boolean)){
+    ['🎒 학생 로그인','🧑‍🏫 교사 로그인','🌐 게스트 입장'].forEach((name,i)=>{
+      preAuthButtons[i].textContent=name;
+      preAuthButtons[i].disabled=true;
+    });
+  }
+  const trigger = document.createElement('button'); trigger.id='nepal-entry-trigger'; trigger.textContent='🧩 엔트리 개발자 모드';trigger.style.display='none';
   const layer = document.createElement('section'); layer.id='nepal-entry-layer';
-  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">실제 EntryJS 편집기 연동 · v3.1 · 학교 계정 · 4단계 센서 경보 알고리즘</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 저장</b> → <b>② 조건문으로 수위 위험 판단</b> → <b>③ 유속·진동·강수 스스로 확장</b> → <b>④ 리스트·반복문으로 종합</b></div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">엔트리 편집기를 불러오는 중입니다…</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button><p id="ne-mini">※ 원본 홍수 4유형·비홍수 3유형과 재난 엔진은 수정하지 않습니다.<br>※ 위험 기준(수위 2m·유속 2m/s·진동 13·강수 22mm/h)은 프로그래밍 학습용 가상 기준이며 실제 재난 경보 기준이 아닙니다.<br>※ 미션 01~04는 실제 엔트리 실행 결과로 판정합니다.</p></aside><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html"></iframe></main>`;
+  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">실제 EntryJS 편집기 연동 · v3.3 · 학교 계정 · 4단계 센서 경보 알고리즘</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 저장</b> → <b>② 조건문으로 수위 위험 판단</b> → <b>③ 유속·진동·강수 스스로 확장</b> → <b>④ 리스트·반복문으로 종합</b></div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">엔트리 편집기를 불러오는 중입니다…</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button><p id="ne-mini">※ 원본 홍수 4유형·비홍수 3유형과 재난 엔진은 수정하지 않습니다.<br>※ 위험 기준(수위 2m·유속 2m/s·진동 13·강수 22mm/h)은 프로그래밍 학습용 가상 기준이며 실제 재난 경보 기준이 아닙니다.<br>※ 미션 01~04는 실제 엔트리 실행 결과로 판정합니다.</p></aside><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html"></iframe></main>`;
   // Pause the original simulator's background animation loops without altering index.html.
   // The two named rAF loops are global function declarations in the original page.
   // Their drawing work is skipped while EntryJS covers the simulator; their ordinary
@@ -125,7 +134,7 @@
     // The classroom module saves and releases the edit lock BEFORE hiding this editor.
     // Stop student code when leaving so an infinite repeat does not consume CPU.
     iframe.contentWindow?.postMessage({type:'NEPAL_DEV_PAUSE'},location.origin);
-    layer.classList.remove('open');trigger.style.display='';
+    layer.classList.remove('open');if(classroom)classroom.refreshUI?.();
     restoreOriginalSimulatorSound();
   };
   trigger.addEventListener('click',()=>{
@@ -322,7 +331,7 @@
   });
   // Load classroom UI asynchronously. The original simulator is not modified.
   const classroomScript=document.createElement('script');
-  classroomScript.src='./nepal_classroom.js?v=32';
+  classroomScript.src='./nepal_classroom.js?v=33';
   classroomScript.onload=()=>{
     if(!window.NepalClassroom){console.error('학급 모듈을 찾지 못했습니다.');return;}
     classroom=window.NepalClassroom.setup({
