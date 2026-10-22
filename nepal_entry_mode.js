@@ -19,6 +19,8 @@
   .ne-main{display:grid;grid-template-columns:minmax(285px,27%) minmax(0,1fr);flex:1;min-height:0}
   .ne-side{border-right:1px solid #2a5132;background:#101e16;overflow:auto;padding:18px}
   .ne-mission-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:12px 0}
+  #ne-teacher-records{margin:9px 0;padding:8px 10px;background:#18331c;border:1px solid #456c3e;border-radius:8px;font-size:11px;line-height:1.55;color:#d2ffc0}
+  #ne-teacher-records[hidden]{display:none!important}
   .ne-mission-list button.final-button{grid-column:span 2;background:#264d22;color:#d7ffb6;border-color:#a0e76a;letter-spacing:.05em}
   .ne-mission-list button{padding:10px 3px;font-size:12px}
   .ne-mission-list button.current{background:#9fe761;color:#11240f}
@@ -159,7 +161,7 @@
   }
   const trigger = document.createElement('button'); trigger.id='nepal-entry-trigger'; trigger.textContent='🧩 엔트리 개발자 모드';trigger.style.display='none';
   const layer = document.createElement('section'); layer.id='nepal-entry-layer';
-  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">7단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 실시간 반복 갱신</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 경보 알고리즘</b> → <b>⑥ 리스트 학습</b> → <b>🏆 FINAL</b></div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 <span id="ne-grade-title">경보 성능평가</span></div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button></aside><div class="ne-editor-stage"><div id="ne-workspace-toolbar"><span id="ne-workspace-heading">🧩 엔트리 코딩 편집기</span><div id="ne-audio-actions"><button id="ne-entry-audio-toggle" type="button" aria-pressed="true">♫ 아리오소 ON</button><a id="ne-arioso-credit" href="https://commons.wikimedia.org/wiki/File:Violinist_CARRIE_REHKOPF-BACH_ARIOSO.ogg" target="_blank" rel="noopener noreferrer" title="연주 Carrie Rehkopf · CC BY-SA 3.0 · 음원 출처">ⓘ</a></div><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button></div><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=41"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
+  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">7단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 실시간 반복 갱신</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 경보 알고리즘</b> → <b>⑥ 리스트 학습</b> → <b>🏆 FINAL</b></div><div id="ne-missions" class="ne-mission-list"></div><div id="ne-teacher-records" hidden></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 <span id="ne-grade-title">경보 성능평가</span></div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button></aside><div class="ne-editor-stage"><div id="ne-workspace-toolbar"><span id="ne-workspace-heading">🧩 엔트리 코딩 편집기</span><div id="ne-audio-actions"><button id="ne-entry-audio-toggle" type="button" aria-pressed="true">♫ 아리오소 ON</button><a id="ne-arioso-credit" href="https://commons.wikimedia.org/wiki/File:Violinist_CARRIE_REHKOPF-BACH_ARIOSO.ogg" target="_blank" rel="noopener noreferrer" title="연주 Carrie Rehkopf · CC BY-SA 3.0 · 음원 출처">ⓘ</a></div><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button></div><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=41"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
   // Pause the original simulator's background animation loops without altering index.html.
   // The two named rAF loops are global function declarations in the original page.
   // Their drawing work is skipped while EntryJS covers the simulator; their ordinary
@@ -475,6 +477,17 @@
   const checkBtn=document.getElementById('ne-check');
   const nextBtn=document.getElementById('ne-next');
   function teacherPreview(){return classroom?.isTeacher?.()===true;}
+  function showTeacherRecords(){
+    const el=document.getElementById('ne-teacher-records');if(!el)return;
+    el.hidden=!teacherPreview();
+    if(el.hidden)return;
+    const d=classroom?.getTeacherScores?.()||{},str=key=>{
+      const score=Number(d[key]?.score);
+      return Number.isFinite(score)&&d[key]?.score!=null?score.toFixed(1)+'점':'미평가';
+    };
+    el.textContent='🧑‍🏫 교사 모드 · 저장된 최고 점수: 형성평가 '+str('floodBest')+
+      ' / 미션 5 '+str('mission5NoListBest')+' / FINAL '+str('finalBest');
+  }
   function unlocked(index){return teacherPreview() || index===0 || passed[index-1]===true;}
   function updateMissionButtons(){
     [...missionBtns.children].forEach((b,i)=>{
@@ -509,6 +522,7 @@
     if(i!==4&&i!==6)exitMission5Setup();
     mission=i;const m=missions[i];
     layer.classList.toggle('ne-sensor-mission',i===4||i===6);
+    showTeacherRecords();
     layer.classList.toggle('ne-graded-mission',i===4||i===6);
     document.getElementById('ne-grade-title').textContent=i===4?'미션 5 성능평가':'FINAL 성능평가';
     if(i===4||i===6){
@@ -524,7 +538,7 @@
     document.getElementById('ne-task').textContent=m.task;
     document.getElementById('ne-example').textContent=m.example;
     checkBtn.textContent=(i===4||i===6)?'🚨 경보 알고리즘 검증 + 100회 평가':i===5?'📋 리스트·반복문 검사':'▶ 엔트리 실행 결과 검사';
-    status.textContent=teacherPreview()?'🧑‍🏫 교사 체험: 모든 미션을 자유롭게 선택할 수 있습니다. 저장은 하지 않습니다.':passed[i]?'✅ 통과한 미션입니다. 다른 코드도 시험할 수 있습니다.':'미션을 읽고 엔트리에서 블록을 연결해 보세요.';
+    status.textContent=teacherPreview()?'🧑‍🏫 교사 모드':passed[i]?'✅ 통과한 미션입니다. 다른 코드도 시험할 수 있습니다.':'미션을 읽고 엔트리에서 블록을 연결해 보세요.';
     document.getElementById('ne-mode-switch').textContent='🗺 센서 설치 화면';
     updateMissionButtons();pushSensorMeasurement();
   }
@@ -567,7 +581,7 @@
       ready=true;
       projectRestoring=true;
       pushSensorMeasurement();updateMissionButtons();
-      status.textContent=teacherPreview()?'🧑‍🏫 교사 체험: 미션 01~06과 FINAL을 선택할 수 있습니다.':'미션을 읽고 엔트리 블록을 연결해 보세요.';
+      status.textContent=teacherPreview()?'🧑‍🏫 교사 모드 · 저장된 코딩 결과가 복원되었습니다.':'미션을 읽고 엔트리 블록을 연결해 보세요.';
       // A saved student project may still be importing after EntryJS is initialized.
       // Keep the mascot visible until BOTH the editor and saved blocks are ready.
       Promise.resolve().then(()=>classroom?.onEntryReady?.()).catch(error=>{
@@ -577,7 +591,7 @@
         projectRestoring=false;
         if(!ready)return;
         if(layer.classList.contains('open'))iframe.contentWindow?.postMessage({type:'NEPAL_DEV_RESUME'},location.origin);
-        hideEditorLoading();updateMissionButtons();
+        hideEditorLoading();updateMissionButtons();showTeacherRecords();
       });
     }
     if(d.type==='ENTRY_ERROR'){ready=false;checking=false;pendingMission=null;loadingTitle.textContent='코딩 친구가 잠시 멈췄어요';loadingSub.textContent='라이브러리 연결에 실패했습니다. 다시 불러오기를 눌러주세요.';retryLoadingButton.hidden=false;clearTimeout(editorBootWatchdog);loadingOverlay.classList.remove('done');updateMissionButtons();status.textContent='편집기 준비 중 오류: '+String(d.message||'알 수 없는 오류');}
@@ -595,10 +609,8 @@
       if(d.ok){
         passed[tested]=true;
         const contiguous=passed.findIndex(flag=>!flag);
-        if(!teacherPreview()){
-          classroom?.saveProgress(contiguous<0?missions.length:contiguous);
-          classroom?.saveNow('mission-pass');
-        }
+        classroom?.saveProgress(contiguous<0?missions.length:contiguous);
+        classroom?.saveNow('mission-pass');
       }
       if((tested===4||tested===6)&&!d.ok)uiSoundEnabled=false;
       updateMissionButtons();
@@ -609,7 +621,7 @@
       const p=missionStopPending;
       if(!p || p.token!==d.token)return;
       clearTimeout(p.timeout);missionStopPending=null;navigating=false;
-      if(d.ok){if(!teacherPreview())classroom?.saveNow('mission-change');applyMission(p.target);}
+      if(d.ok){classroom?.saveNow('mission-change');applyMission(p.target);}
       else{status.textContent='프로그램 정지 확인 실패: '+String(d.message||'다시 시도해 주세요.');updateMissionButtons();}
     }
     if(d.type==='ENTRY_VAR_SNAPSHOT'){
@@ -760,12 +772,11 @@
       status.textContent=`✅ 엔트리 경보 코드 기반 평가 완료! ${base.score.toFixed(1)}점 / ${rank} 등급`;
       passed[gradedMission]=true;
       const contiguous=passed.findIndex(v=>!v);
-      if(!teacherPreview()){
-        classroom?.saveProgress(contiguous<0?missions.length:contiguous);
-        classroom?.saveNow('mission-pass');
-        if(gradedMission===4)classroom?.recordMission5Result?.({score:base.score,rank,n});
-        if(gradedMission===6)classroom?.recordFinalResult?.({score:base.score,rank,n});
-      }
+      classroom?.saveProgress(contiguous<0?missions.length:contiguous);
+      classroom?.saveNow('mission-pass');
+      if(gradedMission===4)classroom?.recordMission5Result?.({score:base.score,rank,n});
+      if(gradedMission===6)classroom?.recordFinalResult?.({score:base.score,rank,n});
+      setTimeout(showTeacherRecords,550);
       if(rank==='LEGEND'){
         try{if(typeof unlockAudio==='function')await unlockAudio();}catch(_){}
         if(typeof launchLegendCelebration==='function')launchLegendCelebration(base.score);
