@@ -192,14 +192,33 @@
   const loadingOverlay=layer.querySelector('#ne-entry-loading');
   const loadingTitle=layer.querySelector('#ne-loading-title');
   const loadingSub=layer.querySelector('#ne-loading-sub');
+  const retryLoadingButton=document.createElement('button');
+  retryLoadingButton.type='button';retryLoadingButton.id='ne-editor-retry';
+  retryLoadingButton.textContent='↻ 엔트리 다시 불러오기';
+  retryLoadingButton.style.cssText='margin-top:16px;padding:11px 20px;border:1px solid #a7e579;background:#254b31;color:#f2ffe9;border-radius:10px;font-weight:800;cursor:pointer';
+  retryLoadingButton.hidden=true;
+  loadingOverlay.querySelector('.ne-loading-center')?.appendChild(retryLoadingButton);
+  let editorBootWatchdog=null;
+  function scheduleEditorBootWatchdog(){
+    clearTimeout(editorBootWatchdog);
+    editorBootWatchdog=setTimeout(()=>{
+      if(!ready&&layer.classList.contains('open')){
+        loadingSub.textContent='연결 시간이 길어지고 있어요. 아래 버튼으로 다시 시도할 수 있습니다.';
+        retryLoadingButton.hidden=false;
+      }
+    },45000);
+  }
   function showEditorLoading(){
     if(ready&&!projectRestoring){hideEditorLoading();return}
     loadingTitle.textContent='로딩중입니다';
     loadingSub.textContent='잠깐만요, 블록을 가져올게요 ✨';
+    retryLoadingButton.hidden=true;
     loadingOverlay.classList.remove('done');
     iframe.style.visibility='hidden';
   }
   function hideEditorLoading(){
+    clearTimeout(editorBootWatchdog);
+    retryLoadingButton.hidden=true;
     polishEntryFrame();
     iframe.style.visibility='visible';
     loadingOverlay.classList.add('done');
@@ -217,11 +236,50 @@
       if(heading)heading.textContent='🧩 엔트리 코딩 편집기';
     }catch(e){console.warn('엔트리 편집기 화면 정리:',e)}
   }
+  // Network-only warmup: do not run the costly EntryJS editor in the background.
+  let entryWarmupQueued=false;
+  function queueEntryWarmup(){
+    if(entryWarmupQueued)return;
+    entryWarmupQueued=true;
+    for(const host of ['https://cdn.jsdelivr.net','https://entry-cdn.pstatic.net']){
+      const link=document.createElement('link');
+      link.rel='preconnect';link.href=host;document.head.appendChild(link);
+    }
+    const warm=()=>{
+      const urls=[
+        './nepal_entry_editor.html?v=40',
+        './lib/vendor/jquery-3.7.1.min.js',
+        './lib/vendor/jquery-ui-1.13.3.min.js',
+        './lib/vendor/codemirror-5.65.20-show-hint.js',
+        './lib/vendor/codemirror-5.65.20-javascript.js'
+      ];
+      urls.forEach((href,index)=>setTimeout(()=>{
+        const link=document.createElement('link');
+        link.rel='prefetch';link.href=href;
+        document.head.appendChild(link);
+      },index*250));
+    };
+    if('requestIdleCallback' in window)requestIdleCallback(warm,{timeout:4000});
+    else setTimeout(warm,1800);
+  }
+  retryLoadingButton.addEventListener('click',()=>{
+    if(ready||checking||projectRestoring)return;
+    ready=false;
+    iframe.dataset.loaded='yes';
+    iframe.src='about:blank';
+    showEditorLoading();
+    setTimeout(()=>{
+      if(!layer.classList.contains('open'))return;
+      iframe.src=iframe.dataset.src;
+      scheduleEditorBootWatchdog();
+    },160);
+  });
   const launch = () => {
     if(layer.classList.contains('open'))return;
     silenceOriginalSimulator();
     layer.classList.add('open');trigger.style.display='none';
     showEditorLoading();updateMissionButtons();
+    if(!ready)scheduleEditorBootWatchdog();
     // Delay the costly EntryJS dependencies until the first explicit opening.
     if(iframe.dataset.loaded!=='yes'){
       iframe.dataset.loaded='yes';
@@ -431,7 +489,7 @@
         hideEditorLoading();updateMissionButtons();
       });
     }
-    if(d.type==='ENTRY_ERROR'){ready=false;checking=false;pendingMission=null;loadingTitle.textContent='코딩 친구가 잠시 멈췄어요';loadingSub.textContent='편집기를 닫고 다시 열어보세요.';loadingOverlay.classList.remove('done');updateMissionButtons();status.textContent='편집기 준비 중 오류: '+String(d.message||'알 수 없는 오류');}
+    if(d.type==='ENTRY_ERROR'){ready=false;checking=false;pendingMission=null;loadingTitle.textContent='코딩 친구가 잠시 멈췄어요';loadingSub.textContent='라이브러리 연결에 실패했습니다. 다시 불러오기를 눌러주세요.';retryLoadingButton.hidden=false;clearTimeout(editorBootWatchdog);loadingOverlay.classList.remove('done');updateMissionButtons();status.textContent='편집기 준비 중 오류: '+String(d.message||'알 수 없는 오류');}
     if(d.type==='ENTRY_CHECK_RESULT'){
       const tested=pendingMission;
       checking=false;pendingMission=null;
@@ -729,6 +787,7 @@
         if(simulatorHome)simulatorHome.classList.remove('hiddenStart');
         document.getElementById('np-board')?.classList.remove('show');
         document.getElementById('np-gate')?.classList.remove('show');
+        queueEntryWarmup();
       },
       isReady:()=>ready,isLayerOpen:()=>layer.classList.contains('open'),
       isBusy:()=>checking||navigating,
