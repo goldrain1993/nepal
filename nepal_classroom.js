@@ -1,4 +1,4 @@
-/** NEPAL × ENTRY v3.3 — native Nepal simulator start page with role-based buttons with role-specific Google authentication, 2/3-person groups, flood scores.
+/** NEPAL × ENTRY v3.4 — native Nepal simulator start page with role-based buttons with role-specific Google authentication, 2/3-person groups, flood scores.
  * Public board = signed-in school accounts only; code/progress = group members only.
  * Firebase rules are the authorization boundary, not this browser code.
  */
@@ -277,6 +277,14 @@ async function joinTeam(){await initReady;if(!user||!db||!requireStudent(user)){
 }
 async function openEditor(){
  if(guestActive){note('🌐 게스트 엔트리 편집 · 미션과 블록은 저장되지 않습니다.');callbacks.launchEditor?.();return}
+ // Teachers have no class/group: use a separate, non-persistent preview session.
+ // Never acquire a student editor lock, write code or mark student mission progress.
+ if(requireTeacher(user)&&sessionActive){
+   readyToSave=false;editorLockHeld=false;projectToRestore=null;
+   callbacks.resetEditor?.();callbacks.launchEditor?.();
+   note('🧑‍🏫 교사 체험 모드 · 모든 미션 열림 · 조별 저장 없음');
+   return;
+ }
  if(!team||!user){showGate();return}
  if(editorLockHeld){callbacks.launchEditor?.();return}
  const c=team.c,g=team.g;note('조별 편집 권한을 확인하는 중…');
@@ -293,7 +301,7 @@ async function openEditor(){
  }catch(e){note('엔트리 입장 실패: '+String(e.message||e));if(editorLockHeld)await releaseLock().catch(()=>{});}
 }
 async function closeEditing(){
- if(guestActive){callbacks.closeEditor?.();return}
+ if(guestActive||requireTeacher(user)){callbacks.closeEditor?.();return}
  if(readyToSave)await saveNow('exit');readyToSave=false;
  callbacks.closeEditor?.();await releaseLock().catch(e=>note('편집 잠금 해제 실패: '+e.message));
 }
@@ -349,7 +357,7 @@ function rpc(action,project){return new Promise((resolve,reject)=>{
  const p={resolve,reject,token,timeout};if(action==='export')exportPending=p;else importPending=p;
  callbacks.iframe.contentWindow?.postMessage(action==='export'?{type:'NEPAL_EXPORT_PROJECT',token}:{type:'NEPAL_IMPORT_PROJECT',token,project},location.origin);
 })}
-async function onEntryReady(){if(guestActive){note('🌐 게스트 엔트리 준비 완료 · 저장 없이 자유롭게 체험하세요.');return}if(!team||!editorLockHeld)return;readyToSave=false;restoring=true;
+async function onEntryReady(){if(guestActive||requireTeacher(user))return;if(!team||!editorLockHeld)return;readyToSave=false;restoring=true;
  try{if(projectToRestore?.objects&&Array.isArray(projectToRestore.objects)){note('저장된 엔트리 블록을 복원하는 중…');await rpc('import',projectToRestore);note('✓ 이전 조별 엔트리 블록 복원 완료');}
    else note('새 조의 엔트리 작업을 시작합니다.');readyToSave=true;
  }catch(e){note('⚠ 블록 복원 실패: '+e.message+' · 기존 파일 보호를 위해 자동 저장을 중지합니다.');}
@@ -422,7 +430,7 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
  $('np-teacher-sim').onclick=()=>{if(requireTeacher(user))enterTeacherSimulator();else if(team){board.classList.remove('show');clearBoard()}else note('학생은 반·조에 먼저 등록해야 합니다.');refreshButtons()};
  if(!autosave)autosave=setInterval(()=>{if(team&&readyToSave&&!restoring&&opts.isLayerOpen?.()&&!opts.isBusy?.())saveNow('auto')},18000);
  setupNativeHome();refreshButtons();
- return{refreshUI:refreshButtons,showGate,showBoard,onEntryReady,saveNow,saveProgress,recordFloodResult,openEditor,closeEditing,enterTeacherSimulator,showLogin,signout,receiveFrameMessage,getTeam:()=>team,isGuest:()=>guestActive};
+ return{refreshUI:refreshButtons,showGate,showBoard,onEntryReady,saveNow,saveProgress,recordFloodResult,openEditor,closeEditing,enterTeacherSimulator,showLogin,signout,receiveFrameMessage,getTeam:()=>team,isGuest:()=>guestActive,isTeacher:()=>sessionActive&&!guestActive&&requireTeacher(user)};
 }
 global.NepalClassroom={setup};
 })(window);

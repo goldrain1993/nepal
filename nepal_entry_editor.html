@@ -489,14 +489,84 @@ async function checkWaterVariable(){
  if(passed)details.push('측정값을 단 한 번 저장하면 미션 01 성공! 다음은 위험 여부를 조건문으로 판단합니다.');
  return {ok:passed,details};
 }
+/* Mission 02 — check BOTH the EntryJS block structure and live behaviour.
+ * Restarting for every test case falsely accepted a one-shot condition. We run
+ * the student project ONCE, switch sensor readings repeatedly and require the
+ * student program to update the risk variable in the SAME running session.
+ * Both two separate "if" blocks (_if) and one "if/else" block are valid.
+ */
+function mission2HasConditionalInsideForeverLoop(){
+ const data=saveProject();
+ function normalise(node){
+  if(typeof node==='string'){
+   try{return JSON.parse(node)}catch(_){return null}
+  }
+  return node;
+ }
+ function hasIf(node){
+  node=normalise(node);
+  if(!node||typeof node!=='object')return false;
+  if(Array.isArray(node))return node.some(hasIf);
+  if(node.type==='_if'||node.type==='if_else')return true;
+  return Object.values(node).some(hasIf);
+ }
+ function walk(node){
+  node=normalise(node);
+  if(!node||typeof node!=='object')return false;
+  if(Array.isArray(node))return node.some(walk);
+  // EntryJS stores a loop's enclosed blocks in .statements. Blocks appearing
+  // immediately BEFORE or AFTER the loop do NOT qualify.
+  if(node.type==='repeat_inf' && hasIf(node.statements))return true;
+  return Object.values(node).some(walk);
+ }
+ return (data.objects||[]).some(object=>walk(object.script));
+}
 async function checkWaterRisk(){
- for(const n of ['수위값','수위위험'])if(!getVar(n))return {ok:false,details:[`「${n}」 변수를 만들어 주세요.`]};
- if(!codeHasTypes(['set_variable','nepal_live_water_sensor']) || !hasConditionBlocks())return {ok:false,details:['수위값을 측정하고, 흐름의 조건문과 판단의 비교 블록을 사용해 수위위험을 0 또는 1로 저장하세요.']};
- // Check safe, dangerous and exact equality (2.00 m is dangerous).
- const cases=[{water:1.35},{water:2.8},{water:2},{water:1.99}];
- const result=await testOneShotScenarios(cases,s=>({'수위값':s.water,'수위위험':Number(s.water>=NEPAL_THRESHOLDS.water)}),'수위 판정');
- if(result.ok)result.details.push('수위가 2m 이상이면 1, 미만이면 0으로 정확히 판단했습니다.');
- return result;
+ for(const n of ['수위값','수위위험']){
+  if(!getVar(n))return {ok:false,details:[`「${n}」 변수를 만들어 주세요.`]};
+ }
+ if(!codeHasTypes(['set_variable','nepal_live_water_sensor'])||!hasConditionBlocks()){
+  return {ok:false,details:[
+   '수위 센서의 실시간 값을 읽고 「수위위험」을 판단하는 조건문을 만들어 주세요.',
+   '「만일」 두 개 또는 「만일~아니면」 한 개 중 편한 방법을 사용해도 됩니다.'
+  ]};
+ }
+ if(!mission2HasConditionalInsideForeverLoop()){
+  return {ok:false,details:[
+   '「만일」 또는 「만일~아니면」 조건문을 「계속 반복하기」 블록 안에 넣어 주세요.',
+   '반복문 바깥의 조건문은 수위를 한 번만 판단하므로 실시간 경보 시스템의 정답이 아닙니다.'
+  ]};
+ }
+ const samples=[1.35,2.8,1.99,2,3.1,1.1];
+ const details=[];
+ let allPassed=true;
+ try{
+  await stopCode();
+  setVar('수위값','');
+  setVar('수위위험','');
+  nepalTestValues.water=samples[0];
+  await startCode();
+  // Absolutely no restart/stop inside this loop. A one-shot decision must fail.
+  for(let i=0;i<samples.length;i++){
+   const water=samples[i],expected=Number(water>=NEPAL_THRESHOLDS.water);
+   nepalTestValues.water=water;
+   const passed=await waitForValues(()=>
+     numericMatches(readVar('수위값'),water)&&
+     numericMatches(readVar('수위위험'),expected),3200);
+   const observedWater=readVar('수위값'),observedRisk=readVar('수위위험');
+   details.push(`${i+1}차 수위 ${water.toFixed(2)}m → 기대 위험 ${expected} / 수위값 ${observedWater===''?'미저장':observedWater} · 수위위험 ${observedRisk===''?'미저장':observedRisk} ${passed?'✓':'✗'}`);
+   if(!passed){
+    allPassed=false;
+    details.push('수위가 바뀌어도 실시간 판단이 계속되도록 센서값 갱신과 조건문을 반복문 안에 배치해 보세요.');
+    break;
+   }
+  }
+ }finally{
+  await stopCode();
+  resetTestReadings();
+ }
+ if(allPassed)details.push('연속 실행 상태에서 안전·위험·경계값을 모두 정확히 판단했습니다! 「만일」과 「만일~아니면」 모두 정답으로 인정합니다.');
+ return {ok:allPassed,details};
 }
 async function checkOtherRisk(){
  const vars=['유속값','진동값','강수값','유속위험','진동위험','강수위험'];

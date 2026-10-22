@@ -1,5 +1,5 @@
 /**
- * NEPAL FLOOD × EntryJS - integration v3.3 native simulator menu login · role login · flood score · 3-person groups
+ * NEPAL FLOOD × EntryJS - integration v3.4 native simulator menu login · role login · flood score · 3-person groups
  * Add <script src="./nepal_entry_mode.js" defer></script> to the original index.html.
  * Keep original simulator unchanged. This overlay mounts a real EntryJS editor page in a same-origin iframe.
  * Four staged missions: water variable, water risk condition, independent flow/vibration/rain risk, list+loop alarm.
@@ -40,7 +40,27 @@
   #ne-sensor-live{margin:10px 0 4px;padding:10px 12px;background:#143021;border:1px solid #508153;border-radius:9px;color:#c8f6b0;font-size:13px;line-height:1.55}
   #ne-sensor-live strong{font-size:18px;color:#f4ffed}
   #ne-status{font-size:12px;color:#c9e2c4;white-space:pre-wrap;line-height:1.6;margin-top:12px}
-  #ne-iframe{width:100%;height:100%;border:0;background:white}
+  .ne-editor-stage{min-width:0;min-height:0;position:relative;overflow:hidden;background:#f8fff8}
+  #ne-iframe{display:block;width:100%;height:100%;border:0;background:white;visibility:hidden}
+  .ne-entry-loading{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 51% 39%,#e6ffca 0%,#f7fff1 46%,#eff8f4 100%);color:#294d2d;text-align:center;transition:opacity .22s ease}
+  .ne-entry-loading.done{opacity:0;visibility:hidden;pointer-events:none}
+  .ne-loading-center{display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px}
+  .ne-loader-mascot{position:relative;width:136px;height:142px;animation:ne-float 1.9s ease-in-out infinite}
+  .ne-mascot-face{position:absolute;left:17px;top:32px;width:102px;height:93px;background:linear-gradient(145deg,#bdfc89,#8ddb67);border:5px solid #357f4c;border-radius:38% 38% 42% 42%;box-shadow:0 13px 0 #498e57,0 18px 21px #204c2c28}
+  .ne-mascot-screen{position:absolute;left:13px;top:18px;width:68px;height:43px;border-radius:19px;background:#203f38;display:flex;align-items:center;justify-content:space-evenly}
+  .ne-mascot-eye{width:12px;height:16px;border-radius:50%;background:#dcffd4;animation:ne-blink 4.2s ease-in-out infinite}
+  .ne-mascot-mouth{position:absolute;width:18px;height:7px;left:37px;top:67px;border-bottom:4px solid #255843;border-radius:50%}
+  .ne-mascot-antenna{position:absolute;top:8px;left:65px;width:6px;height:29px;background:#357f4c;border-radius:8px}
+  .ne-mascot-antenna::after{content:'';position:absolute;top:-10px;left:-5px;width:16px;height:16px;border-radius:50%;background:#96db35;border:3px solid #357f4c}
+  .ne-mascot-arm{position:absolute;top:79px;width:22px;height:31px;background:#93df6e;border:4px solid #357f4c;border-radius:30px}
+  .ne-mascot-arm.left{left:0;transform:rotate(21deg)}.ne-mascot-arm.right{right:0;transform:rotate(-21deg)}
+  .ne-loading-title{font-size:22px;font-weight:900;letter-spacing:-.03em}.ne-loading-sub{font-size:13px;color:#65806b}
+  .ne-loading-dots{display:flex;gap:7px;justify-content:center;margin-top:7px}.ne-loading-dots i{display:block;width:9px;height:9px;border-radius:50%;background:#77b933;animation:ne-dots 1.05s ease-in-out infinite}.ne-loading-dots i:nth-child(2){animation-delay:.14s}.ne-loading-dots i:nth-child(3){animation-delay:.28s}
+  @keyframes ne-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+  @keyframes ne-blink{0%,43%,47%,100%{transform:scaleY(1)}45%{transform:scaleY(.1)}}
+  @keyframes ne-dots{0%,70%,100%{opacity:.35;transform:translateY(0)}35%{opacity:1;transform:translateY(-5px)}}
+  @media(prefers-reduced-motion:reduce){.ne-loader-mascot,.ne-mascot-eye,.ne-loading-dots i{animation:none}}
+
   #ne-mini{font-size:12px;color:#9bbb96;line-height:1.8}
   @media(max-width:800px){.ne-main{grid-template-columns:1fr;grid-template-rows:minmax(220px,38%) minmax(0,1fr)}.ne-side{border-right:0;border-bottom:1px solid #355439}}
   `;
@@ -50,7 +70,7 @@
   // Trigger alarm if AT LEAST TWO OF FOUR sensors indicate danger.
   const missions = [
     {title:'수위 측정값 저장',fault:'수위 센서값이 저장되지 않습니다!',description:'수위 센서는 계속 값을 측정하고 있지만, 측정값을 저장할 변수가 없습니다. 먼저 한 개의 값을 저장하는 기능부터 복구하세요.',task:'「수위값」 변수를 직접 만들고, 「수위 센서가 현재 측정하고 있는 실시간 값」 타원형 블록으로 현재 값을 한 번 저장하세요.',example:'수위 센서 4.20m → 수위값 4.20 (한 번 저장하면 통과)',active:true},
-    {title:'수위 위험 판단',fault:'수위 위험 여부를 판단하지 못합니다!',description:'수위값은 저장했지만 이 값이 위험한지 판단하는 기능이 고장 났습니다. 이번 단계에서는 수위 센서만 사용합니다.',task:'「수위위험」 변수를 직접 만드세요. 수위값이 2m 이상이면 1(위험), 2m 미만이면 0(안전)이 저장되도록 조건문을 작성하세요. 「흐름」과 「판단」 탭을 살펴보세요.',example:'수위 1.50m → 수위위험 0 / 수위 2.80m → 수위위험 1',active:true},
+    {title:'수위 위험 판단',fault:'수위 위험 여부를 판단하지 못합니다!',description:'수위값은 저장했지만 이 값이 위험한지 판단하는 기능이 고장 났습니다. 이번 단계에서는 수위 센서만 사용합니다.',task:'「수위위험」 변수를 직접 만드세요. 수위값이 2m 이상이면 1(위험), 2m 미만이면 0(안전)이 되도록 하세요. 센서값이 바뀌어도 계속 판단할 수 있어야 합니다. 힌트: 「흐름」 탭의 계속 반복하기와 만일/만일~아니면 블록을 살펴보세요.',example:'수위 1.50m → 수위위험 0 / 수위 2.80m → 수위위험 1',active:true},
     {title:'유속·진동·강수 확장',fault:'유속·진동·강수 센서의 위험 판단 기능이 없습니다!',description:'수위 위험을 판단하는 방법을 배웠습니다. 이번에는 같은 방법을 유속·진동·강수 센서에 스스로 적용해 보세요. 리스트는 아직 사용하지 않습니다.',task:'「유속값」·「진동값」·「강수값」 변수와 「유속위험」·「진동위험」·「강수위험」 변수를 직접 만드세요. 유속 2m/s 이상, 진동 13 이상, 강수 22mm/h 이상이면 각각 위험(1), 미만이면 안전(0)이 되도록 만드세요.',example:'유속 2.60 → 위험 1 / 진동 12.50 → 위험 0 / 강수 24mm/h → 위험 1',active:true},
     {title:'리스트·반복문 통합',fault:'네 센서의 위험 신호를 종합하지 못합니다!',description:'이제 수위·유속·진동·강수의 위험 여부가 각각 0 또는 1로 계산됩니다. 네 신호를 리스트에 모으고 반복해서 검사해 위험한 센서의 수를 세어 보세요.',task:'「위험목록」 리스트에 수위위험, 유속위험, 진동위험, 강수위험을 1·2·3·4번 순서로 넣으세요. 반복문으로 네 항목을 검사해 「위험개수」를 구하고, 4개 중 2개 이상 위험하면 「경보결과」를 1, 아니면 0으로 정하세요. 「반복번호」 변수도 활용하세요.',example:'위험목록 [1, 0, 1, 0] → 위험개수 2 → 경보결과 1',active:true}
   ];
@@ -65,7 +85,7 @@
   }
   const trigger = document.createElement('button'); trigger.id='nepal-entry-trigger'; trigger.textContent='🧩 엔트리 개발자 모드';trigger.style.display='none';
   const layer = document.createElement('section'); layer.id='nepal-entry-layer';
-  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">실제 EntryJS 편집기 연동 · v3.3 · 학교 계정 · 4단계 센서 경보 알고리즘</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 저장</b> → <b>② 조건문으로 수위 위험 판단</b> → <b>③ 유속·진동·강수 스스로 확장</b> → <b>④ 리스트·반복문으로 종합</b></div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">엔트리 편집기를 불러오는 중입니다…</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button><p id="ne-mini">※ 원본 홍수 4유형·비홍수 3유형과 재난 엔진은 수정하지 않습니다.<br>※ 위험 기준(수위 2m·유속 2m/s·진동 13·강수 22mm/h)은 프로그래밍 학습용 가상 기준이며 실제 재난 경보 기준이 아닙니다.<br>※ 미션 01~04는 실제 엔트리 실행 결과로 판정합니다.</p></aside><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html"></iframe></main>`;
+  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">4단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 저장</b> → <b>② 조건문으로 수위 위험 판단</b> → <b>③ 유속·진동·강수 스스로 확장</b> → <b>④ 리스트·반복문으로 종합</b></div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button><p id="ne-mini">※ 원본 홍수 4유형·비홍수 3유형과 재난 엔진은 수정하지 않습니다.<br>※ 위험 기준(수위 2m·유속 2m/s·진동 13·강수 22mm/h)은 프로그래밍 학습용 가상 기준이며 실제 재난 경보 기준이 아닙니다.<br>※ 미션 01~04는 실제 엔트리 실행 결과로 판정합니다.</p></aside><div class="ne-editor-stage"><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=35"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">코딩 친구가 준비하고 있어요!</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
   // Pause the original simulator's background animation loops without altering index.html.
   // The two named rAF loops are global function declarations in the original page.
   // Their drawing work is skipped while EntryJS covers the simulator; their ordinary
@@ -116,10 +136,40 @@
     }catch(error){console.warn('[NEPAL ENTRY] 배경음 복구',error)}
   }
   let classroom=null;
+  let projectRestoring=false;
+  const loadingOverlay=layer.querySelector('#ne-entry-loading');
+  const loadingTitle=layer.querySelector('#ne-loading-title');
+  const loadingSub=layer.querySelector('#ne-loading-sub');
+  function showEditorLoading(){
+    if(ready&&!projectRestoring){hideEditorLoading();return}
+    loadingTitle.textContent='코딩 친구가 준비하고 있어요!';
+    loadingSub.textContent='잠깐만요, 블록을 가져올게요 ✨';
+    loadingOverlay.classList.remove('done');
+    iframe.style.visibility='hidden';
+  }
+  function hideEditorLoading(){
+    polishEntryFrame();
+    iframe.style.visibility='visible';
+    loadingOverlay.classList.add('done');
+  }
+  function polishEntryFrame(){
+    try{
+      const doc=iframe.contentDocument;
+      if(!doc || !doc.getElementById('top'))return;
+      if(!doc.getElementById('nepal-student-friendly-style')){
+        const style=doc.createElement('style');style.id='nepal-student-friendly-style';
+        style.textContent='#top #status,#top #assets-status,#top #nepal-sensor-preview,#top #nepal-block-inspector{display:none!important}#top>span:last-child:empty{display:none!important}#nepal-block-panel{display:none!important}';
+        doc.head.appendChild(style);
+      }
+      const heading=doc.querySelector('#top>span:first-child');
+      if(heading)heading.textContent='🧩 엔트리 코딩 편집기';
+    }catch(e){console.warn('엔트리 편집기 화면 정리:',e)}
+  }
   const launch = () => {
     if(layer.classList.contains('open'))return;
     silenceOriginalSimulator();
     layer.classList.add('open');trigger.style.display='none';
+    showEditorLoading();updateMissionButtons();
     // Delay the costly EntryJS dependencies until the first explicit opening.
     if(iframe.dataset.loaded!=='yes'){
       iframe.dataset.loaded='yes';
@@ -156,6 +206,7 @@
   document.body.appendChild(floatSignout);
   document.getElementById('ne-close').addEventListener('click',()=>{if(classroom)classroom.closeEditing();else close();});
   const iframe=document.getElementById('ne-iframe'), status=document.getElementById('ne-status');
+  iframe.addEventListener('load',()=>{if(iframe.dataset.loaded==='yes')polishEntryFrame()});
   // Bridge the *actual* installed flood simulator water-level sensor to the
   // EntryJS reporter. While no sensor/scenario exists, provide changing demo
   // observations and explicitly label them as simulation training data.
@@ -227,7 +278,8 @@
   const missionBtns=document.getElementById('ne-missions');
   const checkBtn=document.getElementById('ne-check');
   const nextBtn=document.getElementById('ne-next');
-  function unlocked(index){return index===0 || passed[index-1]===true;}
+  function teacherPreview(){return classroom?.isTeacher?.()===true;}
+  function unlocked(index){return teacherPreview() || index===0 || passed[index-1]===true;}
   function updateMissionButtons(){
     [...missionBtns.children].forEach((b,i)=>{
       const locked=!unlocked(i);
@@ -241,7 +293,7 @@
     });
     const usable=missions[mission]?.active===true;
     checkBtn.disabled=checking || navigating || !ready || !usable;
-    nextBtn.style.display=passed[mission] && mission+1<missions.length?'block':'none';
+    nextBtn.style.display=(teacherPreview()||passed[mission]) && mission+1<missions.length?'block':'none';
     nextBtn.disabled=checking || navigating || !ready;
   }
   function renderMissionButtons(){
@@ -266,7 +318,7 @@
     document.getElementById('ne-task').textContent=m.task;
     document.getElementById('ne-example').textContent=m.example;
     checkBtn.textContent='▶ 엔트리 실행 결과 검사';
-    status.textContent=passed[i]?'✅ 통과한 미션입니다. 다른 코드도 시험할 수 있습니다.':'미션을 읽고 엔트리에서 블록을 연결해 보세요.';
+    status.textContent=teacherPreview()?'🧑‍🏫 교사 체험: 모든 미션을 자유롭게 선택할 수 있습니다. 저장은 하지 않습니다.':passed[i]?'✅ 통과한 미션입니다. 다른 코드도 시험할 수 있습니다.':'미션을 읽고 엔트리에서 블록을 연결해 보세요.';
     updateMissionButtons();pushSensorMeasurement();
   }
   function changeMission(i){
@@ -283,7 +335,7 @@
     missionStopPending={token,target:i,timeout};
     iframe.contentWindow.postMessage({type:'NEPAL_STOP_FOR_MISSION',token},location.origin);
   }
-  nextBtn.addEventListener('click',()=>{if(passed[mission] && unlocked(mission+1) && mission+1<missions.length)changeMission(mission+1)});
+  nextBtn.addEventListener('click',()=>{if((teacherPreview()||passed[mission]) && unlocked(mission+1) && mission+1<missions.length)changeMission(mission+1)});
   renderMissionButtons();applyMission(0);
   checkBtn.addEventListener('click',()=>{
     if(!ready){status.textContent='엔트리 편집기 로딩이 완료되지 않았습니다. 네트워크와 외부 라이브러리를 확인해 주세요.';return;}
@@ -294,8 +346,24 @@
   });
   window.addEventListener('message',(event)=>{if(event.source!==iframe.contentWindow || event.origin!==location.origin)return; const d=event.data||{};
     classroom?.receiveFrameMessage(d);
-    if(d.type==='ENTRY_READY'){ready=true;classroom?.onEntryReady();if(layer.classList.contains('open'))iframe.contentWindow?.postMessage({type:'NEPAL_DEV_RESUME'},location.origin);pushSensorMeasurement();updateMissionButtons();status.textContent='실제 엔트리 편집기 준비 완료. 미션 01을 통과하면 미션 02가 열립니다.';}
-    if(d.type==='ENTRY_ERROR'){ready=false;checking=false;pendingMission=null;updateMissionButtons();status.textContent='엔트리 로딩 오류: '+String(d.message||'알 수 없는 오류')+'\n하단 설치 안내를 참고해 주세요.';}
+    if(d.type==='ENTRY_READY'){
+      ready=true;
+      projectRestoring=true;
+      pushSensorMeasurement();updateMissionButtons();
+      status.textContent=teacherPreview()?'🧑‍🏫 교사 체험: 미션 01~04를 자유롭게 선택할 수 있습니다.':'미션을 읽고 엔트리 블록을 연결해 보세요.';
+      // A saved student project may still be importing after EntryJS is initialized.
+      // Keep the mascot visible until BOTH the editor and saved blocks are ready.
+      Promise.resolve().then(()=>classroom?.onEntryReady?.()).catch(error=>{
+        console.warn('조별 코딩 복원 안내:',error);
+        status.textContent='이전 코딩 작업을 불러오지 못했습니다. 저장 상태를 확인해 주세요.';
+      }).finally(()=>{
+        projectRestoring=false;
+        if(!ready)return;
+        if(layer.classList.contains('open'))iframe.contentWindow?.postMessage({type:'NEPAL_DEV_RESUME'},location.origin);
+        hideEditorLoading();updateMissionButtons();
+      });
+    }
+    if(d.type==='ENTRY_ERROR'){ready=false;checking=false;pendingMission=null;loadingTitle.textContent='코딩 친구가 잠시 멈췄어요';loadingSub.textContent='편집기를 닫고 다시 열어보세요.';loadingOverlay.classList.remove('done');updateMissionButtons();status.textContent='편집기 준비 중 오류: '+String(d.message||'알 수 없는 오류');}
     if(d.type==='ENTRY_CHECK_RESULT'){
       const tested=pendingMission;
       checking=false;pendingMission=null;
@@ -303,8 +371,10 @@
       if(d.ok){
         passed[tested]=true;
         const contiguous=passed.findIndex(flag=>!flag);
-        classroom?.saveProgress(contiguous<0?missions.length:contiguous);
-        classroom?.saveNow('mission-pass');
+        if(!teacherPreview()){
+          classroom?.saveProgress(contiguous<0?missions.length:contiguous);
+          classroom?.saveNow('mission-pass');
+        }
       }
       updateMissionButtons();
       const next=d.ok && tested+1<missions.length?'\n🔓 다음 미션 '+String(tested+2).padStart(2,'0')+' 잠금이 해제되었습니다.':'';
@@ -314,7 +384,7 @@
       const p=missionStopPending;
       if(!p || p.token!==d.token)return;
       clearTimeout(p.timeout);missionStopPending=null;navigating=false;
-      if(d.ok){classroom?.saveNow('mission-change');applyMission(p.target);}
+      if(d.ok){if(!teacherPreview())classroom?.saveNow('mission-change');applyMission(p.target);}
       else{status.textContent='프로그램 정지 확인 실패: '+String(d.message||'다시 시도해 주세요.');updateMissionButtons();}
     }
     if(d.type==='ENTRY_VAR_SNAPSHOT'){
@@ -331,7 +401,7 @@
   });
   // Load classroom UI asynchronously. The original simulator is not modified.
   const classroomScript=document.createElement('script');
-  classroomScript.src='./nepal_classroom.js?v=33';
+  classroomScript.src='./nepal_classroom.js?v=34';
   classroomScript.onload=()=>{
     if(!window.NepalClassroom){console.error('학급 모듈을 찾지 못했습니다.');return;}
     classroom=window.NepalClassroom.setup({
@@ -358,9 +428,12 @@
         ready=false;checking=false;pendingMission=null;navigating=false;
         if(missionStopPending)clearTimeout(missionStopPending.timeout);
         missionStopPending=null; iframe.src='about:blank';iframe.dataset.loaded='no';
-        passed.fill(false);applyMission(0);
+        passed.fill(false);applyMission(0);projectRestoring=false;
+        if(layer.classList.contains('open'))showEditorLoading();
       }
     });
+    // Ensure teacher mode immediately displays all unlocked mission buttons.
+    updateMissionButtons();
     // The original 100-run assessment calls showRank({score,rank,...}).
     // Keep its own scoring algorithm unchanged; persist the result for the signed-in team.
     if(typeof window.showRank==='function' && !window.showRank.__nepalSaved){
