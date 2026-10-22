@@ -553,6 +553,14 @@
     console.info('[NEPAL 미션 검사 세부 내용]',stage+1,lines);
     if(typeof result.studentFeedback==='string'&&result.studentFeedback.trim())
       return '확인할 부분: '+result.studentFeedback.trim();
+    if(raw.includes('「N」과 「위험개수」는')){
+      const key=raw.includes('현재 「N」')?'N':'위험개수';
+      return '중요 힌트: 「N」과 「위험개수」 두 변수가 필요해요. 특히 「'+key+'」를 찾지 못했어요.';
+    }
+    if(raw.includes('빨간색 「경보 울리기」 블록을 찾지 못했습니다.'))
+      return '확인할 부분: 경보가 필요한 상황에서 실행될 빨간 「경보 울리기」 블록이 보이지 않아요.';
+    if(raw.includes('「N」개 이상인 상황'))
+      return '확인할 부분: 위험신호의 개수와 「N」의 값에 따라 「경보 울리기」가 실행되는 상황이 일치하지 않아요.';
     const missing=raw.match(/「([^」]+)」\s*변수(?:가|를|는)?(?:\s*없습니다|\s*찾지 못했습니다|\s*만들어)/);
     if(missing)return '확인할 부분: 「'+missing[1]+'」 변수를 찾지 못했어요. 미션에 적힌 이름과 만든 변수 이름을 비교해 보세요.';
     if(raw.includes('「위험목록」 리스트')&&raw.includes('필요'))
