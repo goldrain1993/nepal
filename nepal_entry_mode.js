@@ -42,6 +42,15 @@
   #ne-sensor-live strong{font-size:18px;color:#f4ffed}
   #ne-status{font-size:12px;color:#c9e2c4;white-space:pre-wrap;line-height:1.6;margin-top:12px}
   .ne-editor-stage{min-width:0;min-height:0;position:relative;overflow:hidden;background:#f8fff8}
+  /* Shared 48px toolbar replaces the iframe's native title strip in both modes.
+     It never overlaps the sensor sidebar, map or editor workspace. */
+  #ne-workspace-toolbar{position:absolute;top:0;left:0;right:0;height:48px;z-index:15;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 13px;
+    background:#e9f1e6;color:#21431d;border-bottom:1px solid #c1d9bc;font-size:13px;font-weight:800}
+  #ne-workspace-heading{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #nepal-entry-layer.ne-sim-visible #ne-workspace-toolbar{background:#13251a;color:#e9ffc8;border-bottom-color:#46693d}
+  #ne-iframe{margin-top:48px;height:calc(100% - 48px)!important}
+  #ne-entry-loading{top:48px!important}
   #ne-iframe{display:block;width:100%;height:100%;border:0;background:white;visibility:hidden}
   .ne-entry-loading{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 51% 39%,#e6ffca 0%,#f7fff1 46%,#eff8f4 100%);color:#294d2d;text-align:center;transition:opacity .22s ease}
   .ne-entry-loading.done{opacity:0;visibility:hidden;pointer-events:none}
@@ -63,10 +72,10 @@
   @media(prefers-reduced-motion:reduce){.ne-loader-mascot,.ne-mascot-eye,.ne-loading-dots i{animation:none}}
 
   #ne-mini{font-size:12px;color:#9bbb96;line-height:1.8}
-  .ne-editor-stage #ne-sim-stage{display:none;position:absolute;inset:0;z-index:3;overflow:hidden;background:#061009}
+  .ne-editor-stage #ne-sim-stage{display:none;position:absolute;inset:48px 0 0;z-index:3;overflow:hidden;background:#061009}
   #nepal-entry-layer.ne-sim-visible #ne-sim-stage{display:block}
   #nepal-entry-layer.ne-sim-visible #ne-iframe,#nepal-entry-layer.ne-sim-visible #ne-entry-loading{display:none!important}
-  #ne-mode-switch{display:none;position:absolute;right:12px;top:9px;z-index:14;background:#b9ed74;color:#122518;border:1px solid #648a48;border-radius:9px;padding:10px 16px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px #0004}
+  #ne-mode-switch{display:none;position:static;flex:0 0 auto;max-width:58%;min-height:36px;background:#b9ed74;color:#122518;border:1px solid #648a48;border-radius:9px;padding:7px 14px;font-weight:900;cursor:pointer;white-space:nowrap;box-shadow:0 2px 7px #0002}
   #nepal-entry-layer.ne-sensor-mission #ne-mode-switch{display:block}
   #ne-sim-stage #app{height:100%;width:100%;min-height:0}
   #ne-sim-stage #assessmentTabBtn,#ne-sim-stage #assessmentPane,#ne-sim-stage #run,#ne-sim-stage #replay,#ne-sim-stage #design,#ne-sim-stage #nepal-design-save{display:none!important}
@@ -146,7 +155,7 @@
   }
   const trigger = document.createElement('button'); trigger.id='nepal-entry-trigger'; trigger.textContent='🧩 엔트리 개발자 모드';trigger.style.display='none';
   const layer = document.createElement('section'); layer.id='nepal-entry-layer';
-  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">7단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 실시간 반복 갱신</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 경보 알고리즘</b> → <b>⑥ 리스트 학습</b> → <b>🏆 FINAL</b></div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 <span id="ne-grade-title">경보 성능평가</span></div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button></aside><div class="ne-editor-stage"><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=41"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
+  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">7단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 실시간 반복 갱신</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 경보 알고리즘</b> → <b>⑥ 리스트 학습</b> → <b>🏆 FINAL</b></div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 <span id="ne-grade-title">경보 성능평가</span></div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button></aside><div class="ne-editor-stage"><div id="ne-workspace-toolbar"><span id="ne-workspace-heading">🧩 엔트리 코딩 편집기</span><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button></div><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=41"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
   // Pause the original simulator's background animation loops without altering index.html.
   // The two named rAF loops are global function declarations in the original page.
   // Their drawing work is skipped while EntryJS covers the simulator; their ordinary
@@ -593,6 +602,7 @@
       const panel=nativeApp.querySelector('.panel');
       if(panel)panel.scrollTop=0;
     }catch(e){console.warn('미션 6 센서 설치 화면',e)}
+    document.getElementById('ne-workspace-heading').textContent='🗺 센서 설치 화면';
     modeSwitch.textContent='🧩 엔트리 코딩으로 돌아가기';
   }
   function exitMission5Setup(){
@@ -601,6 +611,7 @@
     document.body.classList.remove('nepal-mission6-sim');
     restoreMission6SensorPanel();
     if(nativeApp&&originalAppParent){originalAppParent.insertBefore(nativeApp,originalAppSibling);}
+    document.getElementById('ne-workspace-heading').textContent='🧩 엔트리 코딩 편집기';
     modeSwitch.textContent='🗺 센서 설치 화면';
     if(ready&&layer.classList.contains('open'))iframe.contentWindow?.postMessage({type:'NEPAL_DEV_RESUME'},location.origin);
   }
