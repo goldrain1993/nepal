@@ -146,7 +146,7 @@
   }
   const trigger = document.createElement('button'); trigger.id='nepal-entry-trigger'; trigger.textContent='🧩 엔트리 개발자 모드';trigger.style.display='none';
   const layer = document.createElement('section'); layer.id='nepal-entry-layer';
-  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">7단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 실시간 반복 갱신</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 경보 알고리즘</b> → <b>⑥ 리스트 학습</b> → <b>🏆 FINAL</b></div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 <span id="ne-grade-title">경보 성능평가</span></div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button></aside><div class="ne-editor-stage"><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=40"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
+  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">7단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 실시간 반복 갱신</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 경보 알고리즘</b> → <b>⑥ 리스트 학습</b> → <b>🏆 FINAL</b></div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 <span id="ne-grade-title">경보 성능평가</span></div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button></aside><div class="ne-editor-stage"><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=41"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
   // Pause the original simulator's background animation loops without altering index.html.
   // The two named rAF loops are global function declarations in the original page.
   // Their drawing work is skipped while EntryJS covers the simulator; their ordinary
@@ -256,7 +256,7 @@
     }
     const warm=()=>{
       const urls=[
-        './nepal_entry_editor.html?v=40',
+        './nepal_entry_editor.html?v=41',
         './lib/vendor/jquery-3.7.1.min.js',
         './lib/vendor/jquery-ui-1.13.3.min.js',
         './lib/vendor/codemirror-5.65.20-show-hint.js',
@@ -409,8 +409,8 @@
       b.classList.toggle('current',mission===i);
       b.textContent=(locked?'🔒 ':passed[i]?'✓ ':'')+(i===6?'FINAL':String(i+1).padStart(2,'0'));
     b.classList.toggle('final-button',i===6);
-      b.setAttribute('aria-label',`미션 ${i+1} ${locked?'잠김':passed[i]?'통과':'진행 가능'}`);
-      b.title=locked?`미션 ${i}을(를) 통과하면 열립니다.`:passed[i]?'통과한 미션입니다. 다시 열 수 있습니다.':`미션 ${i+1} 열기`;
+      b.setAttribute('aria-label',`${i===6?'FINAL 미션':'미션 '+(i+1)} ${locked?'잠김':passed[i]?'통과':'진행 가능'}`);
+      b.title=locked?`미션 ${i}을(를) 통과하면 열립니다.`:passed[i]?'통과한 미션입니다. 다시 열 수 있습니다.':`${i===6?'FINAL 미션':'미션 '+(i+1)} 열기`;
     });
     const usable=missions[mission]?.active===true;
     checkBtn.disabled=checking || navigating || !ready || !usable;
@@ -486,7 +486,7 @@
       ready=true;
       projectRestoring=true;
       pushSensorMeasurement();updateMissionButtons();
-      status.textContent=teacherPreview()?'🧑‍🏫 교사 체험: 미션 01~06을 자유롭게 선택할 수 있습니다.':'미션을 읽고 엔트리 블록을 연결해 보세요.';
+      status.textContent=teacherPreview()?'🧑‍🏫 교사 체험: 미션 01~06과 FINAL을 선택할 수 있습니다.':'미션을 읽고 엔트리 블록을 연결해 보세요.';
       // A saved student project may still be importing after EntryJS is initialized.
       // Keep the mascot visible until BOTH the editor and saved blocks are ready.
       Promise.resolve().then(()=>classroom?.onEntryReady?.()).catch(error=>{
@@ -521,7 +521,7 @@
       }
       if((tested===4||tested===6)&&!d.ok)uiSoundEnabled=false;
       updateMissionButtons();
-      const next=d.ok && tested+1<missions.length?'\n🔓 다음 미션 '+String(tested+2).padStart(2,'0')+' 잠금이 해제되었습니다.':'';
+      const next=d.ok && tested+1<missions.length?'\n🔓 '+(tested===5?'FINAL 미션':'다음 미션 '+String(tested+2).padStart(2,'0'))+' 잠금이 해제되었습니다.':'';
       status.textContent=(d.ok?'✅ 복구 검사 통과!':'❌ 복구 검사 실패')+'\n'+(Array.isArray(d.details)?d.details.join('\n'):String(d.message||''))+next;
     }
     if(d.type==='ENTRY_MISSION_STOPPED'){
@@ -810,7 +810,7 @@
 
   // Load classroom UI asynchronously. The original simulator is not modified.
   const classroomScript=document.createElement('script');
-  classroomScript.src='./nepal_classroom.js?v=40';
+  classroomScript.src='./nepal_classroom.js?v=41';
   classroomScript.onload=()=>{
     if(!window.NepalClassroom){console.error('학급 모듈을 찾지 못했습니다.');return;}
     classroom=window.NepalClassroom.setup({
