@@ -1,4 +1,4 @@
-/** NEPAL × ENTRY v3.4 — native Nepal simulator start page with role-based buttons with role-specific Google authentication, 2/3-person groups, flood scores.
+/** NEPAL × ENTRY v3.6 — native Nepal simulator start page with role-based buttons with role-specific Google authentication, 2/3-person groups, flood scores.
  * Public board = signed-in school accounts only; code/progress = group members only.
  * Firebase rules are the authorization boundary, not this browser code.
  */
@@ -97,6 +97,7 @@ let nativeStart=null,nativeButtons=[],nativeStudentPanel=null;
 const loginCaptions=['🎒 학생 로그인','🧑‍🏫 교사 로그인','🌐 게스트 입장'];
 const simulatorCaptions=['시작하기','형성평가 바로가기','이용 방법 보기'];
 let team=null,role=null,editorLockHeld=false,codeListener=null,boardListener=null,projectToRestore=null;
+let designReady=false,designSavedAt=0;
 let progress=0,missionTotal=4,callbacks={},saveBusy=false,queued=false,readyToSave=false,restoring=false,importPending=null,exportPending=null,rpcId=0,headerStatus=null,lastSaved='',autosave=null,lockRefresh=null,lockedTeamPath='';
 function teamPath(c,g){return `${ROOT}/c${c}/teams/g${g}`}
 function workPath(c,g){return `${PRIVATE}/c${c}/teams/g${g}`}
@@ -234,10 +235,13 @@ async function teacherSubmit(){
  finally{loginBusy=false;refreshButtons()}
 }
 async function signout(){
+ if(team&&designReady)await callbacks.flushDesign?.();
+ designReady=false;
  if(guestActive)endGuest();
  if(team)await leaveTeam();
  clearBoard();board.classList.remove('show');
  if(auth)await auth.signOut();
+ callbacks.restoreDesign?.({version:1,sensors:[],alarmMode:'OR',minCount:2});
  user=null;authRole=null;role=null;team=null;projectToRestore=null;readyToSave=false;
  callbacks.resetEditor?.();callbacks.closeEditor?.();callbacks.restoreProgress?.(0);
  landing();refreshButtons();
@@ -264,15 +268,26 @@ async function joinTeam(){await initReady;if(!user||!db||!requireStudent(user)){
   }
   members=(await memRef.once('value')).val()||{};
   if(identify(members)!==slot)throw Error('계정 등록 확인에 실패했습니다.');
-  team={c,g};role=slot;readyToSave=false;editorLockHeld=false;progress=0;lastSaved='';
-  const [progressSnap,codeSnap]=await Promise.all([db.ref(root+'/progress').once('value'),db.ref(workPath(c,g)+'/code').once('value')]);
+  team={c,g};role=slot;readyToSave=false;designReady=false;editorLockHeld=false;progress=0;lastSaved='';
+  const [progressSnap,codeSnap,designSnap]=await Promise.all([db.ref(root+'/progress').once('value'),db.ref(workPath(c,g)+'/code').once('value'),db.ref(workPath(c,g)+'/design').once('value')]);
   progress=Math.max(0,Math.min(missionTotal,Number(progressSnap.val()?.completed)||0));
   const cloudCode=codeSnap.val();const local=localRestore();
   try{projectToRestore=cloudCode?.payload?JSON.parse(cloudCode.payload):(local?.project||null)}catch(e){throw Error('온라인 엔트리 코드 형식 오류: '+e.message)}
   callbacks.resetEditor?.();callbacks.restoreProgress?.(progress);
+  // Restore the complete sensor layout BEFORE enabling design autosave.
+  // Without this gate an empty default canvas could overwrite a group's cloud data.
+  const cloudDesign=designSnap.val();
+  let previousDesign=null;
+  if(cloudDesign?.payload){
+    try{previousDesign=JSON.parse(cloudDesign.payload)}
+    catch(e){throw Error('저장된 센서 설계 파일을 읽을 수 없습니다. 기존 설계 보호를 위해 입장을 중단합니다: '+e.message)}
+  }
+  const restored=callbacks.restoreDesign?.(previousDesign||{version:1,sensors:[],alarmMode:'OR',minCount:2});
+  if(restored===false)throw Error('센서 설계를 복원하지 못했습니다. 저장된 정보를 보호하기 위해 자동 저장을 시작하지 않습니다.');
+  designReady=true;
   gate.classList.remove('show');callbacks.enterSimulator?.();
   note('✓ '+c+'반 '+g+'조 · '+memberNames(members,c,g)+' · 네팔 홍수 시뮬레이션에 입장했습니다.');
- }catch(e){note('입장 실패: '+String(e.message||e));if(editorLockHeld){await releaseLock().catch(()=>{});team=null;readyToSave=false}}
+ }catch(e){designReady=false;note('입장 실패: '+String(e.message||e));if(editorLockHeld){await releaseLock().catch(()=>{});team=null;readyToSave=false}}
  finally{refreshButtons()}
 }
 async function openEditor(){
@@ -309,9 +324,11 @@ async function closeEditing(){
 // access a classroom database, save progress/grades/projects, or create a local backup.
 async function enterGuest(){
  try{
-  if(auth?.currentUser)await auth.signOut();
   if(team)await leaveTeam();
+  if(auth?.currentUser)await auth.signOut();
+  designReady=false;
   guestActive=true;team=null;role=null;projectToRestore=null;readyToSave=false;
+  callbacks.restoreDesign?.({version:1,sensors:[],alarmMode:'OR',minCount:2});
   editorLockHeld=false;progress=0;lastSaved='';
   board.classList.remove('show');clearBoard();
   callbacks.resetEditor?.();callbacks.restoreProgress?.(0);
@@ -324,6 +341,7 @@ async function enterGuest(){
 }
 function endGuest(){
  if(!guestActive)return;
+ designReady=false;
  guestActive=false;readyToSave=false;projectToRestore=null;progress=0;lastSaved='';
  callbacks.resetEditor?.();callbacks.closeEditor?.();callbacks.restoreProgress?.(0);
  if(typeof global.resetRank==='function')global.resetRank();
@@ -331,6 +349,7 @@ function endGuest(){
  sessionActive=false;refreshButtons();
 }
 function enterTeacher(){
+ callbacks.restoreDesign?.({version:1,sensors:[],alarmMode:'OR',minCount:2});
  if(!user||!requireTeacher(user)){note('등록된 교사 Google 계정으로 로그인해 주세요.');return}
  // Successful teacher authentication enters the ORIGINAL Nepal Flood home page,
  // not the classroom board. The board stays available as an optional menu.
@@ -344,6 +363,8 @@ async function releaseLock(){if(lockRefresh){clearInterval(lockRefresh);lockRefr
  const ref=db.ref(lockedTeamPath+'/editorLock');await ref.transaction(old=>old?.uid===user.uid?null:undefined,()=>{},false);editorLockHeld=false;lockedTeamPath='';
 }
 async function leaveTeam(){if(!team)return;
+ if(designReady)await callbacks.flushDesign?.();
+ designReady=false;
  if(readyToSave)await saveNow('exit');
  readyToSave=false;callbacks.resetEditor?.();callbacks.closeEditor?.();await releaseLock().catch(e=>note('잠금 해제 실패: '+e.message));team=null;role=null;projectToRestore=null;progress=0;lastSaved='';callbacks.restoreProgress?.(0);
 }
@@ -382,6 +403,24 @@ async function saveProgress(n){if(guestActive)return;if(!team||!user||!editorLoc
  try{await db.ref(teamPath(team.c,team.g)+'/progress').transaction(old=>({completed:Math.max(Number(old?.completed)||0,value),updatedAt:fb.database.ServerValue.TIMESTAMP}),()=>{},false);
  note('✓ 미션 '+value+'까지 통과 · 온라인 저장 완료');}
  catch(e){note('⚠ 미션 진행도 저장 실패: '+e.message)}
+}
+/** Save only the four editable sensors and alarm design. Guest and teachers never write. */
+async function saveSimulatorDesign(design,reason='auto'){
+ if(guestActive||!designReady||!team||!user||!db||!requireStudent(user))return false;
+ if(!design || design.version!==1 || !Array.isArray(design.sensors) || design.sensors.length>4)return false;
+ const encoded=JSON.stringify(design);
+ if(encoded.length>12000)throw Error('센서 설계 데이터가 너무 큽니다.');
+ const {c,g}=team;const uid=user.uid;
+ try{
+  // Shared per-group Firebase path: other groups cannot read or write it.
+  await db.ref(workPath(c,g)+'/design').set({version:1,payload:encoded,updatedBy:uid,updatedAt:fb.database.ServerValue.TIMESTAMP});
+  designSavedAt=Date.now();
+  if(reason==='manual')note('✓ '+c+'반 '+g+'조 센서 배치와 위험 기준이 온라인에 저장되었습니다.');
+  return true;
+ }catch(e){
+  note('⚠ 센서 설계 저장 실패: '+String(e.message||e));
+  return false;
+ }
 }
 async function recordFloodResult(result){
  if(guestActive)return;if(!team||!user||!db||!requireStudent(user))return;
@@ -430,7 +469,7 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
  $('np-teacher-sim').onclick=()=>{if(requireTeacher(user))enterTeacherSimulator();else if(team){board.classList.remove('show');clearBoard()}else note('학생은 반·조에 먼저 등록해야 합니다.');refreshButtons()};
  if(!autosave)autosave=setInterval(()=>{if(team&&readyToSave&&!restoring&&opts.isLayerOpen?.()&&!opts.isBusy?.())saveNow('auto')},18000);
  setupNativeHome();refreshButtons();
- return{refreshUI:refreshButtons,showGate,showBoard,onEntryReady,saveNow,saveProgress,recordFloodResult,openEditor,closeEditing,enterTeacherSimulator,showLogin,signout,receiveFrameMessage,getTeam:()=>team,isGuest:()=>guestActive,isTeacher:()=>sessionActive&&!guestActive&&requireTeacher(user)};
+ return{refreshUI:refreshButtons,showGate,showBoard,onEntryReady,saveNow,saveProgress,saveSimulatorDesign,recordFloodResult,openEditor,closeEditing,enterTeacherSimulator,showLogin,signout,receiveFrameMessage,getTeam:()=>team,isDesignReady:()=>designReady&&!!team&&!guestActive&&requireStudent(user),isGuest:()=>guestActive,isTeacher:()=>sessionActive&&!guestActive&&requireTeacher(user)};
 }
 global.NepalClassroom={setup};
 })(window);

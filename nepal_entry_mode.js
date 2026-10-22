@@ -1,5 +1,5 @@
 /**
- * NEPAL FLOOD × EntryJS - integration v3.4 native simulator menu login · role login · flood score · 3-person groups
+ * NEPAL FLOOD × EntryJS - integration v3.6 native simulator menu login · role login · flood score · 3-person groups
  * Add <script src="./nepal_entry_mode.js" defer></script> to the original index.html.
  * Keep original simulator unchanged. This overlay mounts a real EntryJS editor page in a same-origin iframe.
  * Four staged missions: water variable, water risk condition, independent flow/vibration/rain risk, list+loop alarm.
@@ -399,13 +399,127 @@
       }
     }
   });
+  /* v3.6: Share the ORIGINAL simulator's sensor/alarm design, not scenario results.
+   * index.html runs before this classic script, so its top-level lexical `sensors`
+   * and `alarmMode` are accessible here without modifying the original simulator.
+   */
+  let designSyncReady=false,designRestoreBusy=false,designBaseline='',designSaveTimer=null;
+  let designQueuedFingerprint='',designSaving=false,designPanel=null,designInfo=null,designButton=null;
+  const allowedSensors=new Set(['수위 센서','유속 센서','진동 센서','강수 센서','기온 센서']);
+  const allowedModes=new Set(['OR','AND','N','MANUAL']);
+  function normalizedDesign(source){
+    if(!source||source.version!==1||!Array.isArray(source.sensors)||source.sensors.length>4)throw Error('센서 설계의 데이터 구조가 올바르지 않습니다.');
+    const arr=source.sensors.map((raw,i)=>{
+      const type=String(raw?.type||'');
+      const x=Number(raw?.x),z=Number(raw?.z);
+      if(!allowedSensors.has(type)||!Number.isFinite(x)||!Number.isFinite(z)||Math.abs(x)>10000||Math.abs(z)>10000)throw Error('센서 '+(i+1)+'의 종류 또는 설치 위치 오류');
+      const rule=raw?.rule||{};
+      if(typeof rule.enabled!=='boolean'||!['ge','le'].includes(rule.op))throw Error('센서 '+(i+1)+'의 위험 조건 오류');
+      const th=rule.th===''?'':Number(rule.th);
+      if(th!==''&&(!Number.isFinite(th)||Math.abs(th)>100000))throw Error('센서 '+(i+1)+'의 위험 기준값 오류');
+      return {id:i+1,type,x,z,rule:{enabled:rule.enabled,op:rule.op,th}};
+    });
+    return {version:1,sensors:arr,alarmMode:allowedModes.has(source.alarmMode)?source.alarmMode:'OR',minCount:Math.max(1,Math.min(4,Number(source.minCount)||2))};
+  }
+  function captureSimulatorDesign(){
+    try{
+      if(typeof sensors==='undefined'||typeof alarmMode==='undefined')return null;
+      return normalizedDesign({version:1,
+        sensors:sensors.map(s=>({type:s.type,x:s.x,z:s.z,rule:{enabled:!!s.rule?.enabled,op:s.rule?.op||'ge',th:s.rule?.th??''}})),
+        alarmMode,minCount:Number(document.getElementById('minRules')?.value)||2});
+    }catch(e){console.error('[NEPAL] 센서 설계 읽기 실패:',e);return null;}
+  }
+  function restoreSimulatorDesign(source){
+    designRestoreBusy=true;designSyncReady=false;
+    try{
+      const d=normalizedDesign(source);
+      // Keep original array identity: renderer and simulator refer to the same array.
+      sensors.splice(0,sensors.length,...d.sensors);
+      alarmMode=d.alarmMode;
+      renderSensors();refreshMinRules();
+      const select=document.getElementById('minRules');
+      if(select)select.value=String(Math.max(1,Math.min(d.minCount,Math.max(1,sensors.filter(s=>s.rule.enabled).length))));
+      updateLogicUI();
+      designBaseline=JSON.stringify(captureSimulatorDesign());
+      designQueuedFingerprint='';
+      clearTimeout(designSaveTimer);
+      designSyncReady=true;
+      if(designInfo)designInfo.textContent=source.sensors.length?'✓ 이전에 저장한 센서 설계를 불러왔어요.':'새로운 센서 설계를 시작해요.';
+      return true;
+    }catch(e){
+      console.error('[NEPAL] 센서 설계 복원 실패:',e);
+      if(designInfo)designInfo.textContent='⚠ 저장된 센서 설계를 읽을 수 없습니다.';
+      return false;
+    }finally{designRestoreBusy=false;updateDesignControls()}
+  }
+  function updateDesignControls(){
+    const canSave=!!(classroom?.isDesignReady?.()&&designSyncReady);
+    if(designPanel)designPanel.style.display=canSave?'block':'none';
+    if(designButton)designButton.disabled=!canSave||designSaving;
+  }
+  async function flushSimulatorDesign(force=false){
+    clearTimeout(designSaveTimer);designSaveTimer=null;
+    if(!classroom?.isDesignReady?.()||!designSyncReady||designRestoreBusy)return false;
+    const snapshot=captureSimulatorDesign();if(!snapshot)return false;
+    const fingerprint=JSON.stringify(snapshot);
+    if(!force&&fingerprint===designBaseline)return true;
+    if(designSaving){designQueuedFingerprint=fingerprint;return false;}
+    designSaving=true;updateDesignControls();
+    if(designInfo)designInfo.textContent='☁️ 센서 설계를 저장하는 중…';
+    try{
+      const ok=await classroom.saveSimulatorDesign(snapshot,force?'manual':'auto');
+      if(ok){designBaseline=fingerprint;if(designInfo)designInfo.textContent='✓ 온라인 저장됨 · '+new Date().toLocaleTimeString('ko-KR');}
+      else if(designInfo)designInfo.textContent='⚠ 저장에 실패했어요. 연결 상태를 확인하고 다시 저장하세요.';
+      return ok;
+    }finally{
+      designSaving=false;updateDesignControls();
+      if(designQueuedFingerprint&&designQueuedFingerprint!==designBaseline){designQueuedFingerprint='';queueSimulatorDesignSave()}
+      else designQueuedFingerprint='';
+    }
+  }
+  function queueSimulatorDesignSave(){
+    if(!classroom?.isDesignReady?.()||!designSyncReady||designRestoreBusy)return;
+    clearTimeout(designSaveTimer);
+    designSaveTimer=setTimeout(()=>{designSaveTimer=null;flushSimulatorDesign(false)},1100);
+  }
+  function scanSimulatorDesign(){
+    updateDesignControls();
+    if(!classroom?.isDesignReady?.()||!designSyncReady||designRestoreBusy)return;
+    const snapshot=captureSimulatorDesign();if(!snapshot)return;
+    const fp=JSON.stringify(snapshot);
+    if(fp!==designBaseline&&!designSaveTimer&&!designSaving)queueSimulatorDesignSave();
+  }
+  function installSimulatorDesignControls(){
+    const practice=document.getElementById('practicePane');
+    if(!practice||document.getElementById('nepal-design-save'))return;
+    designPanel=document.createElement('section');designPanel.id='nepal-design-save';
+    designPanel.style.cssText='background:#14231a;border:1px solid #426043;border-radius:11px;margin:0 0 10px;padding:11px 13px;color:#e9f8dd;display:none';
+    designPanel.innerHTML='<div style="font-weight:800;margin-bottom:6px">💾 우리 조 센서 설계</div><div id="nepal-design-status" style="font-size:12px;opacity:.8;margin-bottom:8px">설정 변경 시 자동 저장돼요.</div><button type="button" id="nepal-design-save-button" style="background:#9cde50;color:#152211;border:0;border-radius:7px;padding:9px 13px;font-weight:900;cursor:pointer">지금 설계 저장</button>';
+    practice.insertBefore(designPanel,practice.firstChild);
+    designInfo=document.getElementById('nepal-design-status');designButton=document.getElementById('nepal-design-save-button');
+    designButton.addEventListener('click',()=>flushSimulatorDesign(true));
+    updateDesignControls();
+  }
+  installSimulatorDesignControls();
+  // Sensor placement/removal and all rule controls are implemented in index.html;
+  // scan actual state rather than relying on brittle DOM event order.
+  setInterval(scanSimulatorDesign,1400);
+  document.addEventListener('change',queueSimulatorDesignSave,true);
+  document.addEventListener('click',e=>{
+    if(!e.target.closest('#practicePane'))return;
+    // Run after the original simulator's handler has changed its state.
+    setTimeout(queueSimulatorDesignSave,0);
+  },true);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)flushSimulatorDesign(false)});
+
   // Load classroom UI asynchronously. The original simulator is not modified.
   const classroomScript=document.createElement('script');
-  classroomScript.src='./nepal_classroom.js?v=34';
+  classroomScript.src='./nepal_classroom.js?v=36';
   classroomScript.onload=()=>{
     if(!window.NepalClassroom){console.error('학급 모듈을 찾지 못했습니다.');return;}
     classroom=window.NepalClassroom.setup({
       header:layer.querySelector('.ne-header'),iframe,totalMissions:missions.length,
+      restoreDesign:restoreSimulatorDesign,flushDesign:()=>flushSimulatorDesign(false),
       launchEditor:launch,closeEditor:close,enterSimulator:()=>{
         // ALL three entry routes (student / teacher / guest) show the original
         // NEPAL FLOOD DATA LAB start menu, including Start / Assessment / Help.
