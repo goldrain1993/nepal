@@ -517,7 +517,7 @@ async function testOneShotScenarios(scenarios, getObservations, label){
 }
 async function checkWaterVariable(){
  if(!getVar('수위값'))return {ok:false,details:['자료 탭에서 「수위값」 변수를 직접 만들어 주세요.']};
- if(!codeHasTypes(['set_variable','nepal_live_water_sensor']))return {ok:false,details:['「수위값을 (수위 센서가 현재 측정하고 있는 실시간 값)으로 정하기」 명령을 작성하고 시작 블록 아래에 연결하세요.']};
+ if(!codeHasTypes(['set_variable','nepal_live_water_sensor']))return {ok:false,details:['수위 센서의 측정값이 「수위값」 변수로 전달되는 부분을 찾지 못했습니다.']};
  const water=nepalSensorValue('water');let passed=false,verifiedWater=null;const details=[];
  try{
   await stopCode();nepalTestValues.water=water;
@@ -535,7 +535,7 @@ async function checkContinuousWaterVariable(){
  if(!getVar('수위값'))return {ok:false,details:['먼저 「수위값」 변수를 만들어 주세요.']};
  if(!liveSensorsAssignedInsideForever(['water']))return {ok:false,details:[
    realTimeSensorHint(['water']),
-   '힌트: 「흐름」의 「계속 반복하기」 안으로 「수위값을 (실시간 수위 센서값)으로 정하기」 블록을 옮겨 보세요.'
+   '수위가 달라져도 변수가 계속 바뀔 수 있는지 살펴보세요.'
  ]};
  const samples=[1.35,3.6,2.05,4.28,1.88];
  const details=[];let ok=true,verifiedWater=null;
@@ -546,7 +546,7 @@ async function checkContinuousWaterVariable(){
      const good=await waitForValues(()=>numericMatches(readVar('수위값'),samples[i]),3200);
      details.push(`수위 ${samples[i].toFixed(2)}m → 수위값 ${readVar('수위값')} ${good?'✓':'✗'}`);
      if(good)verifiedWater=Number(readVar('수위값'));
-     if(!good){ok=false;details.push('엔트리를 정지하거나 다시 시작하지 않았습니다. 수위값이 계속 갱신되어야 해요.');break}
+     if(!good){ok=false;details.push('센서의 수위가 달라졌는데 「수위값」이 새로운 값으로 바뀌지 않았습니다.');break}
    }
  }finally{await stopCode();resetTestReadings()}
  if(ok)details.push('실시간 센서값을 반복해서 수위값에 저장했습니다! 이제 조건문을 추가하세요.');
@@ -599,7 +599,18 @@ async function testContinuousRiskScenarios(scenarios,expectedForScenario,label){
      const passed=await waitForValues(()=>Object.entries(expected).every(([k,v])=>numericMatches(readVar(k),v)),3200);
      details.push(`${label} ${i+1}/${scenarios.length}: `+Object.entries(sample).map(([k,v])=>k+' '+v).join(' / ')+
        ' → '+Object.keys(expected).map(k=>k+'='+readVar(k)).join(', ')+(passed?' ✓':' ✗'));
-     if(!passed){ok=false;details.push('센서값이 변해도 다시 측정하고 위험을 판단하도록 전체 센서 읽기/조건문을 반복문 안에 넣어 보세요.');break}
+     if(!passed){
+       ok=false;
+       const names=Object.keys(expected).filter(name=>!numericMatches(readVar(name),expected[name]));
+       const measurements=names.filter(name=>name.endsWith('값'));
+       const risks=names.filter(name=>name.endsWith('위험'));
+       const issue=measurements.length?
+         `「${measurements.join('」·「')}」에 저장된 값이 각 센서의 측정값과 다릅니다. 센서마다 서로 다른 측정값을 올바르게 읽는지 확인해 보세요.`:
+         risks.length?`「${risks.join('」·「')}」의 안전·위험 판단이 측정값과 맞지 않습니다. 기준값 경계에서도 올바르게 판단하는지 확인해 보세요.`:
+         '센서가 변한 뒤에도 일부 결과가 제때 바뀌지 않았습니다. 측정과 위험 판단이 계속 갱신되는지 확인해 보세요.';
+       details.push(issue);
+       return {ok:false,details,studentFeedback:issue,failedStep:i+1};
+     }
    }
  }finally{await stopCode();resetTestReadings()}
  return {ok,details};
@@ -637,15 +648,11 @@ async function checkWaterRisk(){
  if(!codeHasTypes(['set_variable','nepal_live_water_sensor'])||!hasConditionBlocks()){
   return {ok:false,details:[
    '수위 센서의 실시간 값을 읽고 「수위위험」을 판단하는 조건문을 만들어 주세요.',
-   '「만일」 두 개 또는 「만일~아니면」 한 개 중 편한 방법을 사용해도 됩니다.'
   ]};
  }
  if(!liveSensorsAssignedInsideForever(['water']))return {ok:false,details:[realTimeSensorHint(['water'])]};
  if(!mission2HasConditionalInsideForeverLoop()){
-  return {ok:false,details:[
-   '「만일」 또는 「만일~아니면」 조건문을 「계속 반복하기」 블록 안에 넣어 주세요.',
-   '반복문 바깥의 조건문은 수위를 한 번만 판단하므로 실시간 경보 시스템의 정답이 아닙니다.'
-  ]};
+  return {ok:false,details:['수위가 변할 때마다 안전·위험을 다시 판단하는 흐름이 보이지 않습니다.']};
  }
  const samples=[2.35,4.8,3.99,4,5.2,3.1];
  const details=[];
@@ -667,7 +674,9 @@ async function checkWaterRisk(){
    details.push(`${i+1}차 수위 ${water.toFixed(2)}m → 기대 위험 ${expected} / 수위값 ${observedWater===''?'미저장':observedWater} · 수위위험 ${observedRisk===''?'미저장':observedRisk} ${passed?'✓':'✗'}`);
    if(!passed){
     allPassed=false;
-    details.push('수위가 바뀌어도 실시간 판단이 계속되도록 센서값 갱신과 조건문을 반복문 안에 배치해 보세요.');
+    details.push(numericMatches(observedWater,water)?
+      '수위 측정은 맞지만 「수위위험」의 안전·위험 결과가 기준과 다릅니다.':
+      '수위 측정값이 변했는데 「수위값」이 그 변화를 제대로 따라가지 못했습니다.');
     break;
    }
   }
@@ -675,12 +684,12 @@ async function checkWaterRisk(){
   await stopCode();
   resetTestReadings();
  }
- if(allPassed)details.push('연속 실행 상태에서 안전·위험·경계값을 모두 정확히 판단했습니다! 「만일」과 「만일~아니면」 모두 정답으로 인정합니다.');
+ if(allPassed)details.push('수위가 변할 때마다 안전과 위험을 정확하게 판단했습니다!');
  return {ok:allPassed,details};
 }
 async function checkOtherRisk(){
  const vars=['유속값','진동값','강수값','유속위험','진동위험','강수위험'];
- for(const n of vars)if(!getVar(n))return {ok:false,details:[`「${n}」 변수를 만들어 주세요. 아직 리스트는 필요하지 않습니다.`]};
+ for(const n of vars)if(!getVar(n))return {ok:false,details:[`「${n}」 변수를 찾지 못했습니다.`]};
  if(!codeHasTypes(['set_variable','nepal_live_flow_sensor','nepal_live_vibration_sensor','nepal_live_rain_sensor'])||!hasConditionBlocks())return {ok:false,details:['미션 03의 조건문을 응용해 유속·진동·강수를 측정하고 위험 여부를 각각 판정하세요.']};
  if(!liveSensorsAssignedInsideForever(['water','flow','vibration','rain']))
    return {ok:false,details:[realTimeSensorHint(['water','flow','vibration','rain'])]};
@@ -722,7 +731,7 @@ async function checkChosenAlarmN(requireList=false){
  if(requireList&&!getList('위험목록'))return {ok:false,details:['이번 미션에서는 「위험목록」 리스트를 만들고 위험신호 4개를 저장해 주세요.']};
  if(!liveSensorsAssignedInsideForever(NEPAL_SENSOR_ORDER))return {ok:false,details:[realTimeSensorHint(NEPAL_SENSOR_ORDER)]};
  if(requireList&&(!codeHasTypes(['value_of_index_from_list','change_variable']) || !codeHasTypes(['repeat_basic'])))
-   return {ok:false,details:['리스트의 항목을 반복해서 검사하고 위험개수를 계산하도록 「반복하기」·「리스트 n번째 값」·「변수 더하기」 블록을 사용해 보세요.']};
+   return {ok:false,details:['리스트에 들어 있는 위험신호를 차례대로 살펴보고 개수를 세는 과정이 아직 완성되지 않았습니다.']};
  const savedScripts=JSON.stringify((saveProject().objects||[]).map(o=>o.script||''));
  if(savedScripts.includes('nepal_limit_'))return {ok:false,details:[
    '예전 「시뮬레이션에서 설정한 위험 기준값」 블록이 남아 있습니다.',
@@ -810,8 +819,9 @@ async function checkChosenAlarmN(requireList=false){
          [0,1].includes(Number(readVar('경보결과'))) && readVar('경보결과')!=='';
      },4500);
      if(!stable){
-       details.push(`${mask+1}/16: 4개의 위험신호와 위험개수·경보결과가 연동되지 않았습니다.`);
-       details.push(requireList?'「위험목록」 리스트 4칸을 최신 위험신호로 갱신하고, 반복문으로 위험개수를 세어 보세요.':'리스트 없이 「수위위험」·「유속위험」·「진동위험」·「강수위험」을 더해 「위험개수」와 경보를 계산해 보세요.');
+       details.push(requireList?
+         '센서의 위험신호가 바뀌어도 리스트·위험개수·경보결과 중 일부가 그 변화와 일치하지 않습니다.':
+         '4개 센서의 위험신호와 위험개수·경보결과 중 일부가 서로 맞지 않습니다.');
        return {ok:false,details};
      }
      await wait(120);
