@@ -270,7 +270,13 @@ async function joinTeam(){await initReady;if(!user||!db||!requireStudent(user)){
   if(identify(members)!==slot)throw Error('계정 등록 확인에 실패했습니다.');
   team={c,g};role=slot;readyToSave=false;designReady=false;editorLockHeld=false;progress=0;lastSaved='';
   const [progressSnap,codeSnap,designSnap]=await Promise.all([db.ref(root+'/progress').once('value'),db.ref(workPath(c,g)+'/code').once('value'),db.ref(workPath(c,g)+'/design').once('value')]);
-  progress=Math.max(0,Math.min(missionTotal,Number(progressSnap.val()?.completed)||0));
+  // v3.9 inserts a new repeat-reading mission after old mission 1. The old
+  // mission 2 already proved continuous updating, so groups at old 2~5 may
+  // advance by one. Tag new saves to prevent this migration repeating.
+  const previousProgress=progressSnap.val()||{};
+  const oldCompleted=Number(previousProgress.completed)||0;
+  progress=Math.max(0,Math.min(missionTotal,
+    previousProgress.schemaVersion===2?oldCompleted:(oldCompleted>=2?oldCompleted+1:oldCompleted)));
   const cloudCode=codeSnap.val();const local=localRestore();
   try{projectToRestore=cloudCode?.payload?JSON.parse(cloudCode.payload):(local?.project||null)}catch(e){throw Error('온라인 엔트리 코드 형식 오류: '+e.message)}
   callbacks.resetEditor?.();callbacks.restoreProgress?.(progress);
@@ -400,7 +406,11 @@ async function saveNow(reason='manual'){
 }
 async function saveProgress(n){if(guestActive)return;if(!team||!user||!editorLockHeld)return;
  const value=Math.max(progress,Math.min(missionTotal,Math.max(0,Number(n)||0)));progress=value;
- try{await db.ref(teamPath(team.c,team.g)+'/progress').transaction(old=>({completed:Math.max(Number(old?.completed)||0,value),updatedAt:fb.database.ServerValue.TIMESTAMP}),()=>{},false);
+ try{await db.ref(teamPath(team.c,team.g)+'/progress').transaction(old=>{
+  const n=Number(old?.completed)||0;
+  const migrated=old?.schemaVersion===2?n:(n>=2?n+1:n);
+  return {completed:Math.max(migrated,value),schemaVersion:2,updatedAt:fb.database.ServerValue.TIMESTAMP};
+ },()=>{},false);
  note('✓ 미션 '+value+'까지 통과 · 온라인 저장 완료');}
  catch(e){note('⚠ 미션 진행도 저장 실패: '+e.message)}
 }
@@ -433,7 +443,7 @@ async function recordMission5Result(result){
    return {score,rank,n,updatedBy:user.uid,updatedAt:fb.database.ServerValue.TIMESTAMP};
   },()=>{},false);
   return tx.committed;
- }catch(e){note('미션5 성적 저장 오류: '+e.message);return false}
+ }catch(e){note('미션6 성적 저장 오류: '+e.message);return false}
 }
 async function recordFloodResult(result){
  if(guestActive)return;if(!team||!user||!db||!requireStudent(user))return;
@@ -453,8 +463,8 @@ function showBoard(fromGate){
  $('np-teacher-admin').hidden=!requireTeacher(user);if(requireTeacher(user))previewAdmin();if(guestActive){note('게스트 모드에서는 학급 현황판을 이용할 수 없습니다.');return}if(!user||!db){note('먼저 학교 계정으로 로그인하세요.');landing();return}
  boardFromGate=fromGate||gate.classList.contains('show');$('np-board-class').value=String(team?.c||$('np-class').value||1);gate.classList.remove('show');board.classList.add('show');loadBoard();refreshButtons()}
 function boardCards(data,c){let html='';for(let g=1;g<=GROUP_COUNT;g++){
- const d=data?.['g'+g]||{},mem=d.members||{};const value=Math.max(0,Math.min(missionTotal,Number(d.progress?.completed)||0));const best=d.floodBest||null;const score=best&&Number.isFinite(Number(best.score))?Number(best.score):null;const m5=d.mission5Best||null;const mine=team?.c===c&&team?.g===g;
- html+=`<article class="np-team ${mine?'mine':''}"><div class="np-teamhead"><span>${g}조 ${mine?'(우리 조)':''}</span><span>${value}/${missionTotal}</span></div><div class="np-members">${esc(memberNames(mem,c,g))}</div><div class="np-score">🧩 미션5: ${m5?`${esc(m5.rank)} · ${Number(m5.score)}점 (N=${Number(m5.n)})`:'미응시'}</div><div class="np-score">🌊 네팔 형성평가: ${score===null?'미응시':`${esc(best.rank)} · ${score}점 (최고)`}</div><div class="np-track"><div style="width:${Math.round(100*value/missionTotal)}%"></div></div><div class="np-caption">${value===0?'진행 전':value===missionTotal?'전체 미션 완료':`미션 ${value}까지 통과`}</div></article>`;
+ const d=data?.['g'+g]||{},mem=d.members||{};const rawProgress=Number(d.progress?.completed)||0;const normalizedProgress=d.progress?.schemaVersion===2?rawProgress:(rawProgress>=2?rawProgress+1:rawProgress);const value=Math.max(0,Math.min(missionTotal,normalizedProgress));const best=d.floodBest||null;const score=best&&Number.isFinite(Number(best.score))?Number(best.score):null;const m5=d.mission5Best||null;const mine=team?.c===c&&team?.g===g;
+ html+=`<article class="np-team ${mine?'mine':''}"><div class="np-teamhead"><span>${g}조 ${mine?'(우리 조)':''}</span><span>${value}/${missionTotal}</span></div><div class="np-members">${esc(memberNames(mem,c,g))}</div><div class="np-score">🧩 미션6: ${m5?`${esc(m5.rank)} · ${Number(m5.score)}점 (N=${Number(m5.n)})`:'미응시'}</div><div class="np-score">🌊 네팔 형성평가: ${score===null?'미응시':`${esc(best.rank)} · ${score}점 (최고)`}</div><div class="np-track"><div style="width:${Math.round(100*value/missionTotal)}%"></div></div><div class="np-caption">${value===0?'진행 전':value===missionTotal?'전체 미션 완료':`미션 ${value}까지 통과`}</div></article>`;
  }$('np-grid').innerHTML=html}
 function clearBoard(){if(boardListener){boardListener.ref.off('value',boardListener.cb);boardListener=null}}
 function loadBoard(){if(!user||!db)return;$('np-board-msg').textContent='현황을 불러오는 중…';const c=Number($('np-board-class').value);clearBoard();if(!valid(c,1))return;

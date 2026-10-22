@@ -501,12 +501,80 @@ async function checkWaterVariable(){
  if(passed)details.push('측정값을 단 한 번 저장하면 미션 01 성공! 다음은 위험 여부를 조건문으로 판단합니다.');
  return {ok:passed,details};
 }
+/* NEW Mission 02: move the live-water assignment into a forever loop.
+ * Waiting 0.2 sec is useful for performance, but NOT required for correctness. */
+async function checkContinuousWaterVariable(){
+ if(!getVar('수위값'))return {ok:false,details:['먼저 「수위값」 변수를 만들어 주세요.']};
+ if(!liveSensorsAssignedInsideForever(['water']))return {ok:false,details:[
+   realTimeSensorHint(['water']),
+   '힌트: 「흐름」의 「계속 반복하기」 안으로 「수위값을 (실시간 수위 센서값)으로 정하기」 블록을 옮겨 보세요.'
+ ]};
+ const samples=[1.35,3.6,2.05,4.28,1.88];
+ const details=[];let ok=true;
+ try{
+   await stopCode();setVar('수위값','');nepalTestValues.water=samples[0];await startCode();
+   for(let i=0;i<samples.length;i++){
+     nepalTestValues.water=samples[i];
+     const good=await waitForValues(()=>numericMatches(readVar('수위값'),samples[i]),3200);
+     details.push(`수위 ${samples[i].toFixed(2)}m → 수위값 ${readVar('수위값')} ${good?'✓':'✗'}`);
+     if(!good){ok=false;details.push('엔트리를 정지하거나 다시 시작하지 않았습니다. 수위값이 계속 갱신되어야 해요.');break}
+   }
+ }finally{await stopCode();resetTestReadings()}
+ if(ok)details.push('실시간 센서값을 반복해서 수위값에 저장했습니다! 이제 조건문을 추가하세요.');
+ return {ok,details};
+}
 /* Mission 02 — check BOTH the EntryJS block structure and live behaviour.
  * Restarting for every test case falsely accepted a one-shot condition. We run
  * the student project ONCE, switch sensor readings repeatedly and require the
  * student program to update the risk variable in the SAME running session.
  * Both two separate "if" blocks (_if) and one "if/else" block are valid.
  */
+/* Missions 02~06: readings must be assigned repeatedly, not as a one-off
+ * instruction before/after a forever-loop. Inspect the ACTUAL EntryJS script
+ * trees, and verify changing readings while the engine stays running. */
+function liveSensorsAssignedInsideForever(sensorKeys){
+ const obj=saveProject();
+ const reporters={water:'nepal_live_water_sensor',flow:'nepal_live_flow_sensor',
+   vibration:'nepal_live_vibration_sensor',rain:'nepal_live_rain_sensor'};
+ function normalise(node){if(typeof node==='string'){try{return JSON.parse(node)}catch(_){return null}}return node}
+ function find(node,predicate){
+   node=normalise(node);
+   if(!node||typeof node!=='object')return false;
+   if(Array.isArray(node))return node.some(n=>find(n,predicate));
+   if(predicate(node))return true;
+   return Object.values(node).some(n=>find(n,predicate));
+ }
+ const scripts=(obj.objects||[]).map(o=>normalise(o.script));
+ return sensorKeys.every(key=>scripts.some(script=>find(script,node=>{
+   if(node.type!=='repeat_inf'||!node.statements)return false;
+   // Reject a sensor reporter or variable assignment floating outside the loop.
+   return find(node.statements,n=>n.type==='set_variable' &&
+      find(n.params||[],param=>param.type===reporters[key]));
+ })));
+}
+function realTimeSensorHint(keys){
+ const map={water:'수위값',flow:'유속값',vibration:'진동값',rain:'강수값'};
+ return `「계속 반복하기」 안에서 ${keys.map(k=>'「'+map[k]+'」').join('·')}에 실시간 센서값을 다시 저장하도록 배치해 주세요. 반복문 밖에서 한 번 저장하는 것으로는 통과할 수 없습니다.`;
+}
+/* Change the input readings repeatedly without restarting the EntryJS program.
+ * The same running script must update every sensor variable AND risk verdict. */
+async function testContinuousRiskScenarios(scenarios,expectedForScenario,label){
+ const details=[];let ok=true;
+ try{
+   await stopCode();
+   const first=scenarios[0];Object.assign(nepalTestValues,first);
+   await startCode();
+   for(let i=0;i<scenarios.length;i++){
+     const sample=scenarios[i];Object.assign(nepalTestValues,sample);
+     const expected=expectedForScenario(sample);
+     const passed=await waitForValues(()=>Object.entries(expected).every(([k,v])=>numericMatches(readVar(k),v)),3200);
+     details.push(`${label} ${i+1}/${scenarios.length}: `+Object.entries(sample).map(([k,v])=>k+' '+v).join(' / ')+
+       ' → '+Object.keys(expected).map(k=>k+'='+readVar(k)).join(', ')+(passed?' ✓':' ✗'));
+     if(!passed){ok=false;details.push('센서값이 변해도 다시 측정하고 위험을 판단하도록 전체 센서 읽기/조건문을 반복문 안에 넣어 보세요.');break}
+   }
+ }finally{await stopCode();resetTestReadings()}
+ return {ok,details};
+}
 function mission2HasConditionalInsideForeverLoop(){
  const data=saveProject();
  function normalise(node){
@@ -543,6 +611,7 @@ async function checkWaterRisk(){
    '「만일」 두 개 또는 「만일~아니면」 한 개 중 편한 방법을 사용해도 됩니다.'
   ]};
  }
+ if(!liveSensorsAssignedInsideForever(['water']))return {ok:false,details:[realTimeSensorHint(['water'])]};
  if(!mission2HasConditionalInsideForeverLoop()){
   return {ok:false,details:[
    '「만일」 또는 「만일~아니면」 조건문을 「계속 반복하기」 블록 안에 넣어 주세요.',
@@ -583,7 +652,9 @@ async function checkWaterRisk(){
 async function checkOtherRisk(){
  const vars=['유속값','진동값','강수값','유속위험','진동위험','강수위험'];
  for(const n of vars)if(!getVar(n))return {ok:false,details:[`「${n}」 변수를 만들어 주세요. 아직 리스트는 필요하지 않습니다.`]};
- if(!codeHasTypes(['set_variable','nepal_live_flow_sensor','nepal_live_vibration_sensor','nepal_live_rain_sensor'])||!hasConditionBlocks())return {ok:false,details:['미션 02의 조건문을 응용해 유속·진동·강수를 각각 측정하고 위험 여부를 판정하세요. 리스트는 사용하지 않습니다.']};
+ if(!codeHasTypes(['set_variable','nepal_live_flow_sensor','nepal_live_vibration_sensor','nepal_live_rain_sensor'])||!hasConditionBlocks())return {ok:false,details:['미션 03의 조건문을 응용해 유속·진동·강수를 각각 측정하고 위험 여부를 판정하세요. 리스트는 사용하지 않습니다.']};
+ if(!liveSensorsAssignedInsideForever(['water','flow','vibration','rain']))
+   return {ok:false,details:[realTimeSensorHint(['water','flow','vibration','rain'])]};
  const cases=[
   {water:1.5,flow:1.5,vibration:12.5,rain:20}, // all safe
   {water:1.5,flow:2.6,vibration:12.5,rain:20}, // flow only
@@ -593,12 +664,13 @@ async function checkOtherRisk(){
   {water:1.5,flow:1.99,vibration:12.99,rain:21.99}, // just below threshold
   {water:1.5,flow:2.8,vibration:14.2,rain:25}
  ];
- const result=await testOneShotScenarios(cases,s=>({
+ const result=await testContinuousRiskScenarios(cases,s=>({
+  '수위값':s.water,'수위위험':Number(s.water>=NEPAL_THRESHOLDS.water),
   '유속값':s.flow,'진동값':s.vibration,'강수값':s.rain,
   '유속위험':Number(s.flow>=NEPAL_THRESHOLDS.flow),
   '진동위험':Number(s.vibration>=NEPAL_THRESHOLDS.vibration),
   '강수위험':Number(s.rain>=NEPAL_THRESHOLDS.rain)
- }),'유속·진동·강수 판정');
+ }),'유속·진동·강수 연속 판정');
  if(result.ok)result.details.push('유속 2m/s 이상, 진동 13 이상, 강수 22mm/h 이상을 정확히 판정했습니다.');
  return result;
 }
@@ -606,11 +678,14 @@ async function checkIntegratedList(){
  const vars=['수위값','유속값','진동값','강수값','수위위험','유속위험','진동위험','강수위험','위험개수','경보결과','반복번호'];
  for(const n of vars)if(!getVar(n))return {ok:false,details:[`「${n}」 변수를 먼저 만들어 주세요.`]};
  if(!getList('위험목록'))return {ok:false,details:['「위험목록」 리스트를 직접 만들어 주세요. 리스트에는 위험 여부 0·1 값만 넣습니다.']};
+ if(!liveSensorsAssignedInsideForever(['water','flow','vibration','rain']))return {ok:false,details:[realTimeSensorHint(['water','flow','vibration','rain'])]};
  const hasLoop=codeHasTypes(['repeat_basic']) || codeHasTypes(['repeat_inf']);
  if(!hasLoop || !codeHasTypes(['value_of_index_from_list','get_variable','change_variable']) || !hasConditionBlocks()){
   return {ok:false,details:[
    '「위험목록」에 수위위험·유속위험·진동위험·강수위험을 1·2·3·4번 순서로 넣어 보세요.',
-   '반복문에서 리스트의 네 항목을 번호로 하나씩 읽어 위험개수를 세고, 두 개 이상 위험하면 경보결과를 1로 정하세요.'
+   '힌트 ① 「위험목록」에 0을 네 번 추가해 4칸을 먼저 만들어 보세요. 매 반복마다 항목을 추가하면 길이가 늘어납니다.',
+   '힌트 ② 「n번째 항목 바꾸기」로 네 칸을 현재 위험 신호로 갱신한 뒤, 「반복번호」를 1부터 4까지 움직여 값을 읽어보세요.',
+   '힌트 ③ 위험개수는 매 검사 시작에 0으로 초기화하고, 리스트 항목이 1일 때만 1씩 더해 보세요.'
   ]};
  }
  const scenarios=[
@@ -630,12 +705,16 @@ async function checkIntegratedList(){
  ];
  const details=[];let allPassed=true;
  try{
+  await stopCode();
+  Object.assign(nepalTestValues,scenarios[0]);
+  clearList('위험목록');
+  await startCode();
   for(let i=0;i<scenarios.length;i++){
    const s=scenarios[i];
    const expected=[Number(s.water>=NEPAL_THRESHOLDS.water),Number(s.flow>=NEPAL_THRESHOLDS.flow),Number(s.vibration>=NEPAL_THRESHOLDS.vibration),Number(s.rain>=NEPAL_THRESHOLDS.rain)];
    const dangerCount=expected.reduce((a,v)=>a+v,0);
-   await stopCode();Object.assign(nepalTestValues,s);
-   await startCode();
+   // One uninterrupted run: changing every sensor must replace the FOUR list items.
+   Object.assign(nepalTestValues,s);
    const pass=await waitForValues(()=>{
     const list=readList('위험목록')||[];
     return list.length===4 && list.every((v,j)=>numericMatches(v,expected[j])) &&
@@ -650,7 +729,7 @@ async function checkIntegratedList(){
  if(allPassed)details.push('네 센서 가운데 둘 이상 위험한 경우에만 경보를 내리도록 정확히 구현했습니다!');
  return {ok:allPassed,details};
 }
-/* Mission 05: test the student's ACTUAL EntryJS program against the four
+/* Mission 06: test the student's ACTUAL EntryJS program against the four
  * threshold/op values saved by their team in the flood simulator.
  * Evaluate ALL 16 sensor-risk combinations (not merely inferred N) and send
  * the student's observed alarm truth table to the original disaster engine.
@@ -663,6 +742,7 @@ async function checkChosenAlarmN(){
  const required=['수위위험','유속위험','진동위험','강수위험','위험개수','경보결과','반복번호'];
  for(const name of required)if(!getVar(name))return {ok:false,details:[`「${name}」 변수가 없습니다. 기존 코드를 확인하세요.`]};
  if(!getList('위험목록'))return {ok:false,details:['「위험목록」 리스트가 필요합니다.']};
+ if(!liveSensorsAssignedInsideForever(['water','flow','vibration','rain']))return {ok:false,details:[realTimeSensorHint(['water','flow','vibration','rain'])]};
  if(!codeHasTypes(['value_of_index_from_list','change_variable'])||!(codeHasTypes(['repeat_basic'])||codeHasTypes(['repeat_inf'])))
    return {ok:false,details:['리스트와 반복문으로 위험 신호 네 개를 읽고 위험개수를 계산해야 합니다.']};
  const ruleInfo=NEPAL_SENSOR_ORDER.map((sensor,i)=>({sensor,label:labels[i],...nepalMission5Rules[sensor]}));
@@ -672,14 +752,18 @@ async function checkChosenAlarmN(){
  };
  const observations=Array(16).fill(null),byCount=Array.from({length:5},()=>new Set()),details=[];
  try{
+  await stopCode();
+  const firstBits=NEPAL_SENSOR_ORDER.map(()=>0),firstSynthetic={};
+  ruleInfo.forEach((rule,i)=>firstSynthetic[rule.sensor]=makeReading(rule,firstBits[i]));
+  Object.assign(nepalTestValues,firstSynthetic);
+  const lst=getList('위험목록');if(lst)lst.getArray().splice(0);
+  for(const name of required)if(getVar(name))setVar(name,'');
+  await startCode();
   for(let mask=0;mask<16;mask++){
    const bits=NEPAL_SENSOR_ORDER.map((_,i)=>(mask>>i)&1);
    const synthetic={};ruleInfo.forEach((rule,i)=>synthetic[rule.sensor]=makeReading(rule,bits[i]));
-   await stopCode();Object.assign(nepalTestValues,synthetic);
-   // Isolated runs: infinite-loop programs must be stopped between cases.
-   const lst=getList('위험목록');if(lst)lst.getArray().splice(0);
-   for(const name of required)if(getVar(name))setVar(name,'');
-   await startCode();
+   // Continuous loop: do NOT restart EntryJS when input values change.
+   Object.assign(nepalTestValues,synthetic);
    const count=bits.reduce((a,b)=>a+b,0);
    const stable=await waitForValues(()=>{
      const list=readList('위험목록')||[];
@@ -712,10 +796,11 @@ async function check(mission){
  if(!window.__entryReady)throw Error('엔트리 편집기 준비가 아직 끝나지 않았습니다.');
  switch(mission){
  case 0:return checkWaterVariable();
- case 1:return checkWaterRisk();
- case 2:return checkOtherRisk();
- case 3:return checkIntegratedList();
- case 4:return checkChosenAlarmN();
+ case 1:return checkContinuousWaterVariable();
+ case 2:return checkWaterRisk();
+ case 3:return checkOtherRisk();
+ case 4:return checkIntegratedList();
+ case 5:return checkChosenAlarmN();
  default:return {ok:false,details:['등록되지 않은 미션입니다.']};
  }
 }
