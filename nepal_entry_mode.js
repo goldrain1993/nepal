@@ -18,11 +18,33 @@
   .ne-header button,.ne-side button{border:1px solid #4c7150;border-radius:9px;padding:9px 13px;background:#17331d;color:#ecffe2;cursor:pointer;font-weight:800}
   .ne-main{display:grid;grid-template-columns:minmax(285px,27%) minmax(0,1fr);flex:1;min-height:0}
   .ne-side{border-right:1px solid #2a5132;background:#101e16;overflow:auto;padding:18px}
-  .ne-mission-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:12px 0}
+  .ne-mission-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:12px 0}
+  #ne-teacher-records{margin:9px 0;padding:8px 10px;background:#18331c;border:1px solid #456c3e;border-radius:8px;font-size:11px;line-height:1.55;color:#d2ffc0}
+  #ne-teacher-records[hidden]{display:none!important}
+  .ne-mission-list button.final-button{grid-column:span 2;background:linear-gradient(135deg,#563718,#82551c);color:#ffecb4;border-color:#efc26a;letter-spacing:.05em;box-shadow:0 0 12px #f3b7462a}
   .ne-mission-list button{padding:10px 3px;font-size:12px}
   .ne-mission-list button.current{background:#9fe761;color:#11240f}
   .ne-mission-list button.passed{border-color:#8aca69;background:#173820;color:#caffb6}
   .ne-mission-list button.current.passed{background:#9fe761;color:#11240f}
+  /* Mission 5 is a green checkpoint; FINAL is the special golden challenge. */
+  .ne-mission-list button.mission5-button:not(.locked){
+    background:#234b29;color:#d6ffd0;border-color:#87d77f;font-weight:950
+  }
+  .ne-mission-list button.mission5-button.current:not(.locked){
+    background:#a4e969;color:#11240f;border-color:#d3ffa3;box-shadow:0 0 13px #a4e96942
+  }
+  .ne-mission-list button.mission5-button.passed:not(.current):not(.locked){
+    background:#22442c;color:#d7ffcc;border-color:#7dbd68
+  }
+  .ne-mission-list button.final-button:not(.locked){
+    background:linear-gradient(135deg,#593916,#82551c);color:#ffedbd;border-color:#f1ca78;box-shadow:0 0 13px #e9b7553a
+  }
+  .ne-mission-list button.final-button.current:not(.locked){
+    background:linear-gradient(135deg,#ffe496,#e7b450);color:#392500;border-color:#fff0ba;box-shadow:0 0 0 2px #f8cb6b66,0 0 17px #f0c45a55
+  }
+  .ne-mission-list button.final-button.passed:not(.current):not(.locked){
+    background:#665022;color:#ffe6a8;border-color:#d9ae55
+  }
   .ne-mission-list button.locked,.ne-mission-list button:disabled{background:#152019;border:1px solid #36493b;color:#697b6d;cursor:not-allowed;opacity:.82}
   .ne-mission-list button:focus-visible{outline:2px solid #b8f480;outline-offset:2px}
   #ne-next{width:100%;margin-top:9px;background:#b5f17c;color:#183013;display:none;font-size:14px;padding:11px;font-weight:900}
@@ -30,6 +52,8 @@
   #ne-learning-note{font-size:12px;color:#d4edc3;line-height:1.55;padding:10px;background:#102919;border-left:3px solid #9cdb69;margin:7px 0}
   #ne-saved-live{margin:7px 0;padding:9px 12px;background:#0a1416;border:1px solid #437060;border-radius:8px;color:#d5e9ed;font-size:13px;line-height:1.6}
   #ne-saved-live b{color:#b4eefd}
+  #ne-important-hint{display:none;margin:10px 0;padding:12px 13px;border:2px solid #f2cb65;border-radius:10px;background:#352b14;color:#ffebac;font-size:13px;line-height:1.55;font-weight:800}
+  #ne-alarm-live{display:none;margin:8px 0;padding:9px 11px;border-radius:9px;background:#601e23;color:#ffe2e4;border:1px solid #f27c87;font-weight:900}
   .ne-warning{background:#361b19;border:1px solid #e5795f;border-left:5px solid #ff8a6b;border-radius:9px;padding:16px 14px;margin:12px 0}
   .ne-warning h2{margin:3px 0 8px;font-size:22px;color:#ffbe94;line-height:1.3}
   .ne-warning p{color:#ffe4d4;font-size:13px;line-height:1.75;margin:0}
@@ -41,6 +65,19 @@
   #ne-sensor-live strong{font-size:18px;color:#f4ffed}
   #ne-status{font-size:12px;color:#c9e2c4;white-space:pre-wrap;line-height:1.6;margin-top:12px}
   .ne-editor-stage{min-width:0;min-height:0;position:relative;overflow:hidden;background:#f8fff8}
+  /* Shared 48px toolbar replaces the iframe's native title strip in both modes.
+     It never overlaps the sensor sidebar, map or editor workspace. */
+  #ne-workspace-toolbar{position:absolute;top:0;left:0;right:0;height:48px;z-index:15;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 13px;
+    background:#e9f1e6;color:#21431d;border-bottom:1px solid #c1d9bc;font-size:13px;font-weight:800}
+  #ne-workspace-heading{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:auto}
+  #ne-audio-actions{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+  #ne-entry-audio-toggle{min-height:31px;padding:5px 9px;font-size:11px;font-weight:800;background:#e1edd7;color:#21431d;border:1px solid #a2c293;border-radius:7px;cursor:pointer}
+  #ne-arioso-credit{font-size:13px;text-decoration:none;color:inherit;padding:3px}
+  @media(max-width:730px){#ne-entry-audio-toggle{font-size:10px;padding:4px 5px}#ne-arioso-credit{display:none}}
+  #nepal-entry-layer.ne-sim-visible #ne-workspace-toolbar{background:#13251a;color:#e9ffc8;border-bottom-color:#46693d}
+  #ne-iframe{margin-top:48px;height:calc(100% - 48px)!important}
+  #ne-entry-loading{top:48px!important}
   #ne-iframe{display:block;width:100%;height:100%;border:0;background:white;visibility:hidden}
   .ne-entry-loading{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 51% 39%,#e6ffca 0%,#f7fff1 46%,#eff8f4 100%);color:#294d2d;text-align:center;transition:opacity .22s ease}
   .ne-entry-loading.done{opacity:0;visibility:hidden;pointer-events:none}
@@ -62,23 +99,29 @@
   @media(prefers-reduced-motion:reduce){.ne-loader-mascot,.ne-mascot-eye,.ne-loading-dots i{animation:none}}
 
   #ne-mini{font-size:12px;color:#9bbb96;line-height:1.8}
-  .ne-editor-stage #ne-sim-stage{display:none;position:absolute;inset:0;z-index:3;overflow:hidden;background:#061009}
+  .ne-editor-stage #ne-sim-stage{display:none;position:absolute;inset:48px 0 0;z-index:3;overflow:hidden;background:#061009}
   #nepal-entry-layer.ne-sim-visible #ne-sim-stage{display:block}
   #nepal-entry-layer.ne-sim-visible #ne-iframe,#nepal-entry-layer.ne-sim-visible #ne-entry-loading{display:none!important}
-  #ne-mode-switch{display:none;position:absolute;right:12px;top:9px;z-index:14;background:#b9ed74;color:#122518;border:1px solid #648a48;border-radius:9px;padding:10px 16px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px #0004}
-  #nepal-entry-layer.ne-mission5 #ne-mode-switch{display:block}
+  #ne-mode-switch{display:none;position:static;flex:0 0 auto;max-width:58%;min-height:36px;background:#b9ed74;color:#122518;border:1px solid #648a48;border-radius:9px;padding:7px 14px;font-weight:900;cursor:pointer;white-space:nowrap;box-shadow:0 2px 7px #0002}
+  #nepal-entry-layer.ne-sensor-mission #ne-mode-switch{display:block}
   #ne-sim-stage #app{height:100%;width:100%;min-height:0}
   #ne-sim-stage #assessmentTabBtn,#ne-sim-stage #assessmentPane,#ne-sim-stage #run,#ne-sim-stage #replay,#ne-sim-stage #design,#ne-sim-stage #nepal-design-save{display:none!important}
-  /* Mission 6 setup: only ① observations, ② sensor placement, and the Hint tab.
-     All sensor threshold and evacuation/alarm-setting panels are intentionally hidden. */
-  #ne-sim-stage #practicePane > section.card:nth-of-type(n+3){display:none!important}
-  #ne-sim-stage .panel{padding-top:72px!important;scroll-padding-top:72px!important}
-  /* Fixed login buttons must appear at the BOTTOM-LEFT of the simulation MAP,
-     not over the right-side sensor panel. Respect the developer sidebar width. */
+  /* Mission 6 shows only original observation and sensor-placement cards.
+     Thresholds, operators, and the N-of-four alarm are EntryJS-only. */
+  #ne-sim-stage #practicePane > section.card.ne-mission6-hidden{display:none!important}
+  #ne-sim-stage .panel{padding:12px 12px 22px!important;scroll-padding-top:12px!important}
+  #ne-sim-stage .panel > div:first-child,
+  #ne-sim-stage .panel > .sub,
+  #ne-sim-stage .panel > .tabs{display:none!important}
+  #ne-sim-stage #practicePane{display:block!important}
+  #ne-sim-stage #practicePane > section.card{margin-top:8px}
+  #ne-mission6-sensor-tip{border:1px solid #86c958;background:#162b1a;color:#e5ffcf;
+    border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.6}
+  /* Match the ordinary simulator: floating controls belong to bottom-right. */
   body.nepal-mission6-sim #nepal-entry-trigger,
   body.nepal-mission6-sim #nepal-class-board,
   body.nepal-mission6-sim #nepal-class-switch{
-    left:calc(max(285px, 27vw) + 17px)!important;right:auto!important;
+    left:auto!important;right:22px!important;
     z-index:12900!important;max-width:220px!important;
   }
   body.nepal-mission6-sim #nepal-entry-trigger{display:block!important;bottom:16px!important}
@@ -87,29 +130,31 @@
   @media(max-width:800px){
     body.nepal-mission6-sim #nepal-entry-trigger,
     body.nepal-mission6-sim #nepal-class-board,
-    body.nepal-mission6-sim #nepal-class-switch{left:18px!important}
+    body.nepal-mission6-sim #nepal-class-switch{left:auto!important;right:14px!important}
   }
-  #ne-sim-stage .tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   #ne-sim-stage #sensorType optgroup:last-child option:first-child{display:none!important}
   #ne-sim-stage #dataMode,#ne-sim-stage #replayControls{display:none!important}
   #ne-mission5-report{display:none;margin:12px 0;padding:15px;border:1px solid #89c95c;background:#10241a;border-radius:12px;font-size:13px;color:#dcffcf}
   #ne-mission5-report strong{font-size:28px;color:#b6f36f}
-  #nepal-entry-layer.ne-mission5 #ne-mission5-report{display:block}
+  #nepal-entry-layer.ne-graded-mission #ne-mission5-report{display:block}
   #legendOverlay.show{z-index:30000!important}
   
   @media(max-width:800px){.ne-main{grid-template-columns:1fr;grid-template-rows:minmax(220px,38%) minmax(0,1fr)}.ne-side{border-right:0;border-bottom:1px solid #355439}}
   `;
   document.head.appendChild(css);
-  // Educational thresholds (not real disaster safety standards): water 2m,
-  // flow 2m/s, vibration 13 on a virtual scale, rainfall 22 mm/h.
-  // Trigger alarm if AT LEAST TWO OF FOUR sensors indicate danger.
+  // Missions 1-5 use independent fictional classroom thresholds:
+  // water >= 4m, flow >= 3m/s, vibration >= 16, rainfall >= 35mm/h.
+  // These are learning-only values and are not read from the flood simulator.
+  // Mission 6 thresholds are authored separately by students in EntryJS.
   const missions = [
-    {title:'수위 측정값 저장',fault:'수위 센서값이 저장되지 않습니다!',description:'수위 센서는 계속 값을 측정하고 있지만, 측정값을 저장할 변수가 없습니다. 먼저 한 개의 값을 저장하는 기능부터 복구하세요.',task:'「수위값」 변수를 직접 만들고, 「수위 센서가 현재 측정하고 있는 실시간 값」 타원형 블록으로 현재 값을 한 번 저장하세요.',example:'수위 센서 4.20m → 수위값 4.20 (한 번 저장하면 통과)',active:true},
-    {title:'실시간 수위값 갱신',fault:'수위값이 계속 바뀌지 않습니다!',description:'미션 1에서는 현재 수위를 한 번 저장했습니다. 하지만 재난 현장에서는 수위가 계속 변해요. 실시간 데이터를 관찰하려면 프로그램이 센서값을 반복해서 다시 읽어야 합니다.',task:'이미 만든 「수위값」 변수를 계속 최신 상태로 갱신해 보세요. 「흐름」 탭의 「계속 반복하기」 안에서 「수위값을 (수위 센서가 현재 측정하고 있는 실시간 값)으로 정하기」 명령이 반복되게 만드세요. ※ 0.2초 기다리기는 권장하지만 필수는 아닙니다.',example:'수위 1.35 → 수위값 1.35 / 수위 3.60 → 수위값 3.60 / 수위 2.05 → 수위값 2.05 (프로그램 재시작 없이 갱신)',active:true},
-    {title:'수위 위험 판단',fault:'수위 위험 여부를 판단하지 못합니다!',description:'수위값은 반복해서 갱신되고 있습니다. 이번에는 계속 반복하기 안에서 그 값이 위험한지 매번 판단해 보세요.',task:'「수위위험」 변수를 직접 만드세요. 수위값이 2m 이상이면 1(위험), 2m 미만이면 0(안전)이 되도록 하세요. 센서값이 바뀌어도 계속 판단할 수 있어야 합니다. 힌트: 「흐름」 탭의 계속 반복하기와 만일/만일~아니면 블록을 살펴보세요.',example:'수위 1.50m → 수위위험 0 / 수위 2.80m → 수위위험 1',active:true},
-    {title:'유속·진동·강수 확장',fault:'유속·진동·강수 센서의 위험 판단 기능이 없습니다!',description:'수위 위험을 판단하는 방법을 배웠습니다. 이번에는 같은 방법을 유속·진동·강수 센서에 스스로 적용해 보세요. 리스트는 아직 사용하지 않습니다.',task:'「유속값」·「진동값」·「강수값」 변수와 「유속위험」·「진동위험」·「강수위험」 변수를 직접 만드세요. 세 센서값도 「계속 반복하기」 안에서 갱신하고, 유속 2m/s 이상, 진동 13 이상, 강수 22mm/h 이상이면 각각 위험(1), 미만이면 안전(0)이 되도록 만드세요. 수위값도 계속 갱신되어야 합니다.',example:'유속 2.60 → 위험 1 / 진동 12.50 → 위험 0 / 강수 24mm/h → 위험 1',active:true},
-    {title:'리스트·반복문 통합',fault:'네 센서의 위험 신호를 종합하지 못합니다!',description:'이제 네 위험 신호가 각각 0 또는 1로 계산됩니다. 네 신호를 리스트의 1~4번 칸에 넣고 반복해서 검사해 위험 센서 수를 세어 보세요. 네 센서값은 계속 갱신되어야 합니다.',task:'「위험목록」 리스트에 수위위험·유속위험·진동위험·강수위험을 1·2·3·4번 순서로 넣으세요. 「반복번호」와 반복문으로 위험한 센서의 수를 세고, 2개 이상이면 「경보결과」를 1, 아니면 0으로 정하세요. 💡 힌트: ① 리스트에 먼저 4칸을 준비하기 ② 「계속 반복하기」 안에서 각 칸을 최신 0·1로 바꾸기 ③ 「위험개수」를 0으로 초기화하고 1~4번 항목을 검사하기. 「항목 추가」를 계속 반복하면 리스트가 길어지니 「n번째 항목 바꾸기」를 찾아보세요.',example:'위험목록 [1, 0, 1, 0] → 위험개수 2 → 경보결과 1',active:true},
-    {title:'최종 경보 설계·100회 평가',fault:'실제 재난 상황에 맞는 경보 기준을 완성하세요!',description:'네팔 홍수 시뮬레이션에서 자신이 정한 센서 위치·위험 기준·비교 방향을 코드로 재현하세요. 4개 중 경보를 울릴 N을 정하면, 실제 엔트리 코드의 경보 판단을 원본 재난 엔진에 적용하여 100회 평가합니다.',task:'먼저 네팔 시뮬레이션에서 수위·유속·진동·강수 센서를 설치하고 각 위험 기준값과 비교 방향(이상/이하)을 설정하세요. 엔트리의 실시간 센서값도 「계속 반복하기」 안에서 갱신하고, 「시뮬레이션에서 설정한 ○○ 위험 기준값」 블록을 이용해 같은 위험 판단을 구현하세요. 리스트·반복문으로 네 위험 신호를 세고, 자신이 정한 N개 이상이면 「경보결과」를 1로 정하세요(N=1~4). 평가에 적용되는 센서 위치·임계값은 시뮬레이션에서 저장한 그대로입니다.',example:'시뮬레이션에서 N=3, 센서별 위험 기준 설정 → 엔트리에서도 같은 기준과 N=3 사용 → 동일한 센서 위치로 100회 평가.',active:true}
+    {title:'수위 측정값 저장',fault:'수위 센서값이 저장되지 않습니다!',description:'수위 센서는 계속 값을 측정하지만, 측정값을 저장할 변수가 없습니다. 먼저 값을 저장해 보세요.',task:'「수위값」 변수를 만들고 「수위 센서가 현재 측정하고 있는 실시간 값」 블록으로 현재 값을 한 번 저장하세요.',example:'수위 4.20m → 수위값 4.20',active:true},
+    {title:'실시간 수위값 갱신',fault:'수위값이 계속 바뀌지 않습니다!',description:'한 번 저장한 센서값으로는 실시간 변화를 반영할 수 없습니다. 반복문으로 값을 갱신해 보세요.',task:'「계속 반복하기」 안에서 「수위값」에 최신 수위 센서값을 다시 저장하도록 만드세요. 0.2초 기다리기는 권장하지만 필수는 아닙니다.',example:'수위 1.35 → 3.60 → 2.05에 따라 수위값도 계속 변함',active:true},
+    {title:'수위 위험 판단',fault:'수위 위험 여부를 판단하지 못합니다!',description:'변수와 반복문을 배웠으니 이번에는 조건문을 이용해 수위 위험 여부를 계산하세요.',task:'「수위위험」 변수를 만들고 실습용 기준 수위 4m 이상은 1(위험), 4m 미만은 0(안전)이 되도록 조건문을 작성하세요. 이 판단도 「계속 반복하기」 안에서 갱신하세요.',example:'수위 3.50m → 수위위험 0 / 수위 4.80m → 수위위험 1',active:true},
+    {title:'유속·진동·강수 확장',fault:'다른 센서들의 위험 신호도 만들어야 합니다!',description:'수위의 위험 판단을 유속·진동·강수 센서로 확장해 보세요.',task:'「유속값」·「진동값」·「강수값」 및 각 위험 변수를 만들고 실습용 기준 유속 3m/s 이상·진동 16 이상·강수 35mm/h 이상이면 1, 아니면 0이 되도록 반복해서 갱신하세요.',example:'유속 3.60 → 위험 1 / 진동 15.50 → 위험 0 / 강수 40 → 위험 1',active:true},
+    {title:'센서 배치·경보 알고리즘',fault:'실제 센서 데이터를 이용해 경보를 완성하세요!',description:'센서를 네팔 지형에 배치하고 4개 센서의 위험 기준·비교 방향을 엔트리 코드로 직접 정하세요. 경보 알고리즘을 완성한 후 100회 평가를 받습니다.',task:'「🗺 센서 설치 화면」에서 ① 관측 지점을 살펴보고 ② 수위·유속·진동·강수 센서를 하나씩 설치하세요. 엔트리에서 실시간 센서값과 4개의 위험신호를 갱신하고, 「위험개수」를 계산해 N개 이상(N=1~4) 위험하면 「시작」 탭의 빨간 「경보 울리기」 블록이 실행되도록 구현하세요. 학생 코드로 100회 재난 평가를 받습니다.',example:'4개 센서 설치 → 엔트리에서 위험 기준과 경보 N 직접 설정 → 100회 평가 및 점수 획득',active:true},
+    {title:'리스트로 위험신호 정리',fault:'4개의 위험신호를 리스트로 정리해 보세요!',description:'미션 5의 경보 알고리즘은 유지하면서 이번에는 리스트 자료구조와 반복문만 집중 연습합니다. 100회 평가는 다음 FINAL 미션에서 다시 진행합니다.',task:'「위험목록」 리스트를 만들고 수위위험·유속위험·진동위험·강수위험을 차례대로 4칸에 저장하세요. 매번 최신 위험신호로 리스트 항목을 바꾸고, 「반복번호」와 「반복하기」를 이용해 리스트의 1~4번째 값을 확인해 「위험개수」를 계산하세요. 기존의 경보 알고리즘이 유지되도록 검사해 보세요.',example:'위험목록 [1, 0, 1, 0] → 반복해서 1의 개수 세기 → 위험개수 2',active:true},
+    {title:'FINAL 미션',fault:'지금까지 만든 재난 경보 시스템을 최종 검증하세요!',description:'센서 위치 설계·위험 조건·리스트·반복문·경보 판단을 모두 결합해 최종 재난 경보 시스템을 완성하세요.',task:'필요하면 센서 설치 화면에서 ① 관측 지점과 ② 센서 설치를 다시 확인하세요. 엔트리에서 4개의 위험신호를 「위험목록」 리스트에 저장하고 반복문으로 「위험개수」를 세어 N개 이상 위험하면 빨간 「경보 울리기」 블록이 실행되게 하세요. 전체 코드를 검사한 뒤 100회 재난 평가에 도전하세요.',example:'센서 위치 + 4개 위험 판단 + 리스트·반복문 + 경보 알고리즘 → FINAL 100회 평가',active:true}
+
   ];
   // v4.0: The NORMAL Nepal 100-run evaluation keeps its exact formula;
   // only LEGEND eligibility changes to score >= 97, with NO evac-failure limit.
@@ -137,7 +182,7 @@
   }
   const trigger = document.createElement('button'); trigger.id='nepal-entry-trigger'; trigger.textContent='🧩 엔트리 개발자 모드';trigger.style.display='none';
   const layer = document.createElement('section'); layer.id='nepal-entry-layer';
-  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">6단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 실시간 반복 갱신</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 리스트·반복문</b> → <b>⑥ 100회 평가</b></div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 최종 경보 성능평가</div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button><p id="ne-mini">※ 원본 홍수 4유형·비홍수 3유형과 재난 엔진은 수정하지 않습니다.<br>※ 미션 01~05는 공통 가상 기준(수위 2m·유속 2m/s·진동 13·강수 22mm/h)으로 기초를 학습하고, 미션 06은 각 조가 시뮬레이션에서 직접 설정한 위험 기준과 설치 위치를 평가합니다.<br>※ 실제 재난 경보 기준이 아닙니다.</p></aside><div class="ne-editor-stage"><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=39"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
+  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">7단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 실시간 반복 갱신</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 경보 알고리즘</b> → <b>⑥ 리스트 학습</b> → <b>🏆 FINAL</b></div><div id="ne-missions" class="ne-mission-list"></div><div id="ne-teacher-records" hidden></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 미션</b><div id="ne-task"></div></div><div id="ne-important-hint">⭐ 중요 힌트 · <b>「N」</b>과 <b>「위험개수」</b> 변수는 미션 5의 경보 알고리즘을 만드는 데 꼭 필요합니다.</div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 <span id="ne-grade-title">경보 성능평가</span></div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">📊 엔트리 변수 상태: <b>실행 전</b></div><div id="ne-alarm-live" aria-live="polite">🚨 경보 울리기 블록 실행!</div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button></aside><div class="ne-editor-stage"><div id="ne-workspace-toolbar"><span id="ne-workspace-heading">🧩 엔트리 코딩 편집기</span><div id="ne-audio-actions"><button id="ne-entry-audio-toggle" type="button" aria-pressed="true">♫ 아리오소 ON</button><a id="ne-arioso-credit" href="https://commons.wikimedia.org/wiki/File:Violinist_CARRIE_REHKOPF-BACH_ARIOSO.ogg" target="_blank" rel="noopener noreferrer" title="연주 Carrie Rehkopf · CC BY-SA 3.0 · 음원 출처">ⓘ</a></div><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button></div><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=47"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
   // Pause the original simulator's background animation loops without altering index.html.
   // The two named rAF loops are global function declarations in the original page.
   // Their drawing work is skipped while EntryJS covers the simulator; their ordinary
@@ -171,6 +216,113 @@
       }
     }catch(error){console.warn('[NEPAL ENTRY] 배경음 중지',error)}
   }
+  // Developer-only Bach Arioso BWV 156 (Carrie Rehkopf, CC BY-SA 3.0).
+  // Wikimedia's MP3 transcoding avoids OGG codec problems on school devices.
+  // A separate, lightweight AudioContext creates the "뾱" tap tone.
+  const ariosoUrl='https://upload.wikimedia.org/wikipedia/commons/transcoded/5/53/Violinist_CARRIE_REHKOPF-BACH_ARIOSO.ogg/Violinist_CARRIE_REHKOPF-BACH_ARIOSO.ogg.mp3';
+  const ariosoOggUrl='https://upload.wikimedia.org/wikipedia/commons/5/53/Violinist_CARRIE_REHKOPF-BACH_ARIOSO.ogg';
+  let ariosoFallbackAttempted=false;
+  const ariosoAudio=new Audio();
+  ariosoAudio.preload='none';ariosoAudio.src=ariosoUrl;ariosoAudio.loop=true;ariosoAudio.volume=.27;
+  let entrySoundOn=true,entryAudioCtx=null,entryTapAt=0,entryAudioError=false,entryAutoPlayBlocked=false;
+  const audioButton=document.getElementById('ne-entry-audio-toggle');
+  function refreshEntryAudioButton(){
+    if(!audioButton)return;
+    audioButton.textContent=entrySoundOn?(entryAutoPlayBlocked?'♫ 아리오소 재생':'♫ 아리오소 ON'):'♫ 아리오소 OFF';
+    audioButton.title=entryAudioError?'아리오소 음원 연결 실패 · 눌러 다시 시도':'Bach Arioso BWV 156 · 연주 Carrie Rehkopf (CC BY-SA 3.0) · 켜기/끄기';
+    audioButton.setAttribute('aria-pressed',String(entrySoundOn));
+  }
+  function unlockEntryPop(){
+    try{
+      const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+      const ctx=entryAudioCtx||(entryAudioCtx=new C());
+      if(ctx.state==='suspended')ctx.resume().catch(()=>{});
+    }catch(_){}
+  }
+  // Prepare sound with a REAL pointer gesture before asynchronous Firebase lock
+  // acquisition; otherwise the iframe message alone may lack user activation.
+  trigger.addEventListener('pointerdown',unlockEntryPop,{passive:true});
+  function playEntryPop(){
+    if(!entrySoundOn||!layer.classList.contains('open'))return;
+    const at=performance.now();if(at-entryTapAt<42)return;
+    entryTapAt=at;
+    try{
+      const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+      const ctx=entryAudioCtx||(entryAudioCtx=new C());
+      if(ctx.state==='suspended')ctx.resume().catch(()=>{});
+      if(ctx.state==='closed')return;
+      const now=ctx.currentTime+.007,o=ctx.createOscillator(),g=ctx.createGain();
+      o.type='sine';
+      o.frequency.setValueAtTime(680,now);
+      o.frequency.exponentialRampToValueAtTime(360,now+.092);
+      g.gain.setValueAtTime(.0001,now);
+      g.gain.exponentialRampToValueAtTime(.11,now+.004);
+      g.gain.exponentialRampToValueAtTime(.0001,now+.11);
+      o.connect(g);g.connect(ctx.destination);o.start(now);o.stop(now+.125);
+    }catch(_){}
+  }
+  function playEntryAlarmTone(){
+    if(!entrySoundOn)return;
+    try{
+      const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+      const ctx=entryAudioCtx||(entryAudioCtx=new C());
+      if(ctx.state==='suspended')ctx.resume().catch(()=>{});
+      const now=ctx.currentTime;
+      for(const [i,hz] of [790,560].entries()){
+        const osc=ctx.createOscillator(),gain=ctx.createGain(),start=now+i*.13;
+        osc.type='triangle';osc.frequency.setValueAtTime(hz,start);
+        gain.gain.setValueAtTime(.0001,start);
+        gain.gain.exponentialRampToValueAtTime(.085,start+.018);
+        gain.gain.exponentialRampToValueAtTime(.0001,start+.13);
+        osc.connect(gain);gain.connect(ctx.destination);
+        osc.start(start);osc.stop(start+.15);
+      }
+    }catch(_){}
+  }
+  function playEntryBgm(){
+    if(!entrySoundOn||!layer.classList.contains('open'))return;
+    const p=ariosoAudio.play();
+    if(p&&typeof p.then==='function')p.then(()=>{
+      entryAutoPlayBlocked=false;entryAudioError=false;refreshEntryAudioButton();
+    }).catch(e=>{
+      if(e?.name==='NotAllowedError')entryAutoPlayBlocked=true;
+      else entryAudioError=true;
+      refreshEntryAudioButton();
+    });
+  }
+  function pauseEntrySounds(){
+    ariosoAudio.pause();ariosoAudio.currentTime=0;
+    if(entryAudioCtx?.state==='running')entryAudioCtx.suspend().catch(()=>{});
+  }
+  audioButton?.addEventListener('click',()=>{
+    if(entrySoundOn&&(entryAutoPlayBlocked||entryAudioError)){
+      if(entryAudioError){
+        ariosoFallbackAttempted=false;ariosoAudio.src=ariosoUrl;ariosoAudio.load();
+      }
+      entryAutoPlayBlocked=false;entryAudioError=false;playEntryBgm();refreshEntryAudioButton();return;
+    }
+    entrySoundOn=!entrySoundOn;entryAudioError=false;entryAutoPlayBlocked=false;
+    refreshEntryAudioButton();
+    if(entrySoundOn){playEntryPop();playEntryBgm()}else pauseEntrySounds();
+  });
+  ariosoAudio.addEventListener('error',()=>{
+    if(!ariosoFallbackAttempted){
+      ariosoFallbackAttempted=true;ariosoAudio.src=ariosoOggUrl;
+      if(layer.classList.contains('open')&&entrySoundOn)playEntryBgm();
+    }else{entryAudioError=true;refreshEntryAudioButton();}
+  });
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)ariosoAudio.pause();else if(layer.classList.contains('open'))playEntryBgm()});
+  refreshEntryAudioButton();
+  // Parent overlay interactions (missions, buttons, sensor setup screen).
+  layer.addEventListener('pointerdown',e=>{
+    if(e.target.closest('button,select,input,label,[role="button"],.ne-mission-list'))playEntryPop();
+  },true);
+  // The EntryJS Blockly workspace is in a same-origin iframe. Notify the
+  // parent only on a genuine pointer event to avoid idle sound floods.
+  window.addEventListener('message',e=>{
+    if(e.source===iframe.contentWindow&&e.origin===location.origin&&e.data?.type==='NEPAL_ENTRY_UI_TAP')playEntryPop();
+  });
+
   function restoreOriginalSimulatorSound(){
     try{
       if(previousSoundEnabled===null || typeof uiSoundEnabled==='undefined')return;
@@ -192,14 +344,33 @@
   const loadingOverlay=layer.querySelector('#ne-entry-loading');
   const loadingTitle=layer.querySelector('#ne-loading-title');
   const loadingSub=layer.querySelector('#ne-loading-sub');
+  const retryLoadingButton=document.createElement('button');
+  retryLoadingButton.type='button';retryLoadingButton.id='ne-editor-retry';
+  retryLoadingButton.textContent='↻ 엔트리 다시 불러오기';
+  retryLoadingButton.style.cssText='margin-top:16px;padding:11px 20px;border:1px solid #a7e579;background:#254b31;color:#f2ffe9;border-radius:10px;font-weight:800;cursor:pointer';
+  retryLoadingButton.hidden=true;
+  loadingOverlay.querySelector('.ne-loading-center')?.appendChild(retryLoadingButton);
+  let editorBootWatchdog=null;
+  function scheduleEditorBootWatchdog(){
+    clearTimeout(editorBootWatchdog);
+    editorBootWatchdog=setTimeout(()=>{
+      if(!ready&&layer.classList.contains('open')){
+        loadingSub.textContent='연결 시간이 길어지고 있어요. 아래 버튼으로 다시 시도할 수 있습니다.';
+        retryLoadingButton.hidden=false;
+      }
+    },45000);
+  }
   function showEditorLoading(){
     if(ready&&!projectRestoring){hideEditorLoading();return}
     loadingTitle.textContent='로딩중입니다';
     loadingSub.textContent='잠깐만요, 블록을 가져올게요 ✨';
+    retryLoadingButton.hidden=true;
     loadingOverlay.classList.remove('done');
     iframe.style.visibility='hidden';
   }
   function hideEditorLoading(){
+    clearTimeout(editorBootWatchdog);
+    retryLoadingButton.hidden=true;
     polishEntryFrame();
     iframe.style.visibility='visible';
     loadingOverlay.classList.add('done');
@@ -217,11 +388,51 @@
       if(heading)heading.textContent='🧩 엔트리 코딩 편집기';
     }catch(e){console.warn('엔트리 편집기 화면 정리:',e)}
   }
+  // Network-only warmup: do not run the costly EntryJS editor in the background.
+  let entryWarmupQueued=false;
+  function queueEntryWarmup(){
+    if(entryWarmupQueued)return;
+    entryWarmupQueued=true;
+    for(const host of ['https://cdn.jsdelivr.net','https://entry-cdn.pstatic.net']){
+      const link=document.createElement('link');
+      link.rel='preconnect';link.href=host;document.head.appendChild(link);
+    }
+    const warm=()=>{
+      const urls=[
+        './nepal_entry_editor.html?v=47',
+        './lib/vendor/jquery-3.7.1.min.js',
+        './lib/vendor/jquery-ui-1.13.3.min.js',
+        './lib/vendor/codemirror-5.65.20-show-hint.js',
+        './lib/vendor/codemirror-5.65.20-javascript.js'
+      ];
+      urls.forEach((href,index)=>setTimeout(()=>{
+        const link=document.createElement('link');
+        link.rel='prefetch';link.href=href;
+        document.head.appendChild(link);
+      },index*250));
+    };
+    if('requestIdleCallback' in window)requestIdleCallback(warm,{timeout:4000});
+    else setTimeout(warm,1800);
+  }
+  retryLoadingButton.addEventListener('click',()=>{
+    if(ready||checking||projectRestoring)return;
+    ready=false;
+    iframe.dataset.loaded='yes';
+    iframe.src='about:blank';
+    showEditorLoading();
+    setTimeout(()=>{
+      if(!layer.classList.contains('open'))return;
+      iframe.src=iframe.dataset.src;
+      scheduleEditorBootWatchdog();
+    },160);
+  });
   const launch = () => {
     if(layer.classList.contains('open'))return;
     silenceOriginalSimulator();
     layer.classList.add('open');trigger.style.display='none';
+    playEntryBgm();
     showEditorLoading();updateMissionButtons();
+    if(!ready)scheduleEditorBootWatchdog();
     // Delay the costly EntryJS dependencies until the first explicit opening.
     if(iframe.dataset.loaded!=='yes'){
       iframe.dataset.loaded='yes';
@@ -237,7 +448,7 @@
     // The classroom module saves and releases the edit lock BEFORE hiding this editor.
     // Stop student code when leaving so an infinite repeat does not consume CPU.
     iframe.contentWindow?.postMessage({type:'NEPAL_DEV_PAUSE'},location.origin);
-    layer.classList.remove('open');if(classroom)classroom.refreshUI?.();
+    layer.classList.remove('open');pauseEntrySounds();if(classroom)classroom.refreshUI?.();
     restoreOriginalSimulatorSound();
   };
   trigger.addEventListener('click',()=>{
@@ -286,7 +497,7 @@
         }
       }
     }catch(err){console.warn('수위 센서 연결 대기',err)}
-    return {value:nepalTrainingReadings.water,source:'실습용 가상 수위 센서 (난수 측정)'};
+    return {value:nepalTrainingReadings.water,source:'실습용 가상 수위 센서'};
   }
   function getNepalSensorMeasurement(kind){
     if(kind==='water')return getNepalWaterMeasurement();
@@ -302,7 +513,7 @@
         }
       }
     }catch(err){console.warn(label+' 연결 대기',err)}
-    return {value:nepalTrainingReadings[kind],source:'실습용 가상 '+label+' (난수 측정)'};
+    return {value:nepalTrainingReadings[kind],source:'실습용 가상 '+label};
   }
   function pushSensorMeasurement(){
     if(!layer.classList.contains('open'))return;
@@ -319,7 +530,7 @@
       const fmt=r=>Number(r.value).toFixed(2);
       display.innerHTML=(mission<=2)
        ?'📡 '+readings.water.source+'<br><strong>'+fmt(readings.water)+' m</strong> · 센서는 계속 측정 중'
-       :'📡 센서 측정값 (미리 만들어진 변수 아님)<br><strong>수위 '+fmt(readings.water)+'m · 유속 '+fmt(readings.flow)+'m/s · 진동 '+fmt(readings.vibration)+' · 강수 '+fmt(readings.rain)+'mm/h</strong>';
+       :'📡 센서 측정값<br><strong>수위 '+fmt(readings.water)+'m · 유속 '+fmt(readings.flow)+'m/s · 진동 '+fmt(readings.vibration)+' · 강수 '+fmt(readings.rain)+'mm/h</strong>';
     }
   }
   setInterval(pushSensorMeasurement,800);
@@ -328,10 +539,78 @@
   // This progress belongs to the current browser page, not to a student account.
   // Reloading resets it so a different student does not inherit another's marks.
   const passed=Array(missions.length).fill(false);
+  // EntryJS clears runtime variable values when a mission check stops the engine.
+  // Preserve only the value VERIFIED during the check, not an old live snapshot.
+  const verifiedWaterByMission=Array(missions.length).fill(null);
   const missionBtns=document.getElementById('ne-missions');
   const checkBtn=document.getElementById('ne-check');
   const nextBtn=document.getElementById('ne-next');
+  // Show clear reasons without exposing every hidden test value or block recipe.
+  // The raw diagnostic stays available to teachers in the browser console.
+  function explainMissionFailure(stage,result){
+    const lines=Array.isArray(result.details)?result.details.map(String):[];
+    const raw=lines.join(' ');
+    console.info('[NEPAL 미션 검사 세부 내용]',stage+1,lines);
+    if(typeof result.studentFeedback==='string'&&result.studentFeedback.trim())
+      return '확인할 부분: '+result.studentFeedback.trim();
+    if(raw.includes('「N」과 「위험개수」는')){
+      const key=raw.includes('현재 「N」')?'N':'위험개수';
+      return '중요 힌트: 「N」과 「위험개수」 두 변수가 필요해요. 특히 「'+key+'」를 찾지 못했어요.';
+    }
+    if(raw.includes('빨간색 「경보 울리기」 블록을 찾지 못했습니다.'))
+      return '확인할 부분: 경보가 필요한 상황에서 실행될 빨간 「경보 울리기」 블록이 보이지 않아요.';
+    if(raw.includes('「N」개 이상인 상황'))
+      return '확인할 부분: 위험신호의 개수와 「N」의 값에 따라 「경보 울리기」가 실행되는 상황이 일치하지 않아요.';
+    const missing=raw.match(/「([^」]+)」\s*변수(?:가|를|는)?(?:\s*없습니다|\s*찾지 못했습니다|\s*만들어)/);
+    if(missing)return '확인할 부분: 「'+missing[1]+'」 변수를 찾지 못했어요. 미션에 적힌 이름과 만든 변수 이름을 비교해 보세요.';
+    if(raw.includes('「위험목록」 리스트')&&raw.includes('필요'))
+      return '확인할 부분: 이번 미션에서 사용할 「위험목록」 리스트가 아직 없어요.';
+    if(raw.includes('「위험목록」 리스트')&&raw.includes('만들'))
+      return '확인할 부분: 「위험목록」 리스트가 아직 만들어지지 않았어요.';
+    if(raw.includes('센서의 측정값이')||raw.includes('측정값')&&raw.includes('변수로 전달'))
+      return '확인할 부분: 센서가 읽은 값이 「수위값」에 제대로 저장되지 않고 있어요.';
+    if(raw.includes('변수')&&raw.includes('찾지 못했습니다'))
+      return '확인할 부분: 미션에 필요한 변수 중 아직 만들어지지 않은 것이 있어요. 변수 이름을 비교해 보세요.';
+    if(raw.includes('반복')&&(raw.includes('안')||raw.includes('계속')||raw.includes('갱신'))){
+      if(stage===1)return '확인할 부분: 수위가 바뀐 뒤에도 「수위값」이 최신 값으로 달라지지 않았어요.';
+      if(stage===2)return '확인할 부분: 수위가 달라질 때마다 측정값과 위험 판단이 함께 바뀌지 않고 있어요.';
+      if(stage===3)return '확인할 부분: 센서값이 바뀔 때마다 모든 센서의 값과 위험 판단이 함께 갱신되지 않아요.';
+      return '확인할 부분: 센서값이 변한 뒤에도 위험신호나 경보 결과 일부가 갱신되지 않아요.';
+    }
+    if(stage===0)
+      return '확인할 부분: 「수위값」에 저장된 숫자가 센서의 현재 측정값과 달라요.';
+    if(stage===1)
+      return '확인할 부분: 센서의 수위가 바뀌어도 「수위값」이 그 변화를 계속 따라가지 못해요.';
+    if(stage===2){
+      if(raw.includes('수위 측정은 맞지만')||raw.includes('기대 위험'))
+        return '확인할 부분: 수위 측정은 맞았지만 「수위위험」의 안전·위험 결과가 실습 기준과 다릅니다.';
+      if(raw.includes('조건문')||raw.includes('판단'))
+        return '확인할 부분: 수위가 바뀔 때 안전과 위험을 다시 판단하는 과정이 제대로 작동하지 않아요.';
+      return '확인할 부분: 수위 측정과 「수위위험」의 결과 중 일부가 실습 기준과 맞지 않아요.';
+    }
+    if(stage===3)
+      return '확인할 부분: 유속·진동·강수 중 일부의 측정값 또는 위험 판단 결과가 기준과 맞지 않아요.';
+    if(raw.includes('이전 방식')||raw.includes('예전'))return '확인할 부분: 현재 미션에서 사용할 수 없는 예전 방식의 센서 블록이 포함되어 있어요.';
+    if(raw.includes('위험목록')||raw.includes('리스트'))
+      return '확인할 부분: 센서의 위험신호가 바뀌어도 리스트 또는 위험개수에 같은 내용이 반영되지 않아요.';
+    if(raw.includes('경보')||raw.includes('위험개수')||raw.includes('위험 판정'))
+      return '확인할 부분: 센서들의 위험신호와 최종 경보 결과가 서로 일치하지 않는 경우가 있어요.';
+    if(raw.includes('실행 또는 검사 오류')||raw.includes('시간 초과'))
+      return '검사 도중 기술적인 문제가 발생했어요. 코드를 저장한 뒤 다시 검사해 보세요. 계속 발생하면 선생님께 알려 주세요.';
+    return '확인할 부분: 센서 측정값과 변수·판단 결과가 미션의 일부 검사 상황에서 맞지 않았어요. 마지막으로 바꾼 부분을 살펴보세요.';
+  }
   function teacherPreview(){return classroom?.isTeacher?.()===true;}
+  function showTeacherRecords(){
+    const el=document.getElementById('ne-teacher-records');if(!el)return;
+    el.hidden=!teacherPreview();
+    if(el.hidden)return;
+    const d=classroom?.getTeacherScores?.()||{},str=key=>{
+      const score=Number(d[key]?.score);
+      return Number.isFinite(score)&&d[key]?.score!=null?score.toFixed(1)+'점':'미평가';
+    };
+    el.textContent='🧑‍🏫 교사 모드 · 저장된 최고 점수: 형성평가 '+str('floodBest')+
+      ' / 미션 5 '+str('mission5NoListBest')+' / FINAL '+str('finalBest');
+  }
   function unlocked(index){return teacherPreview() || index===0 || passed[index-1]===true;}
   function updateMissionButtons(){
     [...missionBtns.children].forEach((b,i)=>{
@@ -340,9 +619,11 @@
       b.classList.toggle('locked',locked);
       b.classList.toggle('passed',passed[i]);
       b.classList.toggle('current',mission===i);
-      b.textContent=(locked?'🔒 ':passed[i]?'✓ ':'')+String(i+1).padStart(2,'0');
-      b.setAttribute('aria-label',`미션 ${i+1} ${locked?'잠김':passed[i]?'통과':'진행 가능'}`);
-      b.title=locked?`미션 ${i}을(를) 통과하면 열립니다.`:passed[i]?'통과한 미션입니다. 다시 열 수 있습니다.':`미션 ${i+1} 열기`;
+      b.textContent=(locked?'🔒 ':passed[i]?'✓ ':'')+(i===6?'FINAL':String(i+1).padStart(2,'0'));
+      b.classList.toggle('mission5-button',i===4);
+      b.classList.toggle('final-button',i===6);
+      b.setAttribute('aria-label',`${i===6?'FINAL 미션':'미션 '+(i+1)} ${locked?'잠김':passed[i]?'통과':'진행 가능'}`);
+      b.title=locked?`미션 ${i}을(를) 통과하면 열립니다.`:passed[i]?'통과한 미션입니다. 다시 열 수 있습니다.':`${i===6?'FINAL 미션':'미션 '+(i+1)} 열기`;
     });
     const usable=missions[mission]?.active===true;
     checkBtn.disabled=checking || navigating || !ready || !usable;
@@ -362,19 +643,28 @@
   // Prevent student code from running across missions. The iframe verifies stop.
   let changeToken=0;
   function applyMission(i){
-    if(i!==5)exitMission5Setup();
+    if(i!==4&&i!==6)exitMission5Setup();
     mission=i;const m=missions[i];
-    layer.classList.toggle('ne-mission5',i===5);
-    if(i===5)queueMicrotask(pushMission5Rules);
+    layer.classList.toggle('ne-sensor-mission',i===4||i===6);
+    showTeacherRecords();
+    layer.classList.toggle('ne-graded-mission',i===4||i===6);
+    document.getElementById('ne-grade-title').textContent=i===4?'미션 5 성능평가':'FINAL 성능평가';
+    if(i===4||i===6){
+      document.getElementById('ne-mission5-grade').textContent='미평가';
+      document.getElementById('ne-mission5-score').textContent='엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.';
+      document.getElementById('ne-mission5-progress').textContent='';
+    }
     document.getElementById('ne-sensor-live').style.display='block';
     document.getElementById('ne-saved-live').style.display='block';
-    document.getElementById('ne-saved-live').innerHTML='💾 학생 변수 상태: <b>실행 결과 대기 중</b>';
+    document.getElementById('ne-saved-live').innerHTML='📊 엔트리 변수 상태: <b>실행 결과 대기 중</b>';
+    document.getElementById('ne-important-hint').style.display=i===4?'block':'none';
+    document.getElementById('ne-alarm-live').style.display='none';
     document.getElementById('ne-fault').textContent=m.fault;
     document.getElementById('ne-why').textContent=m.description;
     document.getElementById('ne-task').textContent=m.task;
     document.getElementById('ne-example').textContent=m.example;
-    checkBtn.textContent=i===5?'🚨 엔트리 경보 코드 검증 + 100회 평가':'▶ 엔트리 실행 결과 검사';
-    status.textContent=teacherPreview()?'🧑‍🏫 교사 체험: 모든 미션을 자유롭게 선택할 수 있습니다. 저장은 하지 않습니다.':passed[i]?'✅ 통과한 미션입니다. 다른 코드도 시험할 수 있습니다.':'미션을 읽고 엔트리에서 블록을 연결해 보세요.';
+    checkBtn.textContent=(i===4||i===6)?'🚨 경보 알고리즘 검증 + 100회 평가':i===5?'📋 리스트·반복문 검사':'▶ 엔트리 실행 결과 검사';
+    status.textContent=teacherPreview()?'🧑‍🏫 교사 모드':passed[i]?'✅ 통과한 미션입니다. 다른 코드도 시험할 수 있습니다.':'미션을 읽고 엔트리에서 블록을 연결해 보세요.';
     document.getElementById('ne-mode-switch').textContent='🗺 센서 설치 화면';
     updateMissionButtons();pushSensorMeasurement();
   }
@@ -397,15 +687,14 @@
   checkBtn.addEventListener('click',()=>{
     if(!ready){status.textContent='엔트리 편집기 로딩이 완료되지 않았습니다. 네트워크와 외부 라이브러리를 확인해 주세요.';return;}
     if(checking || navigating || !unlocked(mission) || !missions[mission]?.active)return;
-    if(mission===5){
+    if(mission===4||mission===6){
       // Arm audio directly from the student's click (browser user gesture).
       // Background simulator music stays muted; only a LEGEND celebration uses audio.
       try{uiSoundEnabled=true;if(typeof unlockAudio==='function')unlockAudio();}catch(_){}
     }
-    if(mission===5){
+    if(mission===4||mission===6){
       try{
-        const rules=getMission5ConfiguredRules();
-        iframe.contentWindow.postMessage({type:'NEPAL_MISSION5_RULES',rules},location.origin);
+        getMission5ConfiguredRules();
       }catch(err){status.textContent='⚠ '+String(err.message||err);return;}
     }
     checking=true;pendingMission=mission;updateMissionButtons();
@@ -417,8 +706,8 @@
     if(d.type==='ENTRY_READY'){
       ready=true;
       projectRestoring=true;
-      pushSensorMeasurement();if(mission===5)pushMission5Rules();updateMissionButtons();
-      status.textContent=teacherPreview()?'🧑‍🏫 교사 체험: 미션 01~06을 자유롭게 선택할 수 있습니다.':'미션을 읽고 엔트리 블록을 연결해 보세요.';
+      pushSensorMeasurement();updateMissionButtons();
+      status.textContent=teacherPreview()?'🧑‍🏫 교사 모드 · 저장된 코딩 결과가 복원되었습니다.':'미션을 읽고 엔트리 블록을 연결해 보세요.';
       // A saved student project may still be importing after EntryJS is initialized.
       // Keep the mascot visible until BOTH the editor and saved blocks are ready.
       Promise.resolve().then(()=>classroom?.onEntryReady?.()).catch(error=>{
@@ -428,50 +717,78 @@
         projectRestoring=false;
         if(!ready)return;
         if(layer.classList.contains('open'))iframe.contentWindow?.postMessage({type:'NEPAL_DEV_RESUME'},location.origin);
-        hideEditorLoading();updateMissionButtons();
+        hideEditorLoading();updateMissionButtons();showTeacherRecords();
       });
     }
-    if(d.type==='ENTRY_ERROR'){ready=false;checking=false;pendingMission=null;loadingTitle.textContent='코딩 친구가 잠시 멈췄어요';loadingSub.textContent='편집기를 닫고 다시 열어보세요.';loadingOverlay.classList.remove('done');updateMissionButtons();status.textContent='편집기 준비 중 오류: '+String(d.message||'알 수 없는 오류');}
+    if(d.type==='ENTRY_ERROR'){ready=false;checking=false;pendingMission=null;loadingTitle.textContent='코딩 친구가 잠시 멈췄어요';loadingSub.textContent='라이브러리 연결에 실패했습니다. 다시 불러오기를 눌러주세요.';retryLoadingButton.hidden=false;clearTimeout(editorBootWatchdog);loadingOverlay.classList.remove('done');updateMissionButtons();status.textContent='편집기 준비 중 오류: '+String(d.message||'알 수 없는 오류');}
     if(d.type==='ENTRY_CHECK_RESULT'){
       const tested=pendingMission;
       checking=false;pendingMission=null;
       if(tested===null)return;
-      if(d.ok && tested===5){
+      if(tested===0||tested===1){
+        const checked=Number(d.verifiedWater);
+        verifiedWaterByMission[tested]=d.ok && d.verifiedWater!==null &&
+          d.verifiedWater!==undefined && Number.isFinite(checked)?checked:null;
+        if(d.ok && mission===tested){
+          const cell=document.querySelector('#ne-saved-live b');
+          if(cell)cell.textContent='최근 검사 확인 · 수위값 '+checked.toFixed(2)+'m ✓ (현재 실행 정지)';
+        }
+      }
+      if(d.ok && (tested===4||tested===6)){
         checking=true;
         status.textContent='✅ 엔트리 경보 조건 확인! 이제 실제 네팔 재난 100회 평가를 실행합니다.';
         updateMissionButtons();
-        runMission5Native(d.alarmTable,d.threshold).catch(e=>{checking=false;uiSoundEnabled=false;status.textContent='❌ 100회 평가 오류: '+String(e.message||e);updateMissionButtons()});
+        runMission5Native(d.alarmTable,d.threshold,d.rules,tested).catch(e=>{checking=false;uiSoundEnabled=false;status.textContent='❌ 100회 평가 오류: '+String(e.message||e);updateMissionButtons()});
         return;
       }
       if(d.ok){
         passed[tested]=true;
         const contiguous=passed.findIndex(flag=>!flag);
-        if(!teacherPreview()){
-          classroom?.saveProgress(contiguous<0?missions.length:contiguous);
-          classroom?.saveNow('mission-pass');
-        }
+        classroom?.saveProgress(contiguous<0?missions.length:contiguous);
+        classroom?.saveNow('mission-pass');
       }
-      if(tested===5&&!d.ok)uiSoundEnabled=false;
+      if((tested===4||tested===6)&&!d.ok)uiSoundEnabled=false;
       updateMissionButtons();
-      const next=d.ok && tested+1<missions.length?'\n🔓 다음 미션 '+String(tested+2).padStart(2,'0')+' 잠금이 해제되었습니다.':'';
-      status.textContent=(d.ok?'✅ 복구 검사 통과!':'❌ 복구 검사 실패')+'\n'+(Array.isArray(d.details)?d.details.join('\n'):String(d.message||''))+next;
+      const next=d.ok && tested+1<missions.length?'\n🔓 '+(tested===5?'FINAL 미션':'다음 미션 '+String(tested+2).padStart(2,'0'))+' 잠금이 해제되었습니다.':'';
+      if(d.ok){
+        status.textContent='✅ 복구 미션 성공!\n'+(Array.isArray(d.details)?d.details.join('\n'):String(d.message||''))+next;
+      }else{
+        const stageName=tested===6?'FINAL 미션':'미션 '+String(tested+1).padStart(2,'0');
+        status.textContent='❌ 복구 미션 실패 · '+stageName+'\n'+explainMissionFailure(tested,d);
+      }
     }
     if(d.type==='ENTRY_MISSION_STOPPED'){
       const p=missionStopPending;
       if(!p || p.token!==d.token)return;
       clearTimeout(p.timeout);missionStopPending=null;navigating=false;
-      if(d.ok){if(!teacherPreview())classroom?.saveNow('mission-change');applyMission(p.target);}
+      if(d.ok){classroom?.saveNow('mission-change');applyMission(p.target);}
       else{status.textContent='프로그램 정지 확인 실패: '+String(d.message||'다시 시도해 주세요.');updateMissionButtons();}
+    }
+    if(d.type==='NEPAL_ENTRY_ALARM'){
+      const banner=document.getElementById('ne-alarm-live');
+      if(banner){
+        banner.style.display='block';
+        if(banner._hideTimer)clearTimeout(banner._hideTimer);
+        banner._hideTimer=setTimeout(()=>{banner.style.display='none';},1350);
+      }
+      playEntryAlarmTone();
     }
     if(d.type==='ENTRY_VAR_SNAPSHOT'){
       const target=document.querySelector('#ne-saved-live b');
       if(target){
         const val=x=>x===null||x===undefined||x===''||!Number.isFinite(Number(x))?'미저장':Number(x).toFixed(2);
+        const withUnit=(x,unit)=>{const number=val(x);return number==='미저장'?number:number+unit};
         const v=d.variables||{},r=d.risks||{};
-        if(mission===0||mission===1)target.textContent='수위값 '+val(v.water)+'m';
-        else if(mission===2)target.textContent='수위값 '+val(v.water)+'m · 수위위험 '+val(r.water);
-        else if(mission===3)target.textContent='유속값 '+val(v.flow)+'m/s · 진동값 '+val(v.vibration)+' · 강수값 '+val(v.rain)+'mm/h · 위험 '+val(r.flow)+' / '+val(r.vibration)+' / '+val(r.rain);
-        else target.textContent='위험목록 ['+(Array.isArray(d.list)?d.list.map(val).join(', '):'')+'] · 위험개수 '+val(d.dangerCount)+' · 경보결과 '+val(d.alarm);
+        if(mission===0||mission===1){
+          const stored=verifiedWaterByMission[mission];
+          if(d.running)target.textContent='실행 중 · 수위값 '+withUnit(v.water,'m');
+          else if(stored!==null)target.textContent='최근 검사 확인 · 수위값 '+stored.toFixed(2)+'m ✓ (현재 실행 정지)';
+          else target.textContent='현재 실행 정지 · 수위값 '+withUnit(v.water,'m');
+        }
+        else if(mission===2)target.textContent='수위값 '+withUnit(v.water,'m')+' · 수위위험 '+val(r.water);
+        else if(mission===3)target.textContent='유속값 '+withUnit(v.flow,'m/s')+' · 진동값 '+val(v.vibration)+' · 강수값 '+withUnit(v.rain,'mm/h')+' · 위험 '+val(r.flow)+' / '+val(r.vibration)+' / '+val(r.rain);
+        else if(mission===4)target.textContent='위험개수 '+val(d.dangerCount)+' · N '+val(d.N);
+        else target.textContent='위험목록 ['+(Array.isArray(d.list)?d.list.map(val).join(', '):'')+'] · 위험개수 '+val(d.dangerCount)+' · N '+val(d.N);
       }
     }
   });
@@ -483,23 +800,54 @@
   const nativeApp=document.getElementById('app');
   const originalAppParent=nativeApp?.parentNode;
   const originalAppSibling=nativeApp?.nextSibling;
+  const mission6Practice=nativeApp?.querySelector('#practicePane');
+  const originalPracticeChildren=mission6Practice?[...mission6Practice.children]:[];
+  const mission6Cards=mission6Practice?[...mission6Practice.querySelectorAll(':scope > section.card')]:[];
+  const mission6Tip=document.createElement('div');
+  mission6Tip.id='ne-mission6-sensor-tip';
+  mission6Tip.textContent='📡 ① 관측 지점 → ② 센서 설치. 기존 설치 위치는 유지됩니다.';
+  function prepareMission6SensorPanel(){
+    if(!mission6Practice||mission6Cards.length<3)return;
+    const [observations,installation]=mission6Cards;
+    // Preserve the native order (① observations → ② installation) and the
+    // live simulator elements; never copy sensors or their installed positions.
+    mission6Practice.prepend(observations,installation);
+    mission6Cards.slice(2).forEach(card=>card.classList.add('ne-mission6-hidden'));
+    mission6Practice.prepend(mission6Tip);
+    const sensorSelect=document.getElementById('sensorType');
+    if(sensorSelect?.value==='기온 센서')sensorSelect.value='강수 센서';
+    if(typeof renderSensors==='function')renderSensors();
+  }
+  function restoreMission6SensorPanel(){
+    mission6Tip.remove();
+    mission6Cards.slice(2).forEach(card=>card.classList.remove('ne-mission6-hidden'));
+    if(mission6Practice)originalPracticeChildren.forEach(node=>mission6Practice.appendChild(node));
+  }
   function enterMission5Setup(){
-    if(mission!==5||!nativeApp||!portal)return;
+    if((mission!==4&&mission!==6)||!nativeApp||!portal)return;
     if(typeof simRunning!=='undefined'&&simRunning){status.textContent='현재 시뮬레이션 실행이 끝난 뒤 센서를 배치해 주세요.';return;}
     iframe.contentWindow?.postMessage({type:'NEPAL_DEV_PAUSE'},location.origin);
     portal.appendChild(nativeApp);
     layer.classList.add('ne-sim-visible');
     document.body.classList.add('nepal-mission6-sim');
-    try{document.getElementById('design')?.click();setSidebarTab('practice');const panel=nativeApp.querySelector('.panel');if(panel)panel.scrollTop=0;}catch(e){console.warn('설계 화면 선택',e)}
+    try{
+      document.getElementById('design')?.click();
+      setSidebarTab('practice');
+      prepareMission6SensorPanel();
+      const panel=nativeApp.querySelector('.panel');
+      if(panel)panel.scrollTop=0;
+    }catch(e){console.warn('미션 6 센서 설치 화면',e)}
+    document.getElementById('ne-workspace-heading').textContent='🗺 센서 설치 화면';
     modeSwitch.textContent='🧩 엔트리 코딩으로 돌아가기';
   }
   function exitMission5Setup(){
     if(!layer.classList.contains('ne-sim-visible'))return;
     layer.classList.remove('ne-sim-visible');
     document.body.classList.remove('nepal-mission6-sim');
+    restoreMission6SensorPanel();
     if(nativeApp&&originalAppParent){originalAppParent.insertBefore(nativeApp,originalAppSibling);}
+    document.getElementById('ne-workspace-heading').textContent='🧩 엔트리 코딩 편집기';
     modeSwitch.textContent='🗺 센서 설치 화면';
-    pushMission5Rules();
     if(ready&&layer.classList.contains('open'))iframe.contentWindow?.postMessage({type:'NEPAL_DEV_RESUME'},location.origin);
   }
   modeSwitch.onclick=()=>{if(layer.classList.contains('ne-sim-visible'))exitMission5Setup();else enterMission5Setup()};
@@ -511,63 +859,60 @@
   let mission5Evaluating=false;
   const lessonSensorTypes=['수위 센서','유속 센서','진동 센서','강수 센서'];
   const sensorKeys=['water','flow','vibration','rain'];
-  function pushMission5Rules(){
-    try{const rules=getMission5ConfiguredRules();if(iframe.contentWindow && iframe.dataset.loaded==='yes')iframe.contentWindow.postMessage({type:'NEPAL_MISSION5_RULES',rules},location.origin)}catch(_){}
-  }
+  // Only sensor positions/types are managed by the simulator. The EntryJS
+  // evaluator determines each threshold and compare operator from student code.
   function getMission5ConfiguredRules(){
     const installed=Array.isArray(sensors)?sensors:[];
     const missing=lessonSensorTypes.filter(type=>installed.filter(s=>s.type===type).length!==1);
     if(installed.length!==4||missing.length){
-      throw Error('시뮬레이션에서 센서의 종류를 확인하세요. 수위·유속·진동·강수 센서가 각각 하나씩, 총 4개 필요합니다.'+(missing.length?' 확인: '+missing.join(' · '):''));
+      throw Error('센서 설치 화면에서 수위·유속·진동·강수 센서를 각각 하나씩, 총 4개 설치하세요.'+(missing.length?' 확인: '+missing.join(' · '):''));
     }
-    const rules={};
-    lessonSensorTypes.forEach((type,i)=>{
-      const sn=installed.find(s=>s.type===type);
-      if(!sn.rule||!sn.rule.enabled||sn.rule.th===''||!Number.isFinite(Number(sn.rule.th))||!['ge','le'].includes(sn.rule.op)){
-        throw Error(type+'의 위험 기준값과 비교 방향(이상/이하)을 시뮬레이션에서 설정하고 사용 상태로 켜 주세요.');
-      }
-      rules[sensorKeys[i]]={th:Number(sn.rule.th),op:sn.rule.op};
-    });
-    return rules;
+    return true;
   }
-  async function runMission5Native(alarmTable,n){
+  async function runMission5Native(alarmTable,n,studentRules,gradedMission){
     if(mission5Evaluating)return;
     getMission5ConfiguredRules();
+    if(!studentRules||typeof studentRules!=='object')throw Error('엔트리 코드의 위험 판단 기준을 찾지 못했습니다.');
+    const rules=lessonSensorTypes.map((type,i)=>{
+      const rule=studentRules[sensorKeys[i]];
+      if(!rule||!['ge','le'].includes(rule.op)||!Number.isFinite(rule.th)||rule.th<0||rule.th>100000)
+        throw Error(type+'의 엔트리 위험 기준값 또는 비교 방향이 올바르지 않습니다.');
+      return {op:rule.op,th:rule.th};
+    });
     if(!Array.isArray(alarmTable)||alarmTable.length!==16||alarmTable.some(x=>x!==0&&x!==1))throw Error('엔트리 경보 코드의 16가지 판정 결과가 올바르지 않습니다.');
     if(!Number.isInteger(n)||n<1||n>4)throw Error('엔트리에서 결정한 경보 개수 N을 확인할 수 없습니다.');
-    // The MISSION 6 sensor-placement panel intentionally hides evacuation-mode
-    // controls. Take the student's chosen N ONLY from executed EntryJS code;
-    // the 16-case EntryJS truth table is applied verbatim to the original
-    // Nepal 100-run engine. Do not require clicking an invisible simulator N UI.
-    if(typeof createScenario!=='function'||typeof ruleEverSatisfied!=='function'||typeof resultForScenario!=='function'||typeof calculatePerformanceRank!=='function')throw Error('원본 네팔 재난 평가 함수를 불러오지 못했습니다.');
+    // All four sensor thresholds, compare operators and N were observed from
+    // actual EntryJS execution. Only fixed sensor locations come from the map.
+    // The original Nepal disaster generator and scoring remain unchanged.
+    if(typeof createScenario!=='function'||typeof sensorValue!=='function'||typeof resultForScenario!=='function'||typeof calculatePerformanceRank!=='function')throw Error('원본 네팔 재난 평가 함수를 불러오지 못했습니다.');
     if(typeof simRunning!=='undefined'&&simRunning)throw Error('진행 중인 시뮬레이션을 종료한 후 평가하세요.');
     exitMission5Setup();
     mission5Evaluating=true;
     const actual=sensors;
-    // The original simulator's sensor coordinates, comparison signs and real
-    // user thresholds remain UNCHANGED. Every scenario uses those exact rules.
+    // Never read simulator sensor.rule for Mission 6 scoring.
+    // Record whether each student-code risk predicate has EVER been true this scenario.
     const oldScenario=scenario,oldStep=stepIndex,oldAlarm=alarmIssuedIndex;
     const previousDam={...damPoint},previousDamIndex=damIndex,previousDamRocks=damRocks.map(x=>({...x}));
     let floodN=0,safeN=0,totalFail=0,miss=0,falseAlarm=0;
     const progressEl=document.getElementById('ne-mission5-progress');
     const gradeEl=document.getElementById('ne-mission5-grade');
     const scoreEl=document.getElementById('ne-mission5-score');
-    gradeEl.textContent='평가 중…';scoreEl.textContent='저장된 센서 위치·기준값 + 학생의 실제 엔트리 경보 판정을 사용합니다.';
+    gradeEl.textContent='평가 중…';scoreEl.textContent='시뮬레이터의 센서 위치 + 학생 엔트리 코드에서 판별한 위험 기준·경보 조건을 사용합니다.';
     try{
       for(let k=0;k<100;k++){
         const sc=createScenario();
         scenario=sc;
-        let alarmAt=null;
-        // Flood sensors remember any prior crossing within the SAME scenario.
-        // The 16-entry truth table was obtained from executing the student's
-        // EntryJS blocks. Do not replace it with an independently chosen N.
+        let alarmAt=null,latchedMask=0;
+        // Sensor readings are from the original flood simulation, at each
+        // student's installed location. Risk predicates are derived from the
+        // student's EntryJS program, not from hidden simulator rule fields.
         for(let t=0;t<times.length;t++){
-          let mask=0;
           for(let j=0;j<lessonSensorTypes.length;j++){
-            const sn=actual.find(s=>s.type===lessonSensorTypes[j]);
-            if(ruleEverSatisfied(sn,t))mask|=(1<<j);
+            const sn=actual.find(sensor=>sensor.type===lessonSensorTypes[j]);
+            const reading=sensorValue(sn,t),rule=rules[j];
+            if(rule.op==='ge'?reading>=rule.th:reading<=rule.th)latchedMask|=(1<<j);
           }
-          if(alarmTable[mask]===1){alarmAt=t;break;}
+          if(alarmTable[latchedMask]===1){alarmAt=t;break;}
         }
         const r=resultForScenario(sc,alarmAt);
         if(sc.dangerous){floodN++;totalFail+=r.evacFail;if(alarmAt===null||alarmAt>=sc.arrivalIndex)miss++}
@@ -579,15 +924,15 @@
       const rank=base.score>=97?'LEGEND':base.rank==='LEGEND'?'S':base.rank;
       gradeEl.textContent=rank+' · '+base.score.toFixed(1)+'점';
       scoreEl.textContent=`홍수 ${floodN}회 / 안전 ${safeN}회 · 평균 대피실패 ${avg.toFixed(1)}명 · 홍수 놓침 ${missRate.toFixed(1)}% · 불필요 경보 ${falseRate.toFixed(1)}%`;
-      progressEl.textContent=`100회 완료 · 설치 위치 및 위험 기준: 조별 원본 설정 사용 · N=${n}`;
+      progressEl.textContent=`100회 완료 · ${gradedMission===6?'FINAL':'미션 5'} · 센서 위치: 시뮬레이터 / 위험 기준·N: 학생 코드 · N=${n}`;
       status.textContent=`✅ 엔트리 경보 코드 기반 평가 완료! ${base.score.toFixed(1)}점 / ${rank} 등급`;
-      passed[5]=true;
+      passed[gradedMission]=true;
       const contiguous=passed.findIndex(v=>!v);
-      if(!teacherPreview()){
-        classroom?.saveProgress(contiguous<0?missions.length:contiguous);
-        classroom?.saveNow('mission-pass');
-        classroom?.recordMission5Result?.({score:base.score,rank,n});
-      }
+      classroom?.saveProgress(contiguous<0?missions.length:contiguous);
+      classroom?.saveNow('mission-pass');
+      if(gradedMission===4)classroom?.recordMission5Result?.({score:base.score,rank,n});
+      if(gradedMission===6)classroom?.recordFinalResult?.({score:base.score,rank,n});
+      setTimeout(showTeacherRecords,550);
       if(rank==='LEGEND'){
         try{if(typeof unlockAudio==='function')await unlockAudio();}catch(_){}
         if(typeof launchLegendCelebration==='function')launchLegendCelebration(base.score);
@@ -596,7 +941,7 @@
     }finally{
       scenario=oldScenario;stepIndex=oldStep;alarmIssuedIndex=oldAlarm;
       damPoint=previousDam;damIndex=previousDamIndex;damRocks=previousDamRocks;
-      // Do NOT alter any student sensor rule or the simulator alarm mode.
+      // Do not mutate sensor locations, simulator rules, or alarm mode.
       mission5Evaluating=false;checking=false;updateMissionButtons();
     }
   }
@@ -715,7 +1060,7 @@
 
   // Load classroom UI asynchronously. The original simulator is not modified.
   const classroomScript=document.createElement('script');
-  classroomScript.src='./nepal_classroom.js?v=40';
+  classroomScript.src='./nepal_classroom.js?v=42';
   classroomScript.onload=()=>{
     if(!window.NepalClassroom){console.error('학급 모듈을 찾지 못했습니다.');return;}
     classroom=window.NepalClassroom.setup({
@@ -729,6 +1074,7 @@
         if(simulatorHome)simulatorHome.classList.remove('hiddenStart');
         document.getElementById('np-board')?.classList.remove('show');
         document.getElementById('np-gate')?.classList.remove('show');
+        queueEntryWarmup();
       },
       isReady:()=>ready,isLayerOpen:()=>layer.classList.contains('open'),
       isBusy:()=>checking||navigating,
@@ -743,7 +1089,7 @@
         ready=false;checking=false;pendingMission=null;navigating=false;
         if(missionStopPending)clearTimeout(missionStopPending.timeout);
         missionStopPending=null; iframe.src='about:blank';iframe.dataset.loaded='no';
-        exitMission5Setup();passed.fill(false);applyMission(0);projectRestoring=false;
+        exitMission5Setup();passed.fill(false);verifiedWaterByMission.fill(null);applyMission(0);projectRestoring=false;
         if(layer.classList.contains('open'))showEditorLoading();
       }
     });
