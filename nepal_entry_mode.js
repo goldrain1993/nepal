@@ -129,7 +129,7 @@
     {title:'수위 측정값 저장',fault:'수위 센서값이 저장되지 않습니다!',description:'수위 센서는 계속 값을 측정하지만, 측정값을 저장할 변수가 없습니다. 먼저 값을 저장해 보세요.',task:'「수위값」 변수를 만들고 「수위 센서가 현재 측정하고 있는 실시간 값」 블록으로 현재 값을 한 번 저장하세요.',example:'수위 4.20m → 수위값 4.20',active:true},
     {title:'실시간 수위값 갱신',fault:'수위값이 계속 바뀌지 않습니다!',description:'한 번 저장한 센서값으로는 실시간 변화를 반영할 수 없습니다. 반복문으로 값을 갱신해 보세요.',task:'「계속 반복하기」 안에서 「수위값」에 최신 수위 센서값을 다시 저장하도록 만드세요. 0.2초 기다리기는 권장하지만 필수는 아닙니다.',example:'수위 1.35 → 3.60 → 2.05에 따라 수위값도 계속 변함',active:true},
     {title:'수위 위험 판단',fault:'수위 위험 여부를 판단하지 못합니다!',description:'변수와 반복문을 배웠으니 이번에는 조건문을 이용해 수위 위험 여부를 계산하세요.',task:'「수위위험」 변수를 만들고 실습용 기준 수위 4m 이상은 1(위험), 4m 미만은 0(안전)이 되도록 조건문을 작성하세요. 이 판단도 「계속 반복하기」 안에서 갱신하세요.',example:'수위 3.50m → 수위위험 0 / 수위 4.80m → 수위위험 1',active:true},
-    {title:'유속·진동·강수 확장',fault:'다른 센서들의 위험 신호도 만들어야 합니다!',description:'수위의 위험 판단을 유속·진동·강수 센서로 확장해 보세요. 리스트는 사용하지 않습니다.',task:'「유속값」·「진동값」·「강수값」 및 각 위험 변수를 만들고 실습용 기준 유속 3m/s 이상·진동 16 이상·강수 35mm/h 이상이면 1, 아니면 0이 되도록 반복해서 갱신하세요.',example:'유속 3.60 → 위험 1 / 진동 15.50 → 위험 0 / 강수 40 → 위험 1',active:true},
+    {title:'유속·진동·강수 확장',fault:'다른 센서들의 위험 신호도 만들어야 합니다!',description:'수위의 위험 판단을 유속·진동·강수 센서로 확장해 보세요.',task:'「유속값」·「진동값」·「강수값」 및 각 위험 변수를 만들고 실습용 기준 유속 3m/s 이상·진동 16 이상·강수 35mm/h 이상이면 1, 아니면 0이 되도록 반복해서 갱신하세요.',example:'유속 3.60 → 위험 1 / 진동 15.50 → 위험 0 / 강수 40 → 위험 1',active:true},
     {title:'센서 배치·경보 알고리즘',fault:'실제 센서 데이터를 이용해 경보를 완성하세요!',description:'센서를 네팔 지형에 배치하고 4개 센서의 위험 기준·비교 방향을 엔트리 코드로 직접 정하세요. 리스트 없이 경보 알고리즘을 완성한 후 100회 평가를 받습니다.',task:'「🗺 센서 설치 화면」에서 ① 관측 지점을 살펴보고 ② 수위·유속·진동·강수 센서를 하나씩 설치하세요. 엔트리에서 실시간 센서값과 4개의 위험신호를 갱신하고, 리스트 없이 「위험개수」를 계산해 N개 이상(N=1~4) 위험하면 「경보결과」가 1이 되도록 구현하세요. 학생 코드로 100회 재난 평가를 받습니다.',example:'4개 센서 설치 → 엔트리에서 위험 기준과 경보 N 직접 설정 → 100회 평가 및 점수 획득',active:true},
     {title:'리스트로 위험신호 정리',fault:'4개의 위험신호를 리스트로 정리해 보세요!',description:'미션 5의 경보 알고리즘은 유지하면서 이번에는 리스트 자료구조와 반복문만 집중 연습합니다. 100회 평가는 다음 FINAL 미션에서 다시 진행합니다.',task:'「위험목록」 리스트를 만들고 수위위험·유속위험·진동위험·강수위험을 차례대로 4칸에 저장하세요. 매번 최신 위험신호로 리스트 항목을 바꾸고, 「반복번호」와 「반복하기」를 이용해 리스트의 1~4번째 값을 확인해 「위험개수」를 계산하세요. 기존 경보결과를 유지하면 통과합니다.',example:'위험목록 [1, 0, 1, 0] → 반복해서 1의 개수 세기 → 위험개수 2',active:true},
     {title:'FINAL 미션',fault:'지금까지 만든 재난 경보 시스템을 최종 검증하세요!',description:'센서 위치 설계·위험 조건·리스트·반복문·경보 판단을 모두 결합해 최종 재난 경보 시스템을 완성하세요.',task:'필요하면 센서 설치 화면에서 ① 관측 지점과 ② 센서 설치를 다시 확인하세요. 엔트리에서 4개의 위험신호를 「위험목록」 리스트에 저장하고 반복문으로 「위험개수」를 세어 N개 이상 위험하면 경보가 울리게 하세요. 전체 코드를 검사한 뒤 100회 재난 평가에 도전하세요.',example:'센서 위치 + 4개 위험 판단 + 리스트·반복문 + 경보 알고리즘 → FINAL 100회 평가',active:true}
@@ -458,7 +458,7 @@
         }
       }
     }catch(err){console.warn('수위 센서 연결 대기',err)}
-    return {value:nepalTrainingReadings.water,source:'실습용 가상 수위 센서 (난수 측정)'};
+    return {value:nepalTrainingReadings.water,source:'실습용 가상 수위 센서'};
   }
   function getNepalSensorMeasurement(kind){
     if(kind==='water')return getNepalWaterMeasurement();
@@ -474,7 +474,7 @@
         }
       }
     }catch(err){console.warn(label+' 연결 대기',err)}
-    return {value:nepalTrainingReadings[kind],source:'실습용 가상 '+label+' (난수 측정)'};
+    return {value:nepalTrainingReadings[kind],source:'실습용 가상 '+label};
   }
   function pushSensorMeasurement(){
     if(!layer.classList.contains('open'))return;
@@ -506,6 +506,49 @@
   const missionBtns=document.getElementById('ne-missions');
   const checkBtn=document.getElementById('ne-check');
   const nextBtn=document.getElementById('ne-next');
+  // Show clear reasons without exposing every hidden test value or block recipe.
+  // The raw diagnostic stays available to teachers in the browser console.
+  function explainMissionFailure(stage,result){
+    const lines=Array.isArray(result.details)?result.details.map(String):[];
+    const raw=lines.join(' ');
+    console.info('[NEPAL 미션 검사 세부 내용]',stage+1,lines);
+    if(typeof result.studentFeedback==='string'&&result.studentFeedback.trim())
+      return '확인할 부분: '+result.studentFeedback.trim();
+    const missing=raw.match(/「([^」]+)」\s*변수(?:가|를|는)?(?:\s*없습니다|\s*찾지 못했습니다|\s*만들어)/);
+    if(missing)return '확인할 부분: 「'+missing[1]+'」 변수를 찾지 못했어요. 미션에 적힌 이름과 만든 변수 이름을 비교해 보세요.';
+    if(raw.includes('「위험목록」 리스트')&&raw.includes('필요'))
+      return '확인할 부분: 이번 미션에서 사용할 「위험목록」 리스트가 아직 없어요.';
+    if(raw.includes('「위험목록」 리스트')&&raw.includes('만들'))
+      return '확인할 부분: 「위험목록」 리스트가 아직 만들어지지 않았어요.';
+    if(raw.includes('변수')&&raw.includes('찾지 못했습니다'))
+      return '확인할 부분: 미션에 필요한 변수 중 아직 만들어지지 않은 것이 있어요. 변수 이름을 비교해 보세요.';
+    if(raw.includes('센서의 측정값이')||raw.includes('측정값')&&raw.includes('변수로 전달'))
+      return '확인할 부분: 센서가 읽은 값이 「수위값」에 제대로 저장되지 않고 있어요.';
+    if(raw.includes('반복')&&(raw.includes('안')||raw.includes('계속')||raw.includes('갱신'))){
+      if(stage===1)return '확인할 부분: 수위가 바뀐 뒤에도 「수위값」이 최신 값으로 달라지지 않았어요.';
+      if(stage===2)return '확인할 부분: 수위가 달라질 때마다 측정값과 위험 판단이 함께 바뀌지 않고 있어요.';
+      if(stage===3)return '확인할 부분: 센서값이 바뀔 때마다 모든 센서의 값과 위험 판단이 함께 갱신되지 않아요.';
+      return '확인할 부분: 센서값이 변한 뒤에도 위험신호나 경보 결과 일부가 갱신되지 않아요.';
+    }
+    if(stage===0)
+      return '확인할 부분: 「수위값」에 저장된 숫자가 센서의 현재 측정값과 달라요.';
+    if(stage===1)
+      return '확인할 부분: 센서의 수위가 바뀌어도 「수위값」이 그 변화를 계속 따라가지 못해요.';
+    if(stage===2){
+      if(raw.includes('조건문')||raw.includes('판단'))return '확인할 부분: 수위가 바뀔 때 안전과 위험을 다시 판단하는 과정이 제대로 작동하지 않아요.';
+      return '확인할 부분: 수위 측정과 「수위위험」의 결과 중 일부가 실습 기준과 맞지 않아요.';
+    }
+    if(stage===3)
+      return '확인할 부분: 유속·진동·강수 중 일부의 측정값 또는 위험 판단 결과가 기준과 맞지 않아요.';
+    if(raw.includes('이전 방식')||raw.includes('예전'))return '확인할 부분: 현재 미션에서 사용할 수 없는 예전 방식의 센서 블록이 포함되어 있어요.';
+    if(raw.includes('위험목록')||raw.includes('리스트'))
+      return '확인할 부분: 센서의 위험신호가 바뀌어도 리스트 또는 위험개수에 같은 내용이 반영되지 않아요.';
+    if(raw.includes('경보')||raw.includes('위험개수')||raw.includes('위험 판정'))
+      return '확인할 부분: 센서들의 위험신호와 최종 경보 결과가 서로 일치하지 않는 경우가 있어요.';
+    if(raw.includes('실행 또는 검사 오류')||raw.includes('시간 초과'))
+      return '검사 도중 기술적인 문제가 발생했어요. 코드를 저장한 뒤 다시 검사해 보세요. 계속 발생하면 선생님께 알려 주세요.';
+    return '확인할 부분: 센서 측정값과 변수·판단 결과가 미션의 일부 검사 상황에서 맞지 않았어요. 마지막으로 바꾼 부분을 살펴보세요.';
+  }
   function teacherPreview(){return classroom?.isTeacher?.()===true;}
   function showTeacherRecords(){
     const el=document.getElementById('ne-teacher-records');if(!el)return;
@@ -654,7 +697,12 @@
       if((tested===4||tested===6)&&!d.ok)uiSoundEnabled=false;
       updateMissionButtons();
       const next=d.ok && tested+1<missions.length?'\n🔓 '+(tested===5?'FINAL 미션':'다음 미션 '+String(tested+2).padStart(2,'0'))+' 잠금이 해제되었습니다.':'';
-      status.textContent=(d.ok?'✅ 복구 검사 통과!':'❌ 복구 검사 실패')+'\n'+(Array.isArray(d.details)?d.details.join('\n'):String(d.message||''))+next;
+      if(d.ok){
+        status.textContent='✅ 복구 검사 통과!\n'+(Array.isArray(d.details)?d.details.join('\n'):String(d.message||''))+next;
+      }else{
+        const stageName=tested===6?'FINAL 미션':'미션 '+String(tested+1).padStart(2,'0');
+        status.textContent='❌ '+stageName+' · 아직 통과하지 못했어요.\n'+explainMissionFailure(tested,d);
+      }
     }
     if(d.type==='ENTRY_MISSION_STOPPED'){
       const p=missionStopPending;
