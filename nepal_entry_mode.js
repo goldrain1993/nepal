@@ -1,5 +1,5 @@
 /**
- * NEPAL FLOOD × EntryJS - integration v2.9 guest mode · role login · flood score · 3-person groups
+ * NEPAL FLOOD × EntryJS - integration v3.1 three-button gateway · role login · flood score · 3-person groups
  * Add <script src="./nepal_entry_mode.js" defer></script> to the original index.html.
  * Keep original simulator unchanged. This overlay mounts a real EntryJS editor page in a same-origin iframe.
  * Four staged missions: water variable, water risk condition, independent flow/vibration/rain risk, list+loop alarm.
@@ -56,7 +56,7 @@
   ];
   const trigger = document.createElement('button'); trigger.id='nepal-entry-trigger'; trigger.textContent='🧩 엔트리 개발자 모드';
   const layer = document.createElement('section'); layer.id='nepal-entry-layer';
-  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">실제 EntryJS 편집기 연동 · v2.9 · 학교 계정 · 4단계 센서 경보 알고리즘</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 저장</b> → <b>② 조건문으로 수위 위험 판단</b> → <b>③ 유속·진동·강수 스스로 확장</b> → <b>④ 리스트·반복문으로 종합</b></div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">엔트리 편집기를 불러오는 중입니다…</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button><p id="ne-mini">※ 원본 홍수 4유형·비홍수 3유형과 재난 엔진은 수정하지 않습니다.<br>※ 위험 기준(수위 2m·유속 2m/s·진동 13·강수 22mm/h)은 프로그래밍 학습용 가상 기준이며 실제 재난 경보 기준이 아닙니다.<br>※ 미션 01~04는 실제 엔트리 실행 결과로 판정합니다.</p></aside><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html"></iframe></main>`;
+  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">실제 EntryJS 편집기 연동 · v3.1 · 학교 계정 · 4단계 센서 경보 알고리즘</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 저장</b> → <b>② 조건문으로 수위 위험 판단</b> → <b>③ 유속·진동·강수 스스로 확장</b> → <b>④ 리스트·반복문으로 종합</b></div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">엔트리 편집기를 불러오는 중입니다…</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button><p id="ne-mini">※ 원본 홍수 4유형·비홍수 3유형과 재난 엔진은 수정하지 않습니다.<br>※ 위험 기준(수위 2m·유속 2m/s·진동 13·강수 22mm/h)은 프로그래밍 학습용 가상 기준이며 실제 재난 경보 기준이 아닙니다.<br>※ 미션 01~04는 실제 엔트리 실행 결과로 판정합니다.</p></aside><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html"></iframe></main>`;
   // Pause the original simulator's background animation loops without altering index.html.
   // The two named rAF loops are global function declarations in the original page.
   // Their drawing work is skipped while EntryJS covers the simulator; their ordinary
@@ -136,12 +136,14 @@
   const floatBoard=document.createElement('button');floatBoard.id='nepal-class-board';
   floatBoard.textContent='📊 조별 현황판';
   floatBoard.style.cssText='position:fixed;z-index:12000;right:22px;bottom:83px;padding:12px 18px;background:#102b22;color:#ecffd8;border:1px solid #7ebc65;border-radius:10px;font:800 13px system-ui;cursor:pointer';
+  floatBoard.style.display='none';
   floatBoard.onclick=()=>classroom?.showBoard(false);
   document.body.appendChild(floatBoard);
   const floatSignout=document.createElement('button');floatSignout.id='nepal-class-switch';
-  floatSignout.textContent='↩ 로그인 / 조 변경';
+  floatSignout.textContent='🚪 로그아웃';
   floatSignout.style.cssText='position:fixed;z-index:12000;right:22px;bottom:137px;padding:9px 16px;background:#152619;color:#dbf0d5;border:1px solid #507859;border-radius:10px;font:700 12px system-ui;cursor:pointer';
-  floatSignout.onclick=()=>classroom?.showLogin?.();
+  floatSignout.style.display='none';
+  floatSignout.onclick=()=>classroom?.isGuest?.()?classroom?.showLogin?.():classroom?.signout?.();
   document.body.appendChild(floatSignout);
   document.getElementById('ne-close').addEventListener('click',()=>{if(classroom)classroom.closeEditing();else close();});
   const iframe=document.getElementById('ne-iframe'), status=document.getElementById('ne-status');
@@ -320,7 +322,7 @@
   });
   // Load classroom UI asynchronously. The original simulator is not modified.
   const classroomScript=document.createElement('script');
-  classroomScript.src='./nepal_classroom.js?v=30';
+  classroomScript.src='./nepal_classroom.js?v=31';
   classroomScript.onload=()=>{
     if(!window.NepalClassroom){console.error('학급 모듈을 찾지 못했습니다.');return;}
     classroom=window.NepalClassroom.setup({
