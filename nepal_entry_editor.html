@@ -1248,7 +1248,7 @@ setInterval(()=>{
    value:actual===null||actual===''?null:Number(actual),
    variables:{water:readVar('수위값'),flow:readVar('유속값'),vibration:readVar('진동값'),rain:readVar('강수값')},
    risks:{water:readVar('수위위험'),flow:readVar('유속위험'),vibration:readVar('진동위험'),rain:readVar('강수위험')},
-   dangerCount:readVar('위험개수'),alarm:null,
+   dangerCount:readVar('위험개수'),N:readVar('N'),alarm:null,
    list:readList('위험목록'),
    running:nepalIsRunning()
  });
