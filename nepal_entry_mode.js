@@ -549,12 +549,19 @@
   const mission6Practice=nativeApp?.querySelector('#practicePane');
   const originalPracticeChildren=mission6Practice?[...mission6Practice.children]:[];
   const mission6Cards=mission6Practice?[...mission6Practice.querySelectorAll(':scope > section.card')]:[];
+  const originalMission6HeadingTexts=mission6Cards.slice(0,3).map(card=>card.querySelector('h3')?.firstChild?.textContent||'');
   const mission6Tip=document.createElement('div');
   mission6Tip.id='ne-mission6-sensor-tip';
   mission6Tip.textContent='📡 미션 6 · 센서 4종(수위·유속·진동·강수)을 각각 하나씩 설치하고 위험 기준을 설정하세요. 시뮬레이션에서 설치한 센서는 그대로 유지됩니다. 센서 목록의 항목을 누르면 삭제할 수 있습니다.';
   function prepareMission6SensorPanel(){
     if(!mission6Practice||mission6Cards.length<3)return;
     const [observations,installation,thresholds]=mission6Cards;
+    // Renumber visible tasks to match their temporary visual order.
+    const reorderedLabels=['③ 관측 지점','① 센서 설치 ','② 센서별 위험 기준'];
+    [observations,installation,thresholds].forEach((card,i)=>{
+      const heading=card.querySelector('h3');
+      if(heading?.firstChild?.nodeType===Node.TEXT_NODE)heading.firstChild.textContent=reorderedLabels[i];
+    });
     // Move the ORIGINAL cards, not cloned UI: their click handlers, sensor state,
     // and cloud-restored sensor/rule values remain intact.
     mission6Practice.prepend(installation,thresholds,observations);
@@ -567,6 +574,10 @@
   function restoreMission6SensorPanel(){
     mission6Tip.remove();
     mission6Cards.slice(3).forEach(card=>card.classList.remove('ne-mission6-hidden'));
+    mission6Cards.slice(0,3).forEach((card,i)=>{
+      const heading=card.querySelector('h3');
+      if(heading?.firstChild?.nodeType===Node.TEXT_NODE)heading.firstChild.textContent=originalMission6HeadingTexts[i];
+    });
     if(mission6Practice)originalPracticeChildren.forEach(node=>mission6Practice.appendChild(node));
   }
   function enterMission5Setup(){
