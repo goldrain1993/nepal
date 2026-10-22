@@ -199,6 +199,8 @@
   // Wikimedia's MP3 transcoding avoids OGG codec problems on school devices.
   // A separate, lightweight AudioContext creates the "뾱" tap tone.
   const ariosoUrl='https://upload.wikimedia.org/wikipedia/commons/transcoded/5/53/Violinist_CARRIE_REHKOPF-BACH_ARIOSO.ogg/Violinist_CARRIE_REHKOPF-BACH_ARIOSO.ogg.mp3';
+  const ariosoOggUrl='https://upload.wikimedia.org/wikipedia/commons/5/53/Violinist_CARRIE_REHKOPF-BACH_ARIOSO.ogg';
+  let ariosoFallbackAttempted=false;
   const ariosoAudio=new Audio();
   ariosoAudio.preload='none';ariosoAudio.src=ariosoUrl;ariosoAudio.loop=true;ariosoAudio.volume=.27;
   let entrySoundOn=true,entryAudioCtx=null,entryTapAt=0,entryAudioError=false,entryAutoPlayBlocked=false;
@@ -254,14 +256,22 @@
     if(entryAudioCtx?.state==='running')entryAudioCtx.suspend().catch(()=>{});
   }
   audioButton?.addEventListener('click',()=>{
-    if(entryAutoPlayBlocked&&entrySoundOn){
-      entryAutoPlayBlocked=false;playEntryBgm();refreshEntryAudioButton();return;
+    if(entrySoundOn&&(entryAutoPlayBlocked||entryAudioError)){
+      if(entryAudioError){
+        ariosoFallbackAttempted=false;ariosoAudio.src=ariosoUrl;ariosoAudio.load();
+      }
+      entryAutoPlayBlocked=false;entryAudioError=false;playEntryBgm();refreshEntryAudioButton();return;
     }
     entrySoundOn=!entrySoundOn;entryAudioError=false;entryAutoPlayBlocked=false;
     refreshEntryAudioButton();
     if(entrySoundOn){playEntryPop();playEntryBgm()}else pauseEntrySounds();
   });
-  ariosoAudio.addEventListener('error',()=>{entryAudioError=true;refreshEntryAudioButton()});
+  ariosoAudio.addEventListener('error',()=>{
+    if(!ariosoFallbackAttempted){
+      ariosoFallbackAttempted=true;ariosoAudio.src=ariosoOggUrl;
+      if(layer.classList.contains('open')&&entrySoundOn)playEntryBgm();
+    }else{entryAudioError=true;refreshEntryAudioButton();}
+  });
   document.addEventListener('visibilitychange',()=>{if(document.hidden)ariosoAudio.pause();else if(layer.classList.contains('open'))playEntryBgm()});
   refreshEntryAudioButton();
   // Parent overlay interactions (missions, buttons, sensor setup screen).
