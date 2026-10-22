@@ -26,6 +26,19 @@
   .ne-mission-list button.current{background:#9fe761;color:#11240f}
   .ne-mission-list button.passed{border-color:#8aca69;background:#173820;color:#caffb6}
   .ne-mission-list button.current.passed{background:#9fe761;color:#11240f}
+  /* Mission 5 is a scored checkpoint, visually distinguished from green FINAL. */
+  .ne-mission-list button.mission5-button:not(.locked){
+    background:linear-gradient(135deg,#523b14,#664616);
+    color:#ffe9af;border-color:#e0aa4d;box-shadow:inset 0 0 0 1px #f4c66c44,0 0 11px #f4b84525;
+    font-weight:950
+  }
+  .ne-mission-list button.mission5-button.current:not(.locked){
+    background:linear-gradient(135deg,#ffe08a,#efb94e);
+    color:#352006;border-color:#ffe7a4;box-shadow:0 0 0 2px #f6d27666,0 0 16px #efb94e55
+  }
+  .ne-mission-list button.mission5-button.passed:not(.current):not(.locked){
+    background:#4a3a20;color:#f5dca3;border-color:#cda05a
+  }
   .ne-mission-list button.locked,.ne-mission-list button:disabled{background:#152019;border:1px solid #36493b;color:#697b6d;cursor:not-allowed;opacity:.82}
   .ne-mission-list button:focus-visible{outline:2px solid #b8f480;outline-offset:2px}
   #ne-next{width:100%;margin-top:9px;background:#b5f17c;color:#183013;display:none;font-size:14px;padding:11px;font-weight:900}
@@ -130,7 +143,7 @@
     {title:'실시간 수위값 갱신',fault:'수위값이 계속 바뀌지 않습니다!',description:'한 번 저장한 센서값으로는 실시간 변화를 반영할 수 없습니다. 반복문으로 값을 갱신해 보세요.',task:'「계속 반복하기」 안에서 「수위값」에 최신 수위 센서값을 다시 저장하도록 만드세요. 0.2초 기다리기는 권장하지만 필수는 아닙니다.',example:'수위 1.35 → 3.60 → 2.05에 따라 수위값도 계속 변함',active:true},
     {title:'수위 위험 판단',fault:'수위 위험 여부를 판단하지 못합니다!',description:'변수와 반복문을 배웠으니 이번에는 조건문을 이용해 수위 위험 여부를 계산하세요.',task:'「수위위험」 변수를 만들고 실습용 기준 수위 4m 이상은 1(위험), 4m 미만은 0(안전)이 되도록 조건문을 작성하세요. 이 판단도 「계속 반복하기」 안에서 갱신하세요.',example:'수위 3.50m → 수위위험 0 / 수위 4.80m → 수위위험 1',active:true},
     {title:'유속·진동·강수 확장',fault:'다른 센서들의 위험 신호도 만들어야 합니다!',description:'수위의 위험 판단을 유속·진동·강수 센서로 확장해 보세요.',task:'「유속값」·「진동값」·「강수값」 및 각 위험 변수를 만들고 실습용 기준 유속 3m/s 이상·진동 16 이상·강수 35mm/h 이상이면 1, 아니면 0이 되도록 반복해서 갱신하세요.',example:'유속 3.60 → 위험 1 / 진동 15.50 → 위험 0 / 강수 40 → 위험 1',active:true},
-    {title:'센서 배치·경보 알고리즘',fault:'실제 센서 데이터를 이용해 경보를 완성하세요!',description:'센서를 네팔 지형에 배치하고 4개 센서의 위험 기준·비교 방향을 엔트리 코드로 직접 정하세요. 리스트 없이 경보 알고리즘을 완성한 후 100회 평가를 받습니다.',task:'「🗺 센서 설치 화면」에서 ① 관측 지점을 살펴보고 ② 수위·유속·진동·강수 센서를 하나씩 설치하세요. 엔트리에서 실시간 센서값과 4개의 위험신호를 갱신하고, 리스트 없이 「위험개수」를 계산해 N개 이상(N=1~4) 위험하면 「경보결과」가 1이 되도록 구현하세요. 학생 코드로 100회 재난 평가를 받습니다.',example:'4개 센서 설치 → 엔트리에서 위험 기준과 경보 N 직접 설정 → 100회 평가 및 점수 획득',active:true},
+    {title:'센서 배치·경보 알고리즘',fault:'실제 센서 데이터를 이용해 경보를 완성하세요!',description:'센서를 네팔 지형에 배치하고 4개 센서의 위험 기준·비교 방향을 엔트리 코드로 직접 정하세요. 경보 알고리즘을 완성한 후 100회 평가를 받습니다.',task:'「🗺 센서 설치 화면」에서 ① 관측 지점을 살펴보고 ② 수위·유속·진동·강수 센서를 하나씩 설치하세요. 엔트리에서 실시간 센서값과 4개의 위험신호를 갱신하고, 「위험개수」를 계산해 N개 이상(N=1~4) 위험하면 「경보결과」가 1이 되도록 구현하세요. 학생 코드로 100회 재난 평가를 받습니다.',example:'4개 센서 설치 → 엔트리에서 위험 기준과 경보 N 직접 설정 → 100회 평가 및 점수 획득',active:true},
     {title:'리스트로 위험신호 정리',fault:'4개의 위험신호를 리스트로 정리해 보세요!',description:'미션 5의 경보 알고리즘은 유지하면서 이번에는 리스트 자료구조와 반복문만 집중 연습합니다. 100회 평가는 다음 FINAL 미션에서 다시 진행합니다.',task:'「위험목록」 리스트를 만들고 수위위험·유속위험·진동위험·강수위험을 차례대로 4칸에 저장하세요. 매번 최신 위험신호로 리스트 항목을 바꾸고, 「반복번호」와 「반복하기」를 이용해 리스트의 1~4번째 값을 확인해 「위험개수」를 계산하세요. 기존 경보결과를 유지하면 통과합니다.',example:'위험목록 [1, 0, 1, 0] → 반복해서 1의 개수 세기 → 위험개수 2',active:true},
     {title:'FINAL 미션',fault:'지금까지 만든 재난 경보 시스템을 최종 검증하세요!',description:'센서 위치 설계·위험 조건·리스트·반복문·경보 판단을 모두 결합해 최종 재난 경보 시스템을 완성하세요.',task:'필요하면 센서 설치 화면에서 ① 관측 지점과 ② 센서 설치를 다시 확인하세요. 엔트리에서 4개의 위험신호를 「위험목록」 리스트에 저장하고 반복문으로 「위험개수」를 세어 N개 이상 위험하면 경보가 울리게 하세요. 전체 코드를 검사한 뒤 100회 재난 평가에 도전하세요.',example:'센서 위치 + 4개 위험 판단 + 리스트·반복문 + 경보 알고리즘 → FINAL 100회 평가',active:true}
 
@@ -573,7 +586,8 @@
       b.classList.toggle('passed',passed[i]);
       b.classList.toggle('current',mission===i);
       b.textContent=(locked?'🔒 ':passed[i]?'✓ ':'')+(i===6?'FINAL':String(i+1).padStart(2,'0'));
-    b.classList.toggle('final-button',i===6);
+      b.classList.toggle('mission5-button',i===4);
+      b.classList.toggle('final-button',i===6);
       b.setAttribute('aria-label',`${i===6?'FINAL 미션':'미션 '+(i+1)} ${locked?'잠김':passed[i]?'통과':'진행 가능'}`);
       b.title=locked?`미션 ${i}을(를) 통과하면 열립니다.`:passed[i]?'통과한 미션입니다. 다시 열 수 있습니다.':`${i===6?'FINAL 미션':'미션 '+(i+1)} 열기`;
     });
