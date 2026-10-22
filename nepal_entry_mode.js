@@ -69,16 +69,22 @@
   #nepal-entry-layer.ne-mission5 #ne-mode-switch{display:block}
   #ne-sim-stage #app{height:100%;width:100%;min-height:0}
   #ne-sim-stage #assessmentTabBtn,#ne-sim-stage #assessmentPane,#ne-sim-stage #run,#ne-sim-stage #replay,#ne-sim-stage #design,#ne-sim-stage #nepal-design-save{display:none!important}
-  /* Mission 6 setup: only ① observations, ② sensor placement, and the Hint tab.
-     All sensor threshold and evacuation/alarm-setting panels are intentionally hidden. */
-  #ne-sim-stage #practicePane > section.card:nth-of-type(n+3){display:none!important}
-  #ne-sim-stage .panel{padding-top:72px!important;scroll-padding-top:72px!important}
-  /* Fixed login buttons must appear at the BOTTOM-LEFT of the simulation MAP,
-     not over the right-side sensor panel. Respect the developer sidebar width. */
+  /* In Mission 6 students must be able to INSTALL sensors and CONFIGURE
+     thresholds. The alarm mode remains decided by the EntryJS blocks. */
+  #ne-sim-stage #practicePane > section.card:nth-of-type(n+4){display:none!important}
+  #ne-sim-stage .panel{padding:12px 12px 22px!important;scroll-padding-top:12px!important}
+  #ne-sim-stage .panel > div:first-child,
+  #ne-sim-stage .panel > .sub,
+  #ne-sim-stage .panel > .tabs{display:none!important}
+  #ne-sim-stage #practicePane{display:block!important}
+  #ne-sim-stage #practicePane > section.card{margin-top:8px}
+  #ne-mission6-sensor-tip{border:1px solid #86c958;background:#162b1a;color:#e5ffcf;
+    border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.6}
+  /* Match the ordinary simulator: floating controls belong to bottom-right. */
   body.nepal-mission6-sim #nepal-entry-trigger,
   body.nepal-mission6-sim #nepal-class-board,
   body.nepal-mission6-sim #nepal-class-switch{
-    left:calc(max(285px, 27vw) + 17px)!important;right:auto!important;
+    left:auto!important;right:22px!important;
     z-index:12900!important;max-width:220px!important;
   }
   body.nepal-mission6-sim #nepal-entry-trigger{display:block!important;bottom:16px!important}
@@ -87,9 +93,8 @@
   @media(max-width:800px){
     body.nepal-mission6-sim #nepal-entry-trigger,
     body.nepal-mission6-sim #nepal-class-board,
-    body.nepal-mission6-sim #nepal-class-switch{left:18px!important}
+    body.nepal-mission6-sim #nepal-class-switch{left:auto!important;right:14px!important}
   }
-  #ne-sim-stage .tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   #ne-sim-stage #sensorType optgroup:last-child option:first-child{display:none!important}
   #ne-sim-stage #dataMode,#ne-sim-stage #replayControls{display:none!important}
   #ne-mission5-report{display:none;margin:12px 0;padding:15px;border:1px solid #89c95c;background:#10241a;border-radius:12px;font-size:13px;color:#dcffcf}
@@ -541,6 +546,27 @@
   const nativeApp=document.getElementById('app');
   const originalAppParent=nativeApp?.parentNode;
   const originalAppSibling=nativeApp?.nextSibling;
+  const mission6Practice=nativeApp?.querySelector('#practicePane');
+  const originalPracticeChildren=mission6Practice?[...mission6Practice.children]:[];
+  const mission6Cards=mission6Practice?[...mission6Practice.querySelectorAll(':scope > section.card')]:[];
+  const mission6Tip=document.createElement('div');
+  mission6Tip.id='ne-mission6-sensor-tip';
+  mission6Tip.textContent='📡 미션 6 · 센서 4종(수위·유속·진동·강수)을 각각 하나씩 설치하고 위험 기준을 설정하세요. 시뮬레이션에서 설치한 센서는 그대로 유지됩니다. 센서 목록의 항목을 누르면 삭제할 수 있습니다.';
+  function prepareMission6SensorPanel(){
+    if(!mission6Practice||mission6Cards.length<3)return;
+    const [observations,installation,thresholds]=mission6Cards;
+    // Move the ORIGINAL cards, not cloned UI: their click handlers, sensor state,
+    // and cloud-restored sensor/rule values remain intact.
+    mission6Practice.prepend(installation,thresholds,observations);
+    mission6Practice.prepend(mission6Tip);
+    const sensorSelect=document.getElementById('sensorType');
+    if(sensorSelect?.value==='기온 센서')sensorSelect.value='강수 센서';
+    if(typeof renderSensors==='function')renderSensors();
+  }
+  function restoreMission6SensorPanel(){
+    mission6Tip.remove();
+    if(mission6Practice)originalPracticeChildren.forEach(node=>mission6Practice.appendChild(node));
+  }
   function enterMission5Setup(){
     if(mission!==5||!nativeApp||!portal)return;
     if(typeof simRunning!=='undefined'&&simRunning){status.textContent='현재 시뮬레이션 실행이 끝난 뒤 센서를 배치해 주세요.';return;}
@@ -548,13 +574,20 @@
     portal.appendChild(nativeApp);
     layer.classList.add('ne-sim-visible');
     document.body.classList.add('nepal-mission6-sim');
-    try{document.getElementById('design')?.click();setSidebarTab('practice');const panel=nativeApp.querySelector('.panel');if(panel)panel.scrollTop=0;}catch(e){console.warn('설계 화면 선택',e)}
+    try{
+      document.getElementById('design')?.click();
+      setSidebarTab('practice');
+      prepareMission6SensorPanel();
+      const panel=nativeApp.querySelector('.panel');
+      if(panel)panel.scrollTop=0;
+    }catch(e){console.warn('미션 6 센서 설치 화면',e)}
     modeSwitch.textContent='🧩 엔트리 코딩으로 돌아가기';
   }
   function exitMission5Setup(){
     if(!layer.classList.contains('ne-sim-visible'))return;
     layer.classList.remove('ne-sim-visible');
     document.body.classList.remove('nepal-mission6-sim');
+    restoreMission6SensorPanel();
     if(nativeApp&&originalAppParent){originalAppParent.insertBefore(nativeApp,originalAppSibling);}
     modeSwitch.textContent='🗺 센서 설치 화면';
     pushMission5Rules();
