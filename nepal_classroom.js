@@ -27,6 +27,11 @@ css.textContent=`
 .np-gold-medal::before,.np-gold-medal::after{content:'';position:absolute;top:-13px;width:8px;height:15px;background:#db4536;z-index:-1;border:1px solid #ffc851}
 .np-gold-medal::before{left:5px;transform:rotate(-23deg)}.np-gold-medal::after{right:5px;transform:rotate(23deg)}
 .np-teamhead{display:flex;justify-content:space-between;font-size:15px;font-weight:900}.np-members{font-size:13px;color:#e7f3da;margin-top:7px;overflow-wrap:anywhere;min-height:23px}
+.np-member-entry{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0;padding:2px 0}
+.np-member-entry>span{min-width:0;overflow-wrap:anywhere}
+.np-delete-member{font:inherit;font-size:11px;font-weight:850;cursor:pointer;white-space:nowrap;padding:4px 9px;background:#45241f;border:1px solid #cc7963;border-radius:7px;color:#ffe4d7;flex:none}
+.np-delete-member:hover,.np-delete-member:focus-visible{background:#75352b;border-color:#ffb69e}
+.np-delete-member:disabled{opacity:.45;cursor:wait}
 .np-track{height:8px;background:#304334;border-radius:10px;overflow:hidden;margin-top:12px}.np-track div{height:100%;background:linear-gradient(90deg,#6cb041,#deff9a)}.np-caption{font-size:11px;color:#b5cbb2;margin-top:7px}.np-saveinfo{max-width:260px;font-size:11px;color:#d4e5b9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* A pre-simulation gate: on entry only THREE choices, never account details or logout. */
 #np-gate .np-gate-hero{width:min(900px,calc(100vw - 32px));min-height:min(660px,calc(100vh - 80px));margin:max(4vh,22px) auto;padding:clamp(22px,5vw,60px);border:1px solid #48734d;border-radius:24px;background:radial-gradient(ellipse at 50% 100%,#15412c77,transparent 55%),linear-gradient(145deg,#14291e,#06110e 70%);box-shadow:0 28px 90px #0009;display:flex;flex-direction:column;justify-content:center;position:relative;isolation:isolate;overflow:hidden}
@@ -88,7 +93,7 @@ gate.innerHTML=`<div class="np-gate-hero">
  </div><div class="np-student-footer"><button type="button" id="np-back" class="np-btn np-back">← 돌아가기</button><button type="submit" id="np-enter" class="np-btn np-student-submit">입장하기</button></div></form>
  <div class="np-progress-message" id="np-gate-msg" aria-live="polite"></div>
 </div></div>`;
-board.innerHTML=`<div class="np-wrap"><div class="np-head"><div><div class="np-title">📊 네팔 홍수 · 엔트리 통합 현황판</div><div class="np-sub" id="np-board-info">학교 구글 계정 · 등급/점수는 100회 형성평가 최고 기록</div></div><label>반 선택 <select id="np-board-class">${classOpts}</select></label></div><section id="np-teacher-admin" hidden style="border:1px solid #416949;border-radius:12px;padding:14px;margin-top:16px;background:#11251b"><strong>🧑‍🏫 교사 · 조원 등록 및 삭제</strong><p style="font-size:12px;color:#bfd5b7">학생 Google 계정의 Firebase UID와 이름을 입력하면 등록할 수 있습니다. 이 화면에서 Google 계정 자체를 만들 수는 없습니다. 삭제해도 해당 조의 코딩 프로젝트와 센서 설계는 유지됩니다.</p><div class="np-form"><label class="np-field">조<select id="np-admin-group">${groupOpts}</select></label><label class="np-field">조원 자리<select id="np-admin-slot"><option value="student1">1번 조원</option><option value="student2">2번 조원</option><option value="student3">3번 조원</option></select></label><label class="np-field">조원 이름<input id="np-admin-name" maxlength="18" placeholder="예: 홍길동"></label></div><label class="np-field">학생 Firebase UID<input id="np-admin-uid" autocomplete="off" placeholder="Authentication의 사용자 UID"></label><div class="np-actions"><button class="np-btn" type="button" id="np-admin-add">조원 등록/수정</button><button class="np-btn alt" type="button" id="np-admin-delete">선택한 조원 삭제</button></div><div id="np-admin-info" class="np-note">반·조·조원 자리를 선택하세요.</div></section><div class="np-boardgrid" id="np-grid"></div><div class="np-actions"><button class="np-btn alt" id="np-board-close">← 돌아가기</button><button class="np-btn alt" id="np-teacher-sim">🌊 시뮬레이션 보기</button><button class="np-btn alt" id="np-board-refresh">↻ 새로고침</button><button class="np-btn alt" id="np-board-signout">로그아웃</button></div><div class="np-msg" id="np-board-msg"></div></div>`;
+board.innerHTML=`<div class="np-wrap"><div class="np-head"><div><div class="np-title">📊 네팔 홍수 · 엔트리 통합 현황판</div><div class="np-sub" id="np-board-info">학교 구글 계정 · 등급/점수는 100회 형성평가 최고 기록</div></div><label>반 선택 <select id="np-board-class">${classOpts}</select></label></div><section id="np-teacher-admin" hidden class="np-note" style="margin-top:16px"><strong>🧑‍🏫 학생 등록 삭제</strong><p style="font-size:12px;margin:4px 0 0">반을 선택한 후, 아래 조별 학생 이름 옆의 <b>‘등록 삭제’</b> 버튼을 누르세요. 학생 Google 계정이나 코딩 프로젝트·점수는 삭제되지 않습니다.</p></section><div class="np-boardgrid" id="np-grid"></div><div class="np-actions"><button class="np-btn alt" id="np-board-close">← 돌아가기</button><button class="np-btn alt" id="np-teacher-sim">🌊 시뮬레이션 보기</button><button class="np-btn alt" id="np-board-refresh">↻ 새로고침</button><button class="np-btn alt" id="np-board-signout">로그아웃</button></div><div class="np-msg" id="np-board-msg"></div></div>`;
 const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const cleanName=s=>String(s||'').replace(/\s+/g,' ').trim().slice(0,MAX_NAME);
 function valid(c,g){return Number.isInteger(c)&&c>=1&&c<=11&&Number.isInteger(g)&&g>=1&&g<=15}
@@ -516,7 +521,7 @@ async function recordFloodResult(result){
 }
 let boardFromGate=true;
 function showBoard(fromGate){
- $('np-teacher-admin').hidden=!requireTeacher(user);if(requireTeacher(user))previewAdmin();if(guestActive){note('게스트 모드에서는 학급 현황판을 이용할 수 없습니다.');return}if(!user||!db){note('먼저 학교 계정으로 로그인하세요.');landing();return}
+ $('np-teacher-admin').hidden=!requireTeacher(user);if(guestActive){note('게스트 모드에서는 학급 현황판을 이용할 수 없습니다.');return}if(!user||!db){note('먼저 학교 계정으로 로그인하세요.');landing();return}
  boardFromGate=fromGate||gate.classList.contains('show');$('np-board-class').value=String(team?.c||$('np-class').value||1);gate.classList.remove('show');board.classList.add('show');loadBoard();refreshButtons()}
 function displayRank97(score,rank){
  if(score!==null&&Number(score)>=97)return 'LEGEND';
@@ -559,7 +564,15 @@ function boardCards(data,c){
  for(const e of entries){
   const {g,mem,value,flood,floodScore,mission5,mission5Score,final,finalScore,mine}=e;
   const medal=g===gold?'<span class="np-gold-medal" role="img" aria-label="이 반의 1위 금메달">1</span>':'';
-  html+=`<article class="np-team ${mine?'mine':''}"><div class="np-teamhead"><span style="display:flex;align-items:center;gap:6px">${medal}${g}조 ${mine?'(우리 조)':''}</span><span>${value}/${missionTotal}</span></div><div class="np-members">${esc(memberNames(mem,c,g))}</div><div class="np-score">🌊 형성평가: ${floodScore===null?'미응시':`${esc(displayRank97(floodScore,flood.rank))} · ${floodScore}점`}</div><div class="np-score">🧩 미션 5: ${mission5Score===null?'미응시':`${esc(displayRank97(mission5Score,mission5.rank))} · ${mission5Score}점 (N=${Number(mission5.n)})`}</div><div class="np-score">🏆 FINAL 미션: ${finalScore===null?'미응시':`${esc(displayRank97(finalScore,final.rank))} · ${finalScore}점 (N=${Number(final.n)})`}</div><div class="np-track"><div style="width:${Math.round(100*value/missionTotal)}%"></div></div><div class="np-caption">${value===0?'진행 전':value===missionTotal?'FINAL 미션 완료':`미션 ${value}까지 통과`}</div></article>`;
+  const membersHtml=requireTeacher(user)?
+    memberKeys.slice(0,groupCapacity(c,g)).map((slot,i)=>{
+      const student=mem[slot],label=student?.displayName||String(i+1)+'번 조원 미등록';
+      const button=student?.uid?
+        `<button type="button" class="np-delete-member" data-class="${c}" data-group="${g}" data-slot="${slot}"
+          aria-label="${c}반 ${g}조 ${esc(label)} 등록 삭제">등록 삭제</button>`:'';
+      return `<div class="np-member-entry"><span>${esc(label)}</span>${button}</div>`;
+    }).join(''):esc(memberNames(mem,c,g));
+  html+=`<article class="np-team ${mine?'mine':''}"><div class="np-teamhead"><span style="display:flex;align-items:center;gap:6px">${medal}${g}조 ${mine?'(우리 조)':''}</span><span>${value}/${missionTotal}</span></div><div class="np-members">${membersHtml}</div><div class="np-score">🌊 형성평가: ${floodScore===null?'미응시':`${esc(displayRank97(floodScore,flood.rank))} · ${floodScore}점`}</div><div class="np-score">🧩 미션 5: ${mission5Score===null?'미응시':`${esc(displayRank97(mission5Score,mission5.rank))} · ${mission5Score}점 (N=${Number(mission5.n)})`}</div><div class="np-score">🏆 FINAL 미션: ${finalScore===null?'미응시':`${esc(displayRank97(finalScore,final.rank))} · ${finalScore}점 (N=${Number(final.n)})`}</div><div class="np-track"><div style="width:${Math.round(100*value/missionTotal)}%"></div></div><div class="np-caption">${value===0?'진행 전':value===missionTotal?'FINAL 미션 완료':`미션 ${value}까지 통과`}</div></article>`;
  }
  $('np-grid').innerHTML=html;
 }
@@ -569,31 +582,26 @@ function loadBoard(){if(!user||!db)return;$('np-board-msg').textContent='현황�
  ref.on('value',cb,err=>{ $('np-grid').innerHTML=''; $('np-board-msg').textContent='현황판 접근 실패: '+err.message+'\nFirebase 콘솔 → Realtime Database → 규칙에서 v3.0 firebase.rules.json 전체를 붙여 넣고 [게시]를 눌러야 합니다. 교사 Google UID가 규칙에 포함되어 있는지도 확인하세요.'; });boardListener={ref,cb};
  $('np-board-info').textContent='학교 학생/등록 교사 Google 계정으로만 조회 · '+c+'반 15개 조 · 금메달 순서: FINAL → 미션 5 → 형성평가';
 }
-function adminSelection(){const c=Number($('np-board-class').value),g=Number($('np-admin-group').value),slot=$('np-admin-slot').value;
- if(!valid(c,g)||!memberKeys.includes(slot))throw Error('반·조·조원 자리를 확인하세요.');
- if(slot==='student3'&&groupCapacity(c,g)!==3)throw Error('이 조는 2인 조입니다. 3번 자리를 사용할 수 없습니다.');
- return {c,g,slot};}
-async function previewAdmin(){if(!requireTeacher(user))return;
- try{const {c,g,slot}=adminSelection();const data=(await db.ref(teamPath(c,g)+'/members/'+slot).once('value')).val();
- $('np-admin-name').value=data?.displayName||'';$('np-admin-uid').value=data?.uid||'';
- $('np-admin-info').textContent=`${c}반 ${g}조 · ${slot}: ${data?.displayName||'미등록'} / 등록 가능 인원 ${groupCapacity(c,g)}명`;
- }catch(e){$('np-admin-info').textContent=e.message;$('np-admin-name').value='';$('np-admin-uid').value='';}}
-async function registerAdminMember(){if(!requireTeacher(user)||!db)return;
- try{const {c,g,slot}=adminSelection(),uid=String($('np-admin-uid').value||'').trim(),name=cleanName($('np-admin-name').value);
- if(!name||!uid||!(/^[a-zA-Z0-9_-]{14,160}$/).test(uid))throw Error('학생 이름과 Firebase UID를 정확하게 입력하세요.');
- const existing=(await db.ref(teamPath(c,g)+'/members').once('value')).val()||{};
- if(memberKeys.some(k=>k!==slot && existing[k]?.uid===uid))throw Error('이 Google UID는 이미 이 조의 다른 자리에 등록되어 있습니다.');
- const path=teamPath(c,g)+'/members/'+slot;
- await db.ref(path).set({uid,displayName:name,joinedAt:fb.database.ServerValue.TIMESTAMP});
- $('np-admin-info').textContent=`✓ ${c}반 ${g}조 ${name} 등록 완료`;
- }catch(e){$('np-admin-info').textContent='등록 실패: '+e.message;}}
-async function deleteAdminMember(){if(!requireTeacher(user)||!db)return;
- try{const {c,g,slot}=adminSelection(),path=teamPath(c,g)+'/members/'+slot;
- const current=(await db.ref(path).once('value')).val();if(!current){$('np-admin-info').textContent='해당 자리는 비어 있습니다.';return;}
- if(!confirm(`${c}반 ${g}조 ${current.displayName||slot}의 조원 등록을 삭제할까요?\n코딩 프로젝트와 점수는 삭제하지 않습니다.`))return;
- await db.ref(path).remove();await previewAdmin();$('np-admin-info').textContent='✓ 조원 등록을 삭제했습니다. 이전 프로젝트 및 센서 설계는 보존됩니다.';
- }catch(e){$('np-admin-info').textContent='삭제 실패: '+e.message;}}
-
+// Teacher removes one group membership without needing to know Firebase UID.
+async function deleteAdminMember(c,g,slot,button){
+ if(!requireTeacher(user)||!sessionActive||!db)return;
+ if(!valid(c,g)||!memberKeys.slice(0,groupCapacity(c,g)).includes(slot))return;
+ const ref=db.ref(teamPath(c,g)+'/members/'+slot);
+ try{
+  if(button)button.disabled=true;
+  const existing=(await ref.once('value')).val();
+  if(!existing?.uid){$('np-board-msg').textContent='이 조원 자리는 이미 비어 있습니다.';return;}
+  const name=existing.displayName||slot;
+  if(!confirm(`${c}반 ${g}조 · ${name} 학생의 조원 등록을 삭제할까요?\n\n학생 Google 계정, 조별 코딩 프로젝트와 점수는 삭제되지 않습니다.`))return;
+  const tx=await ref.transaction(old=>old?.uid===existing.uid?null:undefined,()=>{},false);
+  $('np-board-msg').textContent=tx.committed?
+    `✓ ${c}반 ${g}조 · ${name} 학생의 등록을 삭제했습니다. (코드·점수 보존)`:
+    '등록 정보가 바뀌어 삭제를 중단했습니다. 목록을 다시 확인해 주세요.';
+ }catch(error){
+  $('np-board-msg').textContent='학생 등록 삭제 실패: '+String(error.message||error)+
+    '\nFirebase 실시간 데이터베이스의 교사 삭제 권한 규칙이 게시되어 있는지 확인해 주세요.';
+ }finally{if(button?.isConnected)button.disabled=false;}
+}
 function closeBoard(){board.classList.remove('show');clearBoard();if(boardFromGate&&!team){
   if(requireTeacher(user)){enterTeacherSimulator();}else{landing();}
  }refreshButtons()}
@@ -610,9 +618,13 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
  $('np-role-student').onclick=()=>selectRole('student');$('np-role-teacher').onclick=teacherSubmit;
  $('np-back').onclick=landing;
  $('np-student-form').onsubmit=e=>{e.preventDefault();studentSubmit()};
- $('np-board-class').onchange=()=>{loadBoard();previewAdmin()};
- $('np-admin-group').onchange=previewAdmin;$('np-admin-slot').onchange=previewAdmin;
- $('np-admin-add').onclick=registerAdminMember;$('np-admin-delete').onclick=deleteAdminMember;$('np-board-refresh').onclick=loadBoard;$('np-board-close').onclick=closeBoard;
+ $('np-board-class').onchange=loadBoard;
+ $('np-grid').addEventListener('click',event=>{
+   const button=event.target.closest('button.np-delete-member');
+   if(!button||!requireTeacher(user)||!board.contains(button))return;
+   deleteAdminMember(Number(button.dataset.class),Number(button.dataset.group),button.dataset.slot,button);
+ });
+ $('np-board-refresh').onclick=loadBoard;$('np-board-close').onclick=closeBoard;
  $('np-board-signout').onclick=signout;
  $('np-teacher-sim').onclick=()=>{if(requireTeacher(user))enterTeacherSimulator();else if(team){board.classList.remove('show');clearBoard()}else note('학생은 반·조에 먼저 등록해야 합니다.');refreshButtons()};
  if(!autosave)autosave=setInterval(()=>{if((team||requireTeacher(user)&&sessionActive)&&readyToSave&&!restoring&&opts.isLayerOpen?.()&&!opts.isBusy?.())saveNow('auto')},18000);
