@@ -1176,19 +1176,7 @@ window.addEventListener('message',e=>{
     }
   }
 });
-// A team may use any threshold and either >= or <=. These values come from
-// its saved simulator design; this changes only Mission 05 grading inputs.
-window.addEventListener('message',event=>{
-  if(event.source!==window.parent||event.origin!==location.origin)return;
-  if(event.data?.type!=='NEPAL_MISSION5_RULES')return;
-  const incoming=event.data.rules;
-  if(!incoming||typeof incoming!=='object')return;
-  for(const key of NEPAL_SENSOR_ORDER){
-    const v=incoming[key];
-    nepalMission5Rules[key]=(v&&Number.isFinite(Number(v.th))&&['ge','le'].includes(v.op))?
-      {th:Number(v.th),op:v.op}:null;
-  }
-});
+// Mission 6 no longer imports sensor thresholds from the simulator.
 // The parent overlay is the source of truth for active/hidden developer state.
 // Never keep an EntryJS infinite-repeat script running behind the simulator.
 window.addEventListener('message',e=>{
