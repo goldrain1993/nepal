@@ -11,5 +11,5 @@ window.NEPAL_FIREBASE_CONFIG = {
   projectId: 'nepal-entry-classroom',
   appId: '1:200958663908:web:b2d566d0b94f1e088e60f1',
   schoolDomain: 'psinjung.ms.kr',
-  teacherUids: ['YOUR_TEACHER_UID']
+  teacherUids: ['GIoPe92By9esQ6H0KcJjvYoPiyN2']
 };

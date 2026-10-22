@@ -1,0 +1,150 @@
+{
+  "rules": {
+    "nepal-v27": {
+      "public": {
+        "classes": {
+          "$class": {
+            "teams": {
+              ".read": "(auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr')) || (auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.uid === 'GIoPe92By9esQ6H0KcJjvYoPiyN2')",
+              "$group": {
+                "members": {
+                  "student1": {
+                    ".write": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr') && newData.exists() && newData.child('uid').val() === auth.uid && (!data.exists() || data.child('uid').val() === auth.uid)",
+                    ".validate": "newData.hasChildren(['uid','displayName','joinedAt'])",
+                    "uid": {
+                      ".validate": "newData.isString() && newData.val() === auth.uid"
+                    },
+                    "displayName": {
+                      ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 18"
+                    },
+                    "joinedAt": {
+                      ".validate": "newData.isNumber()"
+                    },
+                    "$other": {
+                      ".validate": false
+                    }
+                  },
+                  "student2": {
+                    ".write": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr') && root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student1/uid').exists() && root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student1/uid').val() !== auth.uid && newData.exists() && newData.child('uid').val() === auth.uid && (!data.exists() || data.child('uid').val() === auth.uid)",
+                    ".validate": "newData.hasChildren(['uid','displayName','joinedAt'])",
+                    "uid": {
+                      ".validate": "newData.isString() && newData.val() === auth.uid"
+                    },
+                    "displayName": {
+                      ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 18"
+                    },
+                    "joinedAt": {
+                      ".validate": "newData.isNumber()"
+                    },
+                    "$other": {
+                      ".validate": false
+                    }
+                  },
+                  "$other": {
+                    ".validate": false
+                  },
+                  "student3": {
+                    ".write": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr') && root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student1/uid').exists() && root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student1/uid').val() !== auth.uid && newData.exists() && newData.child('uid').val() === auth.uid && (!data.exists() || data.child('uid').val() === auth.uid) && (($class === 'c1' && $group === 'g13') || ($class === 'c2' && $group === 'g2') || ($class === 'c3' && $group === 'g15') || ($class === 'c5' && $group === 'g2') || ($class === 'c7' && $group === 'g6') || ($class === 'c8' && $group === 'g2') || ($class === 'c9' && $group === 'g1') || ($class === 'c10' && $group === 'g4') || ($class === 'c11' && $group === 'g6')) && root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student2/uid').exists() && root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student2/uid').val() !== auth.uid",
+                    ".validate": "newData.hasChildren(['uid','displayName','joinedAt'])",
+                    "uid": {
+                      ".validate": "newData.isString() && newData.val() === auth.uid"
+                    },
+                    "displayName": {
+                      ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 18"
+                    },
+                    "joinedAt": {
+                      ".validate": "newData.isNumber()"
+                    },
+                    "$other": {
+                      ".validate": false
+                    }
+                  }
+                },
+                "progress": {
+                  ".write": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr') && (data.parent().child('members/student1/uid').val() === auth.uid || data.parent().child('members/student2/uid').val() === auth.uid || root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student3/uid').val() === auth.uid) && root.child('nepal-v27/private/classes/'+$class+'/teams/'+$group+'/editorLock/uid').val() === auth.uid",
+                  ".validate": "newData.hasChildren(['completed','updatedAt']) && (!data.hasChild('completed') || newData.child('completed').val() >= data.child('completed').val())",
+                  "completed": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 4"
+                  },
+                  "updatedAt": {
+                    ".validate": "newData.isNumber()"
+                  },
+                  "$other": {
+                    ".validate": false
+                  }
+                },
+                "$other": {
+                  ".validate": false
+                },
+                "floodBest": {
+                  ".write": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr') && (root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student1/uid').val() === auth.uid || root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student2/uid').val() === auth.uid || root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student3/uid').val() === auth.uid) && newData.exists() && (!data.exists() || newData.child('score').val() > data.child('score').val()) && newData.child('updatedBy').val() === auth.uid",
+                  ".validate": "newData.hasChildren(['score','rank','updatedBy','updatedAt'])",
+                  "score": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+                  },
+                  "rank": {
+                    ".validate": "newData.isString() && (newData.val() === 'LEGEND' || newData.val() === 'S' || newData.val() === 'A' || newData.val() === 'B' || newData.val() === 'C' || newData.val() === 'F')"
+                  },
+                  "updatedBy": {
+                    ".validate": "newData.isString() && newData.val() === auth.uid"
+                  },
+                  "updatedAt": {
+                    ".validate": "newData.isNumber()"
+                  },
+                  "$other": {
+                    ".validate": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "private": {
+        "classes": {
+          "$class": {
+            "teams": {
+              "$group": {
+                ".read": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr') && (root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student1/uid').val() === auth.uid || root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student2/uid').val() === auth.uid || root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student3/uid').val() === auth.uid)",
+                "editorLock": {
+                  ".write": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr') && (root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student1/uid').val() === auth.uid || root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student2/uid').val() === auth.uid || root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student3/uid').val() === auth.uid) && ((!newData.exists() && data.child('uid').val() === auth.uid) || (newData.child('uid').val() === auth.uid && (!data.exists() || data.child('uid').val() === auth.uid || data.child('updatedAt').val() < now - 120000)))",
+                  ".validate": "newData.hasChildren(['uid','updatedAt'])",
+                  "uid": {
+                    ".validate": "newData.isString() && newData.val() === auth.uid"
+                  },
+                  "updatedAt": {
+                    ".validate": "newData.isNumber() && newData.val() <= now + 10000 && newData.val() >= now - 10000"
+                  },
+                  "$other": {
+                    ".validate": false
+                  }
+                },
+                "code": {
+                  ".write": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr') && (root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student1/uid').val() === auth.uid || root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student2/uid').val() === auth.uid || root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student3/uid').val() === auth.uid) && root.child('nepal-v27/private/classes/'+$class+'/teams/'+$group+'/editorLock/uid').val() === auth.uid",
+                  ".validate": "newData.hasChildren(['payload','updatedAt','updatedBy']) && newData.child('updatedBy').val() === auth.uid",
+                  "payload": {
+                    ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 1250000"
+                  },
+                  "updatedAt": {
+                    ".validate": "newData.isNumber()"
+                  },
+                  "updatedBy": {
+                    ".validate": "newData.isString() && newData.val() === auth.uid"
+                  },
+                  "$other": {
+                    ".validate": false
+                  }
+                },
+                "$other": {
+                  ".validate": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    ".read": false,
+    ".write": false
+  }
+}
