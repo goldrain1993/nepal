@@ -1,8 +1,8 @@
 /**
- * NEPAL FLOOD × EntryJS - integration v3.8 native simulator menu login · role login · flood score · 3-person groups
+ * NEPAL FLOOD × EntryJS - integration v4.0 native simulator menu login · role login · flood score · 3-person groups
  * Add <script src="./nepal_entry_mode.js" defer></script> to the original index.html.
  * Keep original simulator unchanged. This overlay mounts a real EntryJS editor page in a same-origin iframe.
- * Five staged missions: water variable, water risk condition, independent flow/vibration/rain risk, list+loop alarm.
+ * Six staged missions: water variable, water risk condition, independent flow/vibration/rain risk, list+loop alarm.
  */
 (function () {
   'use strict';
@@ -69,7 +69,26 @@
   #nepal-entry-layer.ne-mission5 #ne-mode-switch{display:block}
   #ne-sim-stage #app{height:100%;width:100%;min-height:0}
   #ne-sim-stage #assessmentTabBtn,#ne-sim-stage #assessmentPane,#ne-sim-stage #run,#ne-sim-stage #replay,#ne-sim-stage #design,#ne-sim-stage #nepal-design-save{display:none!important}
-  #ne-sim-stage #practicePane>.card~.card~.card~.card~.card{display:none!important}
+  /* Mission 6 setup: only ① observations, ② sensor placement, and the Hint tab.
+     All sensor threshold and evacuation/alarm-setting panels are intentionally hidden. */
+  #ne-sim-stage #practicePane > section.card:nth-of-type(n+3){display:none!important}
+  #ne-sim-stage .panel{padding-top:72px!important;scroll-padding-top:72px!important}
+  /* Fixed login buttons must appear at the BOTTOM-LEFT of the simulation MAP,
+     not over the right-side sensor panel. Respect the developer sidebar width. */
+  body.nepal-mission6-sim #nepal-entry-trigger,
+  body.nepal-mission6-sim #nepal-class-board,
+  body.nepal-mission6-sim #nepal-class-switch{
+    left:calc(max(285px, 27vw) + 17px)!important;right:auto!important;
+    z-index:12900!important;max-width:220px!important;
+  }
+  body.nepal-mission6-sim #nepal-entry-trigger{display:block!important;bottom:16px!important}
+  body.nepal-mission6-sim #nepal-class-board{bottom:79px!important}
+  body.nepal-mission6-sim #nepal-class-switch{bottom:133px!important}
+  @media(max-width:800px){
+    body.nepal-mission6-sim #nepal-entry-trigger,
+    body.nepal-mission6-sim #nepal-class-board,
+    body.nepal-mission6-sim #nepal-class-switch{left:18px!important}
+  }
   #ne-sim-stage .tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   #ne-sim-stage #sensorType optgroup:last-child option:first-child{display:none!important}
   #ne-sim-stage #dataMode,#ne-sim-stage #replayControls{display:none!important}
@@ -92,6 +111,21 @@
     {title:'리스트·반복문 통합',fault:'네 센서의 위험 신호를 종합하지 못합니다!',description:'이제 네 위험 신호가 각각 0 또는 1로 계산됩니다. 네 신호를 리스트의 1~4번 칸에 넣고 반복해서 검사해 위험 센서 수를 세어 보세요. 네 센서값은 계속 갱신되어야 합니다.',task:'「위험목록」 리스트에 수위위험·유속위험·진동위험·강수위험을 1·2·3·4번 순서로 넣으세요. 「반복번호」와 반복문으로 위험한 센서의 수를 세고, 2개 이상이면 「경보결과」를 1, 아니면 0으로 정하세요. 💡 힌트: ① 리스트에 먼저 4칸을 준비하기 ② 「계속 반복하기」 안에서 각 칸을 최신 0·1로 바꾸기 ③ 「위험개수」를 0으로 초기화하고 1~4번 항목을 검사하기. 「항목 추가」를 계속 반복하면 리스트가 길어지니 「n번째 항목 바꾸기」를 찾아보세요.',example:'위험목록 [1, 0, 1, 0] → 위험개수 2 → 경보결과 1',active:true},
     {title:'최종 경보 설계·100회 평가',fault:'실제 재난 상황에 맞는 경보 기준을 완성하세요!',description:'네팔 홍수 시뮬레이션에서 자신이 정한 센서 위치·위험 기준·비교 방향을 코드로 재현하세요. 4개 중 경보를 울릴 N을 정하면, 실제 엔트리 코드의 경보 판단을 원본 재난 엔진에 적용하여 100회 평가합니다.',task:'먼저 네팔 시뮬레이션에서 수위·유속·진동·강수 센서를 설치하고 각 위험 기준값과 비교 방향(이상/이하)을 설정하세요. 엔트리의 실시간 센서값도 「계속 반복하기」 안에서 갱신하고, 「시뮬레이션에서 설정한 ○○ 위험 기준값」 블록을 이용해 같은 위험 판단을 구현하세요. 리스트·반복문으로 네 위험 신호를 세고, 자신이 정한 N개 이상이면 「경보결과」를 1로 정하세요(N=1~4). 평가에 적용되는 센서 위치·임계값은 시뮬레이션에서 저장한 그대로입니다.',example:'시뮬레이션에서 N=3, 센서별 위험 기준 설정 → 엔트리에서도 같은 기준과 N=3 사용 → 동일한 센서 위치로 100회 평가.',active:true}
   ];
+  // v4.0: The NORMAL Nepal 100-run evaluation keeps its exact formula;
+  // only LEGEND eligibility changes to score >= 97, with NO evac-failure limit.
+  if(typeof window.calculatePerformanceRank==='function' && !window.calculatePerformanceRank.__nepalV40){
+    const originalRank=window.calculatePerformanceRank;
+    const relaxedRank=function(...args){
+      const result=originalRank.apply(this,args);
+      if(result && Number.isFinite(Number(result.score)) && Number(result.score)>=97){
+        result.rank='LEGEND';result.css='rank-legend';
+        result.desc='종합 성능 점수 97점 이상으로 LEGEND 등급을 달성했습니다!';
+      }
+      return result;
+    };
+    relaxedRank.__nepalV40=true;
+    window.calculatePerformanceRank=relaxedRank;
+  }
   // Login lives IN the original simulator start menu, not in a new overlay.
   // Prevent its original simulation actions before the classroom module is ready.
   const preAuthButtons=['enterLabBtn','enterAssessmentBtn','enterHowBtn'].map(id=>document.getElementById(id));
@@ -103,7 +137,7 @@
   }
   const trigger = document.createElement('button'); trigger.id='nepal-entry-trigger'; trigger.textContent='🧩 엔트리 개발자 모드';trigger.style.display='none';
   const layer = document.createElement('section'); layer.id='nepal-entry-layer';
-  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">6단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 실시간 반복 갱신</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 리스트·반복문</b> → <b>⑥ 100회 평가</b></div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 최종 경보 성능평가</div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button><p id="ne-mini">※ 원본 홍수 4유형·비홍수 3유형과 재난 엔진은 수정하지 않습니다.<br>※ 미션 01~05는 공통 가상 기준(수위 2m·유속 2m/s·진동 13·강수 22mm/h)으로 기초를 학습하고, 미션 06은 각 조가 시뮬레이션에서 직접 설정한 위험 기준과 설치 위치를 평가합니다.<br>※ 실제 재난 경보 기준이 아닙니다.</p></aside><div class="ne-editor-stage"><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=39"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">코딩 친구가 준비하고 있어요!</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
+  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">6단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 실시간 반복 갱신</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 리스트·반복문</b> → <b>⑥ 100회 평가</b></div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 최종 경보 성능평가</div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button><p id="ne-mini">※ 원본 홍수 4유형·비홍수 3유형과 재난 엔진은 수정하지 않습니다.<br>※ 미션 01~05는 공통 가상 기준(수위 2m·유속 2m/s·진동 13·강수 22mm/h)으로 기초를 학습하고, 미션 06은 각 조가 시뮬레이션에서 직접 설정한 위험 기준과 설치 위치를 평가합니다.<br>※ 실제 재난 경보 기준이 아닙니다.</p></aside><div class="ne-editor-stage"><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=39"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
   // Pause the original simulator's background animation loops without altering index.html.
   // The two named rAF loops are global function declarations in the original page.
   // Their drawing work is skipped while EntryJS covers the simulator; their ordinary
@@ -160,7 +194,7 @@
   const loadingSub=layer.querySelector('#ne-loading-sub');
   function showEditorLoading(){
     if(ready&&!projectRestoring){hideEditorLoading();return}
-    loadingTitle.textContent='코딩 친구가 준비하고 있어요!';
+    loadingTitle.textContent='로딩중입니다';
     loadingSub.textContent='잠깐만요, 블록을 가져올게요 ✨';
     loadingOverlay.classList.remove('done');
     iframe.style.visibility='hidden';
@@ -455,18 +489,25 @@
     iframe.contentWindow?.postMessage({type:'NEPAL_DEV_PAUSE'},location.origin);
     portal.appendChild(nativeApp);
     layer.classList.add('ne-sim-visible');
-    try{document.getElementById('design')?.click();setSidebarTab('practice');}catch(e){console.warn('설계 화면 선택',e)}
+    document.body.classList.add('nepal-mission6-sim');
+    try{document.getElementById('design')?.click();setSidebarTab('practice');const panel=nativeApp.querySelector('.panel');if(panel)panel.scrollTop=0;}catch(e){console.warn('설계 화면 선택',e)}
     modeSwitch.textContent='🧩 엔트리 코딩으로 돌아가기';
   }
   function exitMission5Setup(){
     if(!layer.classList.contains('ne-sim-visible'))return;
     layer.classList.remove('ne-sim-visible');
+    document.body.classList.remove('nepal-mission6-sim');
     if(nativeApp&&originalAppParent){originalAppParent.insertBefore(nativeApp,originalAppSibling);}
     modeSwitch.textContent='🗺 센서 설치 화면';
     pushMission5Rules();
     if(ready&&layer.classList.contains('open'))iframe.contentWindow?.postMessage({type:'NEPAL_DEV_RESUME'},location.origin);
   }
   modeSwitch.onclick=()=>{if(layer.classList.contains('ne-sim-visible'))exitMission5Setup();else enterMission5Setup()};
+  trigger.addEventListener('click',event=>{
+    if(!layer.classList.contains('ne-sim-visible'))return;
+    event.stopImmediatePropagation();
+    exitMission5Setup();
+  },true);
   let mission5Evaluating=false;
   const lessonSensorTypes=['수위 센서','유속 센서','진동 센서','강수 센서'];
   const sensorKeys=['water','flow','vibration','rain'];
@@ -494,12 +535,10 @@
     getMission5ConfiguredRules();
     if(!Array.isArray(alarmTable)||alarmTable.length!==16||alarmTable.some(x=>x!==0&&x!==1))throw Error('엔트리 경보 코드의 16가지 판정 결과가 올바르지 않습니다.');
     if(!Number.isInteger(n)||n<1||n>4)throw Error('엔트리에서 결정한 경보 개수 N을 확인할 수 없습니다.');
-    // Mission 06 reproduces the original simulator design: the alert count
-    // selected in the simulator must match the count implemented in EntryJS.
-    const simulatorN=alarmMode==='OR'?1:alarmMode==='AND'?4:alarmMode==='N'?Number(document.getElementById('minRules')?.value):null;
-    if(!Number.isInteger(simulatorN)||simulatorN<1||simulatorN>4)
-      throw Error('시뮬레이션의 「대피 경보 조건」에서 자동 경보 OR/AND/N개 이상을 선택하세요. 직접 판단 모드는 엔트리 평가에 사용할 수 없습니다.');
-    if(n!==simulatorN)throw Error(`엔트리 코드는 ${n}개 이상일 때 경보를 내리지만, 시뮬레이션은 ${simulatorN}개 이상으로 설정되어 있습니다. 두 경보 조건을 일치시켜 주세요.`);
+    // The MISSION 6 sensor-placement panel intentionally hides evacuation-mode
+    // controls. Take the student's chosen N ONLY from executed EntryJS code;
+    // the 16-case EntryJS truth table is applied verbatim to the original
+    // Nepal 100-run engine. Do not require clicking an invisible simulator N UI.
     if(typeof createScenario!=='function'||typeof ruleEverSatisfied!=='function'||typeof resultForScenario!=='function'||typeof calculatePerformanceRank!=='function')throw Error('원본 네팔 재난 평가 함수를 불러오지 못했습니다.');
     if(typeof simRunning!=='undefined'&&simRunning)throw Error('진행 중인 시뮬레이션을 종료한 후 평가하세요.');
     exitMission5Setup();
@@ -537,7 +576,7 @@
       }
       const avg=floodN?totalFail/floodN:0,missRate=floodN?100*miss/floodN:0,falseRate=safeN?100*falseAlarm/safeN:0;
       const base=calculatePerformanceRank(avg,missRate,falseRate);
-      const rank=base.score>=95?'LEGEND':base.rank==='LEGEND'?'S':base.rank;
+      const rank=base.score>=97?'LEGEND':base.rank==='LEGEND'?'S':base.rank;
       gradeEl.textContent=rank+' · '+base.score.toFixed(1)+'점';
       scoreEl.textContent=`홍수 ${floodN}회 / 안전 ${safeN}회 · 평균 대피실패 ${avg.toFixed(1)}명 · 홍수 놓침 ${missRate.toFixed(1)}% · 불필요 경보 ${falseRate.toFixed(1)}%`;
       progressEl.textContent=`100회 완료 · 설치 위치 및 위험 기준: 조별 원본 설정 사용 · N=${n}`;
@@ -676,7 +715,7 @@
 
   // Load classroom UI asynchronously. The original simulator is not modified.
   const classroomScript=document.createElement('script');
-  classroomScript.src='./nepal_classroom.js?v=39';
+  classroomScript.src='./nepal_classroom.js?v=40';
   classroomScript.onload=()=>{
     if(!window.NepalClassroom){console.error('학급 모듈을 찾지 못했습니다.');return;}
     classroom=window.NepalClassroom.setup({

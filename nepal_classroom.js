@@ -1,4 +1,4 @@
-/** NEPAL × ENTRY v3.7 — native Nepal simulator start page with role-based buttons with role-specific Google authentication, 2/3-person groups, flood scores.
+/** NEPAL × ENTRY v4.0 — native Nepal simulator start page with role-based buttons with role-specific Google authentication, 2/3-person groups, flood scores.
  * Public board = signed-in school accounts only; code/progress = group members only.
  * Firebase rules are the authorization boundary, not this browser code.
  */
@@ -22,7 +22,11 @@ css.textContent=`
 .np-note{background:#18271b;border:1px solid #425b3b;border-radius:9px;padding:11px;color:#dcecd5;font-size:12px;margin:11px 0}.np-alert{color:#ffc0a2;border-color:#825041}
 .np-msg{white-space:pre-wrap;min-height:22px;color:#def4cd;font-size:12px;margin-top:11px}.np-head{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}.np-head select{min-width:125px;width:auto}
 .np-boardgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}.np-team{background:#0e2017;border:1px solid #2a5636;border-radius:12px;padding:14px;min-height:123px}.np-team.mine{outline:2px solid #a9ed70}
-.np-score{font-size:12px;color:#d5f59a;margin-top:5px}.np-teamhead{display:flex;justify-content:space-between;font-size:15px;font-weight:900}.np-members{font-size:13px;color:#e7f3da;margin-top:7px;overflow-wrap:anywhere;min-height:23px}
+.np-score{font-size:12px;color:#d5f59a;margin-top:5px}
+.np-gold-medal{position:relative;display:inline-grid;place-items:center;width:32px;height:32px;margin-right:4px;border-radius:50%;border:3px ridge #ffe185;background:radial-gradient(circle at 35% 27%,#fff2a9 0%,#ffc640 35%,#d78a09 85%);box-shadow:0 1px 8px #ffc94b88,inset 0 0 0 2px #bb8013;color:#4a2700;font-size:19px;font-weight:1000;text-shadow:0 1px #ffe89b;vertical-align:middle;flex:none}
+.np-gold-medal::before,.np-gold-medal::after{content:'';position:absolute;top:-13px;width:8px;height:15px;background:#db4536;z-index:-1;border:1px solid #ffc851}
+.np-gold-medal::before{left:5px;transform:rotate(-23deg)}.np-gold-medal::after{right:5px;transform:rotate(23deg)}
+.np-teamhead{display:flex;justify-content:space-between;font-size:15px;font-weight:900}.np-members{font-size:13px;color:#e7f3da;margin-top:7px;overflow-wrap:anywhere;min-height:23px}
 .np-track{height:8px;background:#304334;border-radius:10px;overflow:hidden;margin-top:12px}.np-track div{height:100%;background:linear-gradient(90deg,#6cb041,#deff9a)}.np-caption{font-size:11px;color:#b5cbb2;margin-top:7px}.np-saveinfo{max-width:260px;font-size:11px;color:#d4e5b9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* A pre-simulation gate: on entry only THREE choices, never account details or logout. */
 #np-gate .np-gate-hero{width:min(900px,calc(100vw - 32px));min-height:min(660px,calc(100vh - 80px));margin:max(4vh,22px) auto;padding:clamp(22px,5vw,60px);border:1px solid #48734d;border-radius:24px;background:radial-gradient(ellipse at 50% 100%,#15412c77,transparent 55%),linear-gradient(145deg,#14291e,#06110e 70%);box-shadow:0 28px 90px #0009;display:flex;flex-direction:column;justify-content:center;position:relative;isolation:isolate;overflow:hidden}
@@ -462,10 +466,54 @@ let boardFromGate=true;
 function showBoard(fromGate){
  $('np-teacher-admin').hidden=!requireTeacher(user);if(requireTeacher(user))previewAdmin();if(guestActive){note('게스트 모드에서는 학급 현황판을 이용할 수 없습니다.');return}if(!user||!db){note('먼저 학교 계정으로 로그인하세요.');landing();return}
  boardFromGate=fromGate||gate.classList.contains('show');$('np-board-class').value=String(team?.c||$('np-class').value||1);gate.classList.remove('show');board.classList.add('show');loadBoard();refreshButtons()}
-function boardCards(data,c){let html='';for(let g=1;g<=GROUP_COUNT;g++){
- const d=data?.['g'+g]||{},mem=d.members||{};const rawProgress=Number(d.progress?.completed)||0;const normalizedProgress=d.progress?.schemaVersion===2?rawProgress:(rawProgress>=2?rawProgress+1:rawProgress);const value=Math.max(0,Math.min(missionTotal,normalizedProgress));const best=d.floodBest||null;const score=best&&Number.isFinite(Number(best.score))?Number(best.score):null;const m5=d.mission5Best||null;const mine=team?.c===c&&team?.g===g;
- html+=`<article class="np-team ${mine?'mine':''}"><div class="np-teamhead"><span>${g}조 ${mine?'(우리 조)':''}</span><span>${value}/${missionTotal}</span></div><div class="np-members">${esc(memberNames(mem,c,g))}</div><div class="np-score">🧩 미션6: ${m5?`${esc(m5.rank)} · ${Number(m5.score)}점 (N=${Number(m5.n)})`:'미응시'}</div><div class="np-score">🌊 네팔 형성평가: ${score===null?'미응시':`${esc(best.rank)} · ${score}점 (최고)`}</div><div class="np-track"><div style="width:${Math.round(100*value/missionTotal)}%"></div></div><div class="np-caption">${value===0?'진행 전':value===missionTotal?'전체 미션 완료':`미션 ${value}까지 통과`}</div></article>`;
- }$('np-grid').innerHTML=html}
+function displayRank97(score,rank){
+ if(score!==null&&Number(score)>=97)return 'LEGEND';
+ if(String(rank||'').toUpperCase()==='LEGEND')return Number(score)>=90?'S':Number(score)>=80?'A':Number(score)>=65?'B':Number(score)>=50?'C':'F';
+ return String(rank||'미평가');
+}
+function boardCards(data,c){
+ const entries=[];
+ for(let g=1;g<=GROUP_COUNT;g++){
+  const d=data?.['g'+g]||{},mem=d.members||{};
+  const rawProgress=Number(d.progress?.completed)||0;
+  const normalizedProgress=d.progress?.schemaVersion===2?rawProgress:(rawProgress>=2?rawProgress+1:rawProgress);
+  const value=Math.max(0,Math.min(missionTotal,normalizedProgress));
+  const flood=d.floodBest||null;
+  const floodScore=flood&&Number.isFinite(Number(flood.score))?Number(flood.score):null;
+  const mission6=d.mission5Best||null; // Keep the v3.7 Firebase key for existing scores.
+  const mission6Score=mission6&&Number.isFinite(Number(mission6.score))?Number(mission6.score):null;
+  const members=Object.values(mem).filter(x=>x?.uid);
+  const firstJoin=Math.min(...members.map(x=>Number(x.joinedAt)).filter(n=>Number.isFinite(n)&&n>0));
+  const finished=Number(d.progress?.updatedAt);
+  const duration=Number.isFinite(firstJoin)&&Number.isFinite(finished)&&finished>=firstJoin?finished-firstJoin:null;
+  entries.push({g,mem,value,flood,floodScore,mission6,mission6Score,
+    duration,hasTeam:members.length>0,mine:team?.c===c&&team?.g===g});
+ }
+ const eligible=entries.filter(e=>e.hasTeam);
+ const hasMission6=eligible.some(e=>e.mission6Score!==null);
+ // A class has ONE gold medal. Prefer mission-6 score; if NO team took it,
+ // prefer mission advancement + elapsed time. Then use Nepal flood evaluation.
+ const ranked=eligible.sort((a,b)=>{
+   if(hasMission6){
+     if(a.mission6Score===null && b.mission6Score!==null)return 1;
+     if(a.mission6Score!==null && b.mission6Score===null)return -1;
+     if(a.mission6Score!==null && b.mission6Score!==null&&a.mission6Score!==b.mission6Score)return b.mission6Score-a.mission6Score;
+   }
+   if(a.value!==b.value)return b.value-a.value;
+   if(a.duration!==null&&b.duration!==null&&a.duration!==b.duration)return a.duration-b.duration;
+   // Identical progression (or no comparable timing data): tie-break by flood score.
+   if(a.floodScore!==b.floodScore)return (b.floodScore??-1)-(a.floodScore??-1);
+   return a.g-b.g;
+ });
+ const gold=ranked[0]&&(hasMission6||ranked[0].value>0||ranked[0].floodScore!==null)?ranked[0].g:null;
+ let html='';
+ for(const e of entries){
+  const {g,mem,value,flood,floodScore,mission6,mission6Score,mine}=e;
+  const medal=g===gold?'<span class="np-gold-medal" role="img" aria-label="이 반의 1위 금메달">1</span>':'';
+  html+=`<article class="np-team ${mine?'mine':''}"><div class="np-teamhead"><span style="display:flex;align-items:center;gap:6px">${medal}${g}조 ${mine?'(우리 조)':''}</span><span>${value}/${missionTotal}</span></div><div class="np-members">${esc(memberNames(mem,c,g))}</div><div class="np-score">🌊 네팔 형성평가: ${floodScore===null?'미응시':`${esc(displayRank97(floodScore,flood.rank))} · ${floodScore}점 (최고)`}</div><div class="np-score">🧩 미션6: ${mission6Score===null?'미응시':`${esc(displayRank97(mission6Score,mission6.rank))} · ${mission6Score}점 (N=${Number(mission6.n)})`}</div><div class="np-track"><div style="width:${Math.round(100*value/missionTotal)}%"></div></div><div class="np-caption">${value===0?'진행 전':value===missionTotal?'전체 미션 완료':`미션 ${value}까지 통과`}</div></article>`;
+ }
+ $('np-grid').innerHTML=html;
+}
 function clearBoard(){if(boardListener){boardListener.ref.off('value',boardListener.cb);boardListener=null}}
 function loadBoard(){if(!user||!db)return;$('np-board-msg').textContent='현황을 불러오는 중…';const c=Number($('np-board-class').value);clearBoard();if(!valid(c,1))return;
  const ref=db.ref(`${ROOT}/c${c}/teams`);const cb=snap=>{ $('np-board-msg').textContent=''; if(board.classList.contains('show')&&Number($('np-board-class').value)===c)boardCards(snap.val()||{},c)};
