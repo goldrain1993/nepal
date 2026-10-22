@@ -71,7 +71,7 @@
   #ne-sim-stage #assessmentTabBtn,#ne-sim-stage #assessmentPane,#ne-sim-stage #run,#ne-sim-stage #replay,#ne-sim-stage #design,#ne-sim-stage #nepal-design-save{display:none!important}
   /* In Mission 6 students must be able to INSTALL sensors and CONFIGURE
      thresholds. The alarm mode remains decided by the EntryJS blocks. */
-  #ne-sim-stage #practicePane > section.card:nth-of-type(n+4){display:none!important}
+  #ne-sim-stage #practicePane > section.card.ne-mission6-hidden{display:none!important}
   #ne-sim-stage .panel{padding:12px 12px 22px!important;scroll-padding-top:12px!important}
   #ne-sim-stage .panel > div:first-child,
   #ne-sim-stage .panel > .sub,
@@ -558,6 +558,7 @@
     // Move the ORIGINAL cards, not cloned UI: their click handlers, sensor state,
     // and cloud-restored sensor/rule values remain intact.
     mission6Practice.prepend(installation,thresholds,observations);
+    mission6Cards.slice(3).forEach(card=>card.classList.add('ne-mission6-hidden'));
     mission6Practice.prepend(mission6Tip);
     const sensorSelect=document.getElementById('sensorType');
     if(sensorSelect?.value==='기온 센서')sensorSelect.value='강수 센서';
@@ -565,6 +566,7 @@
   }
   function restoreMission6SensorPanel(){
     mission6Tip.remove();
+    mission6Cards.slice(3).forEach(card=>card.classList.remove('ne-mission6-hidden'));
     if(mission6Practice)originalPracticeChildren.forEach(node=>mission6Practice.appendChild(node));
   }
   function enterMission5Setup(){
