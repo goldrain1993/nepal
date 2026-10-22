@@ -18,7 +18,8 @@
   .ne-header button,.ne-side button{border:1px solid #4c7150;border-radius:9px;padding:9px 13px;background:#17331d;color:#ecffe2;cursor:pointer;font-weight:800}
   .ne-main{display:grid;grid-template-columns:minmax(285px,27%) minmax(0,1fr);flex:1;min-height:0}
   .ne-side{border-right:1px solid #2a5132;background:#101e16;overflow:auto;padding:18px}
-  .ne-mission-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:12px 0}
+  .ne-mission-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:12px 0}
+  .ne-mission-list button.final-button{grid-column:span 2;background:#264d22;color:#d7ffb6;border-color:#a0e76a;letter-spacing:.05em}
   .ne-mission-list button{padding:10px 3px;font-size:12px}
   .ne-mission-list button.current{background:#9fe761;color:#11240f}
   .ne-mission-list button.passed{border-color:#8aca69;background:#173820;color:#caffb6}
@@ -66,7 +67,7 @@
   #nepal-entry-layer.ne-sim-visible #ne-sim-stage{display:block}
   #nepal-entry-layer.ne-sim-visible #ne-iframe,#nepal-entry-layer.ne-sim-visible #ne-entry-loading{display:none!important}
   #ne-mode-switch{display:none;position:absolute;right:12px;top:9px;z-index:14;background:#b9ed74;color:#122518;border:1px solid #648a48;border-radius:9px;padding:10px 16px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px #0004}
-  #nepal-entry-layer.ne-mission5 #ne-mode-switch{display:block}
+  #nepal-entry-layer.ne-sensor-mission #ne-mode-switch{display:block}
   #ne-sim-stage #app{height:100%;width:100%;min-height:0}
   #ne-sim-stage #assessmentTabBtn,#ne-sim-stage #assessmentPane,#ne-sim-stage #run,#ne-sim-stage #replay,#ne-sim-stage #design,#ne-sim-stage #nepal-design-save{display:none!important}
   /* Mission 6 shows only original observation and sensor-placement cards.
@@ -99,7 +100,7 @@
   #ne-sim-stage #dataMode,#ne-sim-stage #replayControls{display:none!important}
   #ne-mission5-report{display:none;margin:12px 0;padding:15px;border:1px solid #89c95c;background:#10241a;border-radius:12px;font-size:13px;color:#dcffcf}
   #ne-mission5-report strong{font-size:28px;color:#b6f36f}
-  #nepal-entry-layer.ne-mission5 #ne-mission5-report{display:block}
+  #nepal-entry-layer.ne-graded-mission #ne-mission5-report{display:block}
   #legendOverlay.show{z-index:30000!important}
   
   @media(max-width:800px){.ne-main{grid-template-columns:1fr;grid-template-rows:minmax(220px,38%) minmax(0,1fr)}.ne-side{border-right:0;border-bottom:1px solid #355439}}
@@ -110,12 +111,14 @@
   // These are learning-only values and are not read from the flood simulator.
   // Mission 6 thresholds are authored separately by students in EntryJS.
   const missions = [
-    {title:'수위 측정값 저장',fault:'수위 센서값이 저장되지 않습니다!',description:'수위 센서는 계속 값을 측정하고 있지만, 측정값을 저장할 변수가 없습니다. 먼저 한 개의 값을 저장하는 기능부터 복구하세요.',task:'「수위값」 변수를 직접 만들고, 「수위 센서가 현재 측정하고 있는 실시간 값」 타원형 블록으로 현재 값을 한 번 저장하세요.',example:'수위 센서 4.20m → 수위값 4.20 (한 번 저장하면 통과)',active:true},
-    {title:'실시간 수위값 갱신',fault:'수위값이 계속 바뀌지 않습니다!',description:'미션 1에서는 현재 수위를 한 번 저장했습니다. 하지만 재난 현장에서는 수위가 계속 변해요. 실시간 데이터를 관찰하려면 프로그램이 센서값을 반복해서 다시 읽어야 합니다.',task:'이미 만든 「수위값」 변수를 계속 최신 상태로 갱신해 보세요. 「흐름」 탭의 「계속 반복하기」 안에서 「수위값을 (수위 센서가 현재 측정하고 있는 실시간 값)으로 정하기」 명령이 반복되게 만드세요. ※ 0.2초 기다리기는 권장하지만 필수는 아닙니다.',example:'수위 1.35 → 수위값 1.35 / 수위 3.60 → 수위값 3.60 / 수위 2.05 → 수위값 2.05 (프로그램 재시작 없이 갱신)',active:true},
-    {title:'수위 위험 판단',fault:'수위 위험 여부를 판단하지 못합니다!',description:'수위값은 반복해서 갱신되고 있습니다. 이번에는 계속 반복하기 안에서 그 값이 위험한지 매번 판단해 보세요.',task:'「수위위험」 변수를 직접 만드세요. 수위값이 4m 이상이면 1(위험), 4m 미만이면 0(안전)이 되도록 하세요. 센서값이 바뀌어도 계속 판단할 수 있어야 합니다. 힌트: 「흐름」 탭의 계속 반복하기와 만일/만일~아니면 블록을 살펴보세요.',example:'수위 3.50m → 수위위험 0 / 수위 4.80m → 수위위험 1',active:true},
-    {title:'유속·진동·강수 확장',fault:'유속·진동·강수 센서의 위험 판단 기능이 없습니다!',description:'수위 위험을 판단하는 방법을 배웠습니다. 이번에는 같은 방법을 유속·진동·강수 센서에 스스로 적용해 보세요. 리스트는 아직 사용하지 않습니다.',task:'「유속값」·「진동값」·「강수값」 변수와 「유속위험」·「진동위험」·「강수위험」 변수를 직접 만드세요. 세 센서값도 「계속 반복하기」 안에서 갱신하고, 유속 3m/s 이상, 진동 16 이상, 강수 35mm/h 이상이면 각각 위험(1), 미만이면 안전(0)이 되도록 만드세요. 수위값도 계속 갱신되어야 합니다.',example:'유속 3.60 → 위험 1 / 진동 15.50 → 위험 0 / 강수 40mm/h → 위험 1',active:true},
-    {title:'리스트·반복문 통합',fault:'4개 센서의 위험 신호를 종합하지 못합니다!',description:'이제 4개의 위험신호가 각각 0 또는 1로 계산됩니다. 4개의 위험신호를 리스트의 1~4번 칸에 넣고 반복해서 검사해 위험 센서 수를 세어 보세요. 4개 센서값은 계속 갱신되어야 합니다.',task:'「위험목록」 리스트에 수위위험·유속위험·진동위험·강수위험을 1·2·3·4번 순서로 넣으세요. 「반복번호」와 반복문으로 위험한 센서의 수를 세고, 2개 이상이면 「경보결과」를 1, 아니면 0으로 정하세요. 💡 힌트: ① 리스트에 먼저 4칸을 준비하기 ② 「계속 반복하기」 안에서 각 칸을 최신 0·1로 바꾸기 ③ 「위험개수」를 0으로 초기화하고 1~4번 항목을 검사하기. 「항목 추가」를 계속 반복하면 리스트가 길어지니 「n번째 항목 바꾸기」를 찾아보세요.',example:'위험목록 [1, 0, 1, 0] → 위험개수 2 → 경보결과 1',active:true},
-    {title:'최종 경보 설계·100회 평가',fault:'실제 재난 상황에 맞는 경보 기준을 완성하세요!',description:'시뮬레이션에서 센서 4개의 위치를 선택한 뒤, 위험 기준과 비교 방향은 엔트리 코드에서 직접 설계하세요. 작성한 엔트리 코드의 위험 판단과 경보 조건을 100회 재난 평가에 적용합니다.',task:'「🗺 센서 설치 화면」에서 관측 지점을 살피고 수위·유속·진동·강수 센서를 각각 하나씩 설치하세요. 엔트리로 돌아와 4개 센서의 실시간 값, 위험 임계값과 비교 방향(이상/이하), 위험목록, 반복문 및 경보 개수 N(1~4)을 직접 코딩하세요. 실제 코드의 실행 결과로 판별한 기준을 설치 위치별 센서 데이터에 적용해 100회 평가합니다.',example:'① 관측 지점 선택 → ② 지형에 4개 센서 설치 → ③ 엔트리에서 각 센서의 위험 기준·비교 방향·경보 N 코딩 → ④ 학생 코드 기반 100회 재난 평가.',active:true}
+    {title:'수위 측정값 저장',fault:'수위 센서값이 저장되지 않습니다!',description:'수위 센서는 계속 값을 측정하지만, 측정값을 저장할 변수가 없습니다. 먼저 값을 저장해 보세요.',task:'「수위값」 변수를 만들고 「수위 센서가 현재 측정하고 있는 실시간 값」 블록으로 현재 값을 한 번 저장하세요.',example:'수위 4.20m → 수위값 4.20',active:true},
+    {title:'실시간 수위값 갱신',fault:'수위값이 계속 바뀌지 않습니다!',description:'한 번 저장한 센서값으로는 실시간 변화를 반영할 수 없습니다. 반복문으로 값을 갱신해 보세요.',task:'「계속 반복하기」 안에서 「수위값」에 최신 수위 센서값을 다시 저장하도록 만드세요. 0.2초 기다리기는 권장하지만 필수는 아닙니다.',example:'수위 1.35 → 3.60 → 2.05에 따라 수위값도 계속 변함',active:true},
+    {title:'수위 위험 판단',fault:'수위 위험 여부를 판단하지 못합니다!',description:'변수와 반복문을 배웠으니 이번에는 조건문을 이용해 수위 위험 여부를 계산하세요.',task:'「수위위험」 변수를 만들고 실습용 기준 수위 4m 이상은 1(위험), 4m 미만은 0(안전)이 되도록 조건문을 작성하세요. 이 판단도 「계속 반복하기」 안에서 갱신하세요.',example:'수위 3.50m → 수위위험 0 / 수위 4.80m → 수위위험 1',active:true},
+    {title:'유속·진동·강수 확장',fault:'다른 센서들의 위험 신호도 만들어야 합니다!',description:'수위의 위험 판단을 유속·진동·강수 센서로 확장해 보세요. 리스트는 사용하지 않습니다.',task:'「유속값」·「진동값」·「강수값」 및 각 위험 변수를 만들고 실습용 기준 유속 3m/s 이상·진동 16 이상·강수 35mm/h 이상이면 1, 아니면 0이 되도록 반복해서 갱신하세요.',example:'유속 3.60 → 위험 1 / 진동 15.50 → 위험 0 / 강수 40 → 위험 1',active:true},
+    {title:'센서 배치·경보 알고리즘',fault:'실제 센서 데이터를 이용해 경보를 완성하세요!',description:'센서를 네팔 지형에 배치하고 4개 센서의 위험 기준·비교 방향을 엔트리 코드로 직접 정하세요. 리스트 없이 경보 알고리즘을 완성한 후 100회 평가를 받습니다.',task:'「🗺 센서 설치 화면」에서 ① 관측 지점을 살펴보고 ② 수위·유속·진동·강수 센서를 하나씩 설치하세요. 엔트리에서 실시간 센서값과 4개의 위험신호를 갱신하고, 리스트 없이 「위험개수」를 계산해 N개 이상(N=1~4) 위험하면 「경보결과」가 1이 되도록 구현하세요. 학생 코드로 100회 재난 평가를 받습니다.',example:'4개 센서 설치 → 엔트리에서 위험 기준과 경보 N 직접 설정 → 100회 평가 및 점수 획득',active:true},
+    {title:'리스트로 위험신호 정리',fault:'4개의 위험신호를 리스트로 정리해 보세요!',description:'미션 5의 경보 알고리즘은 유지하면서 이번에는 리스트 자료구조와 반복문만 집중 연습합니다. 100회 평가는 다음 FINAL 미션에서 다시 진행합니다.',task:'「위험목록」 리스트를 만들고 수위위험·유속위험·진동위험·강수위험을 차례대로 4칸에 저장하세요. 매번 최신 위험신호로 리스트 항목을 바꾸고, 「반복번호」와 「반복하기」를 이용해 리스트의 1~4번째 값을 확인해 「위험개수」를 계산하세요. 기존 경보결과를 유지하면 통과합니다.',example:'위험목록 [1, 0, 1, 0] → 반복해서 1의 개수 세기 → 위험개수 2',active:true},
+    {title:'FINAL 미션',fault:'지금까지 만든 재난 경보 시스템을 최종 검증하세요!',description:'센서 위치 설계·위험 조건·리스트·반복문·경보 판단을 모두 결합해 최종 재난 경보 시스템을 완성하세요.',task:'필요하면 센서 설치 화면에서 ① 관측 지점과 ② 센서 설치를 다시 확인하세요. 엔트리에서 4개의 위험신호를 「위험목록」 리스트에 저장하고 반복문으로 「위험개수」를 세어 N개 이상 위험하면 경보가 울리게 하세요. 전체 코드를 검사한 뒤 100회 재난 평가에 도전하세요.',example:'센서 위치 + 4개 위험 판단 + 리스트·반복문 + 경보 알고리즘 → FINAL 100회 평가',active:true}
+
   ];
   // v4.0: The NORMAL Nepal 100-run evaluation keeps its exact formula;
   // only LEGEND eligibility changes to score >= 97, with NO evac-failure limit.
@@ -143,7 +146,7 @@
   }
   const trigger = document.createElement('button'); trigger.id='nepal-entry-trigger'; trigger.textContent='🧩 엔트리 개발자 모드';trigger.style.display='none';
   const layer = document.createElement('section'); layer.id='nepal-entry-layer';
-  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">6단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 실시간 반복 갱신</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 리스트·반복문</b> → <b>⑥ 100회 평가</b></div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 최종 경보 성능평가</div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button></aside><div class="ne-editor-stage"><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=40"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
+  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">7단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 실시간 반복 갱신</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 경보 알고리즘</b> → <b>⑥ 리스트 학습</b> → <b>🏆 FINAL</b></div><div id="ne-missions" class="ne-mission-list"></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 <span id="ne-grade-title">경보 성능평가</span></div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">💾 엔트리 변수 수위값: <b>미생성 / 저장 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button></aside><div class="ne-editor-stage"><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=40"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
   // Pause the original simulator's background animation loops without altering index.html.
   // The two named rAF loops are global function declarations in the original page.
   // Their drawing work is skipped while EntryJS covers the simulator; their ordinary
@@ -404,7 +407,8 @@
       b.classList.toggle('locked',locked);
       b.classList.toggle('passed',passed[i]);
       b.classList.toggle('current',mission===i);
-      b.textContent=(locked?'🔒 ':passed[i]?'✓ ':'')+String(i+1).padStart(2,'0');
+      b.textContent=(locked?'🔒 ':passed[i]?'✓ ':'')+(i===6?'FINAL':String(i+1).padStart(2,'0'));
+    b.classList.toggle('final-button',i===6);
       b.setAttribute('aria-label',`미션 ${i+1} ${locked?'잠김':passed[i]?'통과':'진행 가능'}`);
       b.title=locked?`미션 ${i}을(를) 통과하면 열립니다.`:passed[i]?'통과한 미션입니다. 다시 열 수 있습니다.':`미션 ${i+1} 열기`;
     });
@@ -426,9 +430,11 @@
   // Prevent student code from running across missions. The iframe verifies stop.
   let changeToken=0;
   function applyMission(i){
-    if(i!==5)exitMission5Setup();
+    if(i!==4&&i!==6)exitMission5Setup();
     mission=i;const m=missions[i];
-    layer.classList.toggle('ne-mission5',i===5);
+    layer.classList.toggle('ne-sensor-mission',i===4||i===6);
+    layer.classList.toggle('ne-graded-mission',i===4||i===6);
+    document.getElementById('ne-grade-title').textContent=i===4?'미션 5 성능평가':'FINAL 성능평가';
     document.getElementById('ne-sensor-live').style.display='block';
     document.getElementById('ne-saved-live').style.display='block';
     document.getElementById('ne-saved-live').innerHTML='💾 학생 변수 상태: <b>실행 결과 대기 중</b>';
@@ -436,7 +442,7 @@
     document.getElementById('ne-why').textContent=m.description;
     document.getElementById('ne-task').textContent=m.task;
     document.getElementById('ne-example').textContent=m.example;
-    checkBtn.textContent=i===5?'🚨 엔트리 경보 코드 검증 + 100회 평가':'▶ 엔트리 실행 결과 검사';
+    checkBtn.textContent=(i===4||i===6)?'🚨 경보 알고리즘 검증 + 100회 평가':i===5?'📋 리스트·반복문 검사':'▶ 엔트리 실행 결과 검사';
     status.textContent=teacherPreview()?'🧑‍🏫 교사 체험: 모든 미션을 자유롭게 선택할 수 있습니다. 저장은 하지 않습니다.':passed[i]?'✅ 통과한 미션입니다. 다른 코드도 시험할 수 있습니다.':'미션을 읽고 엔트리에서 블록을 연결해 보세요.';
     document.getElementById('ne-mode-switch').textContent='🗺 센서 설치 화면';
     updateMissionButtons();pushSensorMeasurement();
@@ -460,12 +466,12 @@
   checkBtn.addEventListener('click',()=>{
     if(!ready){status.textContent='엔트리 편집기 로딩이 완료되지 않았습니다. 네트워크와 외부 라이브러리를 확인해 주세요.';return;}
     if(checking || navigating || !unlocked(mission) || !missions[mission]?.active)return;
-    if(mission===5){
+    if(mission===4||mission===6){
       // Arm audio directly from the student's click (browser user gesture).
       // Background simulator music stays muted; only a LEGEND celebration uses audio.
       try{uiSoundEnabled=true;if(typeof unlockAudio==='function')unlockAudio();}catch(_){}
     }
-    if(mission===5){
+    if(mission===4||mission===6){
       try{
         getMission5ConfiguredRules();
       }catch(err){status.textContent='⚠ '+String(err.message||err);return;}
@@ -498,11 +504,11 @@
       const tested=pendingMission;
       checking=false;pendingMission=null;
       if(tested===null)return;
-      if(d.ok && tested===5){
+      if(d.ok && (tested===4||tested===6)){
         checking=true;
         status.textContent='✅ 엔트리 경보 조건 확인! 이제 실제 네팔 재난 100회 평가를 실행합니다.';
         updateMissionButtons();
-        runMission5Native(d.alarmTable,d.threshold,d.rules).catch(e=>{checking=false;uiSoundEnabled=false;status.textContent='❌ 100회 평가 오류: '+String(e.message||e);updateMissionButtons()});
+        runMission5Native(d.alarmTable,d.threshold,d.rules,tested).catch(e=>{checking=false;uiSoundEnabled=false;status.textContent='❌ 100회 평가 오류: '+String(e.message||e);updateMissionButtons()});
         return;
       }
       if(d.ok){
@@ -513,7 +519,7 @@
           classroom?.saveNow('mission-pass');
         }
       }
-      if(tested===5&&!d.ok)uiSoundEnabled=false;
+      if((tested===4||tested===6)&&!d.ok)uiSoundEnabled=false;
       updateMissionButtons();
       const next=d.ok && tested+1<missions.length?'\n🔓 다음 미션 '+String(tested+2).padStart(2,'0')+' 잠금이 해제되었습니다.':'';
       status.textContent=(d.ok?'✅ 복구 검사 통과!':'❌ 복구 검사 실패')+'\n'+(Array.isArray(d.details)?d.details.join('\n'):String(d.message||''))+next;
@@ -550,7 +556,7 @@
   const mission6Cards=mission6Practice?[...mission6Practice.querySelectorAll(':scope > section.card')]:[];
   const mission6Tip=document.createElement('div');
   mission6Tip.id='ne-mission6-sensor-tip';
-  mission6Tip.textContent='📡 미션 6 · ① 관측 지점 → ② 센서 설치. 수위·유속·진동·강수 센서를 하나씩 지형에 배치하세요. 위험 기준·비교 방향·경보 조건은 엔트리에서 직접 코딩합니다. 이전에 설치한 센서 위치는 유지됩니다.';
+  mission6Tip.textContent='📡 ① 관측 지점 → ② 센서 설치. 기존 설치 위치는 유지됩니다.';
   function prepareMission6SensorPanel(){
     if(!mission6Practice||mission6Cards.length<3)return;
     const [observations,installation]=mission6Cards;
@@ -569,7 +575,7 @@
     if(mission6Practice)originalPracticeChildren.forEach(node=>mission6Practice.appendChild(node));
   }
   function enterMission5Setup(){
-    if(mission!==5||!nativeApp||!portal)return;
+    if((mission!==4&&mission!==6)||!nativeApp||!portal)return;
     if(typeof simRunning!=='undefined'&&simRunning){status.textContent='현재 시뮬레이션 실행이 끝난 뒤 센서를 배치해 주세요.';return;}
     iframe.contentWindow?.postMessage({type:'NEPAL_DEV_PAUSE'},location.origin);
     portal.appendChild(nativeApp);
@@ -612,7 +618,7 @@
     }
     return true;
   }
-  async function runMission5Native(alarmTable,n,studentRules){
+  async function runMission5Native(alarmTable,n,studentRules,gradedMission){
     if(mission5Evaluating)return;
     getMission5ConfiguredRules();
     if(!studentRules||typeof studentRules!=='object')throw Error('엔트리 코드의 위험 판단 기준을 찾지 못했습니다.');
@@ -667,14 +673,15 @@
       const rank=base.score>=97?'LEGEND':base.rank==='LEGEND'?'S':base.rank;
       gradeEl.textContent=rank+' · '+base.score.toFixed(1)+'점';
       scoreEl.textContent=`홍수 ${floodN}회 / 안전 ${safeN}회 · 평균 대피실패 ${avg.toFixed(1)}명 · 홍수 놓침 ${missRate.toFixed(1)}% · 불필요 경보 ${falseRate.toFixed(1)}%`;
-      progressEl.textContent=`100회 완료 · 센서 위치: 시뮬레이터 / 위험 기준·N: 학생 엔트리 코드 · N=${n}`;
+      progressEl.textContent=`100회 완료 · ${gradedMission===6?'FINAL':'미션 5'} · 센서 위치: 시뮬레이터 / 위험 기준·N: 학생 코드 · N=${n}`;
       status.textContent=`✅ 엔트리 경보 코드 기반 평가 완료! ${base.score.toFixed(1)}점 / ${rank} 등급`;
-      passed[5]=true;
+      passed[gradedMission]=true;
       const contiguous=passed.findIndex(v=>!v);
       if(!teacherPreview()){
         classroom?.saveProgress(contiguous<0?missions.length:contiguous);
         classroom?.saveNow('mission-pass');
-        classroom?.recordMission5Result?.({score:base.score,rank,n});
+        if(gradedMission===4)classroom?.recordMission5Result?.({score:base.score,rank,n});
+        if(gradedMission===6)classroom?.recordFinalResult?.({score:base.score,rank,n});
       }
       if(rank==='LEGEND'){
         try{if(typeof unlockAudio==='function')await unlockAudio();}catch(_){}
