@@ -435,6 +435,11 @@
     layer.classList.toggle('ne-sensor-mission',i===4||i===6);
     layer.classList.toggle('ne-graded-mission',i===4||i===6);
     document.getElementById('ne-grade-title').textContent=i===4?'미션 5 성능평가':'FINAL 성능평가';
+    if(i===4||i===6){
+      document.getElementById('ne-mission5-grade').textContent='미평가';
+      document.getElementById('ne-mission5-score').textContent='엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.';
+      document.getElementById('ne-mission5-progress').textContent='';
+    }
     document.getElementById('ne-sensor-live').style.display='block';
     document.getElementById('ne-saved-live').style.display='block';
     document.getElementById('ne-saved-live').innerHTML='💾 학생 변수 상태: <b>실행 결과 대기 중</b>';
