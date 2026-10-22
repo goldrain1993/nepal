@@ -273,14 +273,18 @@ async function joinTeam(){await initReady;if(!user||!db||!requireStudent(user)){
   members=(await memRef.once('value')).val()||{};
   if(identify(members)!==slot)throw Error('계정 등록 확인에 실패했습니다.');
   team={c,g};role=slot;readyToSave=false;designReady=false;editorLockHeld=false;progress=0;lastSaved='';
-  const [progressSnap,codeSnap,designSnap]=await Promise.all([db.ref(root+'/progress').once('value'),db.ref(workPath(c,g)+'/code').once('value'),db.ref(workPath(c,g)+'/design').once('value')]);
-  // v3.9 inserts a new repeat-reading mission after old mission 1. The old
-  // mission 2 already proved continuous updating, so groups at old 2~5 may
-  // advance by one. Tag new saves to prevent this migration repeating.
+  const [progressSnap,progressV3Snap,codeSnap,designSnap]=await Promise.all([
+   db.ref(root+'/progress').once('value'),db.ref(root+'/progressV3').once('value'),
+   db.ref(workPath(c,g)+'/code').once('value'),db.ref(workPath(c,g)+'/design').once('value')
+  ]);
+  // Preserve old six-stage progress without skipping the newly redesigned
+  // stages 5/6/FINAL. Use a new key so legacy progress is never overwritten.
   const previousProgress=progressSnap.val()||{};
+  const currentProgress=progressV3Snap.val();
   const oldCompleted=Number(previousProgress.completed)||0;
-  progress=Math.max(0,Math.min(missionTotal,
-    previousProgress.schemaVersion===2?oldCompleted:(oldCompleted>=2?oldCompleted+1:oldCompleted)));
+  const oldAligned=previousProgress.schemaVersion===2?oldCompleted:(oldCompleted>=2?oldCompleted+1:oldCompleted);
+  progress=Math.max(0,Math.min(missionTotal,currentProgress?
+    Number(currentProgress.completed)||0:Math.min(4,oldAligned)));
   const cloudCode=codeSnap.val();const local=localRestore();
   try{projectToRestore=cloudCode?.payload?JSON.parse(cloudCode.payload):(local?.project||null)}catch(e){throw Error('온라인 엔트리 코드 형식 오류: '+e.message)}
   callbacks.resetEditor?.();callbacks.restoreProgress?.(progress);
@@ -410,15 +414,16 @@ async function saveNow(reason='manual'){
  }catch(e){note('⚠ 온라인 저장 실패: '+String(e.message||e)+' · 현재 브라우저에 보조 저장이 있다면 같은 계정으로 다시 확인하세요.');return false}
  finally{saveBusy=false;if(queued){queued=false;setTimeout(()=>saveNow('auto'),500)}}
 }
-async function saveProgress(n){if(guestActive)return;if(!team||!user||!editorLockHeld)return;
+async function saveProgress(n){
+ if(guestActive||!team||!user||!editorLockHeld)return;
  const value=Math.max(progress,Math.min(missionTotal,Math.max(0,Number(n)||0)));progress=value;
- try{await db.ref(teamPath(team.c,team.g)+'/progress').transaction(old=>{
-  const n=Number(old?.completed)||0;
-  const migrated=old?.schemaVersion===2?n:(n>=2?n+1:n);
-  return {completed:Math.max(migrated,value),schemaVersion:2,updatedAt:fb.database.ServerValue.TIMESTAMP};
- },()=>{},false);
- note('✓ 미션 '+value+'까지 통과 · 온라인 저장 완료');}
- catch(e){note('⚠ 미션 진행도 저장 실패: '+e.message)}
+ try{
+  await db.ref(teamPath(team.c,team.g)+'/progressV3').transaction(old=>({
+   completed:Math.max(Number(old?.completed)||0,value),
+   schemaVersion:3,updatedAt:fb.database.ServerValue.TIMESTAMP
+  }),()=>{},false);
+  note('✓ '+(value===7?'FINAL 미션':('미션 '+value))+'까지 통과 · 온라인 저장 완료');
+ }catch(e){note('⚠ 미션 진행도 저장 실패: '+e.message)}
 }
 /** Save only the four editable sensors and alarm design. Guest and teachers never write. */
 async function saveSimulatorDesign(design,reason='auto'){
@@ -438,18 +443,25 @@ async function saveSimulatorDesign(design,reason='auto'){
   return false;
  }
 }
-async function recordMission5Result(result){
+async function recordStageBest(key,label,result){
  if(guestActive||!team||!user||!db||!requireStudent(user))return false;
  const score=Number(result?.score),rank=String(result?.rank||''),n=Number(result?.n);
  if(!Number.isFinite(score)||score<0||score>100||!['LEGEND','S','A','B','C','F'].includes(rank)||!Number.isInteger(n)||n<1||n>4)return false;
- const ref=db.ref(teamPath(team.c,team.g)+'/mission5Best');
+ const ref=db.ref(teamPath(team.c,team.g)+'/'+key);
  try{
   const tx=await ref.transaction(old=>{
    if(old && Number(old.score)>=score)return;
    return {score,rank,n,updatedBy:user.uid,updatedAt:fb.database.ServerValue.TIMESTAMP};
   },()=>{},false);
+  note(tx.committed?'🏆 '+label+' 최고 점수 저장: '+score.toFixed(1)+'점':'📊 '+label+' 기존 최고 점수 유지');
   return tx.committed;
- }catch(e){note('미션6 성적 저장 오류: '+e.message);return false}
+ }catch(e){note('⚠ '+label+' 점수 저장 오류: '+e.message);return false}
+}
+async function recordMission5Result(result){
+ return recordStageBest('mission5NoListBest','미션 5',result);
+}
+async function recordFinalResult(result){
+ return recordStageBest('finalBest','FINAL 미션',result);
 }
 async function recordFloodResult(result){
  if(guestActive)return;if(!team||!user||!db||!requireStudent(user))return;
@@ -475,44 +487,41 @@ function displayRank97(score,rank){
 }
 function boardCards(data,c){
  const entries=[];
+ const scoreOf=x=>x&&Number.isFinite(Number(x.score))?Number(x.score):null;
  for(let g=1;g<=GROUP_COUNT;g++){
   const d=data?.['g'+g]||{},mem=d.members||{};
   const rawProgress=Number(d.progress?.completed)||0;
-  const normalizedProgress=d.progress?.schemaVersion===2?rawProgress:(rawProgress>=2?rawProgress+1:rawProgress);
-  const value=Math.max(0,Math.min(missionTotal,normalizedProgress));
-  const flood=d.floodBest||null;
-  const floodScore=flood&&Number.isFinite(Number(flood.score))?Number(flood.score):null;
-  const mission6=d.mission5Best||null; // Keep the v3.7 Firebase key for existing scores.
-  const mission6Score=mission6&&Number.isFinite(Number(mission6.score))?Number(mission6.score):null;
+  const oldAligned=d.progress?.schemaVersion===2?rawProgress:(rawProgress>=2?rawProgress+1:rawProgress);
+  const progressV3=d.progressV3;
+  const value=Math.max(0,Math.min(missionTotal,progressV3?
+    Number(progressV3.completed)||0:Math.min(4,oldAligned)));
+  const flood=d.floodBest||null,floodScore=scoreOf(flood);
+  const mission5=d.mission5NoListBest||null,mission5Score=scoreOf(mission5);
+  // Legacy key "mission5Best" held the old FINAL/100-run result.
+  const final=d.finalBest||d.mission5Best||null,finalScore=scoreOf(final);
   const members=Object.values(mem).filter(x=>x?.uid);
   const firstJoin=Math.min(...members.map(x=>Number(x.joinedAt)).filter(n=>Number.isFinite(n)&&n>0));
-  const finished=Number(d.progress?.updatedAt);
+  const finished=Number(progressV3?.updatedAt||d.progress?.updatedAt);
   const duration=Number.isFinite(firstJoin)&&Number.isFinite(finished)&&finished>=firstJoin?finished-firstJoin:null;
-  entries.push({g,mem,value,flood,floodScore,mission6,mission6Score,
-    duration,hasTeam:members.length>0,mine:team?.c===c&&team?.g===g});
+  // Score availability takes priority over all other scores: FINAL > M5 > flood.
+  const tier=finalScore!==null?3:mission5Score!==null?2:floodScore!==null?1:0;
+  const qualifyingScore=tier===3?finalScore:tier===2?mission5Score:tier===1?floodScore:null;
+  entries.push({g,mem,value,flood,floodScore,mission5,mission5Score,final,finalScore,
+    tier,qualifyingScore,duration,hasTeam:members.length>0,mine:team?.c===c&&team?.g===g});
  }
- const eligible=entries.filter(e=>e.hasTeam);
- const hasMission6=eligible.some(e=>e.mission6Score!==null);
- // A class has ONE gold medal. Prefer mission-6 score; if NO team took it,
- // prefer mission advancement + elapsed time. Then use Nepal flood evaluation.
- const ranked=eligible.sort((a,b)=>{
-   if(hasMission6){
-     if(a.mission6Score===null && b.mission6Score!==null)return 1;
-     if(a.mission6Score!==null && b.mission6Score===null)return -1;
-     if(a.mission6Score!==null && b.mission6Score!==null&&a.mission6Score!==b.mission6Score)return b.mission6Score-a.mission6Score;
-   }
-   if(a.value!==b.value)return b.value-a.value;
-   if(a.duration!==null&&b.duration!==null&&a.duration!==b.duration)return a.duration-b.duration;
-   // Identical progression (or no comparable timing data): tie-break by flood score.
-   if(a.floodScore!==b.floodScore)return (b.floodScore??-1)-(a.floodScore??-1);
-   return a.g-b.g;
+ const ranked=entries.filter(e=>e.hasTeam).sort((a,b)=>{
+  if(a.tier!==b.tier)return b.tier-a.tier;
+  if(a.qualifyingScore!==b.qualifyingScore)return (b.qualifyingScore??-1)-(a.qualifyingScore??-1);
+  if(a.value!==b.value)return b.value-a.value;
+  if(a.duration!==null&&b.duration!==null&&a.duration!==b.duration)return a.duration-b.duration;
+  return a.g-b.g;
  });
- const gold=ranked[0]&&(hasMission6||ranked[0].value>0||ranked[0].floodScore!==null)?ranked[0].g:null;
+ const gold=ranked[0]?.tier>0?ranked[0].g:null;
  let html='';
  for(const e of entries){
-  const {g,mem,value,flood,floodScore,mission6,mission6Score,mine}=e;
+  const {g,mem,value,flood,floodScore,mission5,mission5Score,final,finalScore,mine}=e;
   const medal=g===gold?'<span class="np-gold-medal" role="img" aria-label="이 반의 1위 금메달">1</span>':'';
-  html+=`<article class="np-team ${mine?'mine':''}"><div class="np-teamhead"><span style="display:flex;align-items:center;gap:6px">${medal}${g}조 ${mine?'(우리 조)':''}</span><span>${value}/${missionTotal}</span></div><div class="np-members">${esc(memberNames(mem,c,g))}</div><div class="np-score">🌊 네팔 형성평가: ${floodScore===null?'미응시':`${esc(displayRank97(floodScore,flood.rank))} · ${floodScore}점 (최고)`}</div><div class="np-score">🧩 미션6: ${mission6Score===null?'미응시':`${esc(displayRank97(mission6Score,mission6.rank))} · ${mission6Score}점 (N=${Number(mission6.n)})`}</div><div class="np-track"><div style="width:${Math.round(100*value/missionTotal)}%"></div></div><div class="np-caption">${value===0?'진행 전':value===missionTotal?'전체 미션 완료':`미션 ${value}까지 통과`}</div></article>`;
+  html+=`<article class="np-team ${mine?'mine':''}"><div class="np-teamhead"><span style="display:flex;align-items:center;gap:6px">${medal}${g}조 ${mine?'(우리 조)':''}</span><span>${value}/${missionTotal}</span></div><div class="np-members">${esc(memberNames(mem,c,g))}</div><div class="np-score">🌊 형성평가: ${floodScore===null?'미응시':`${esc(displayRank97(floodScore,flood.rank))} · ${floodScore}점`}</div><div class="np-score">🧩 미션 5: ${mission5Score===null?'미응시':`${esc(displayRank97(mission5Score,mission5.rank))} · ${mission5Score}점 (N=${Number(mission5.n)})`}</div><div class="np-score">🏆 FINAL 미션: ${finalScore===null?'미응시':`${esc(displayRank97(finalScore,final.rank))} · ${finalScore}점 (N=${Number(final.n)})`}</div><div class="np-track"><div style="width:${Math.round(100*value/missionTotal)}%"></div></div><div class="np-caption">${value===0?'진행 전':value===missionTotal?'FINAL 미션 완료':`미션 ${value}까지 통과`}</div></article>`;
  }
  $('np-grid').innerHTML=html;
 }
@@ -520,7 +529,7 @@ function clearBoard(){if(boardListener){boardListener.ref.off('value',boardListe
 function loadBoard(){if(!user||!db)return;$('np-board-msg').textContent='현황을 불러오는 중…';const c=Number($('np-board-class').value);clearBoard();if(!valid(c,1))return;
  const ref=db.ref(`${ROOT}/c${c}/teams`);const cb=snap=>{ $('np-board-msg').textContent=''; if(board.classList.contains('show')&&Number($('np-board-class').value)===c)boardCards(snap.val()||{},c)};
  ref.on('value',cb,err=>{ $('np-grid').innerHTML=''; $('np-board-msg').textContent='현황판 접근 실패: '+err.message+'\nFirebase 콘솔 → Realtime Database → 규칙에서 v3.0 firebase.rules.json 전체를 붙여 넣고 [게시]를 눌러야 합니다. 교사 Google UID가 규칙에 포함되어 있는지도 확인하세요.'; });boardListener={ref,cb};
- $('np-board-info').textContent='학교 학생/등록 교사 Google 계정으로만 조회 · '+c+'반 15개 조 · 홍수 평가 최고 점수/등급';
+ $('np-board-info').textContent='학교 학생/등록 교사 Google 계정으로만 조회 · '+c+'반 15개 조 · 금메달 순서: FINAL → 미션 5 → 형성평가';
 }
 function adminSelection(){const c=Number($('np-board-class').value),g=Number($('np-admin-group').value),slot=$('np-admin-slot').value;
  if(!valid(c,g)||!memberKeys.includes(slot))throw Error('반·조·조원 자리를 확인하세요.');
@@ -570,7 +579,7 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
  $('np-teacher-sim').onclick=()=>{if(requireTeacher(user))enterTeacherSimulator();else if(team){board.classList.remove('show');clearBoard()}else note('학생은 반·조에 먼저 등록해야 합니다.');refreshButtons()};
  if(!autosave)autosave=setInterval(()=>{if(team&&readyToSave&&!restoring&&opts.isLayerOpen?.()&&!opts.isBusy?.())saveNow('auto')},18000);
  setupNativeHome();refreshButtons();
- return{refreshUI:refreshButtons,showGate,showBoard,onEntryReady,saveNow,saveProgress,saveSimulatorDesign,recordFloodResult,recordMission5Result,openEditor,closeEditing,enterTeacherSimulator,showLogin,signout,receiveFrameMessage,getTeam:()=>team,isDesignReady:()=>designReady&&!!team&&!guestActive&&requireStudent(user),isGuest:()=>guestActive,isTeacher:()=>sessionActive&&!guestActive&&requireTeacher(user)};
+ return{refreshUI:refreshButtons,showGate,showBoard,onEntryReady,saveNow,saveProgress,saveSimulatorDesign,recordFloodResult,recordMission5Result,recordFinalResult,openEditor,closeEditing,enterTeacherSimulator,showLogin,signout,receiveFrameMessage,getTeam:()=>team,isDesignReady:()=>designReady&&!!team&&!guestActive&&requireStudent(user),isGuest:()=>guestActive,isTeacher:()=>sessionActive&&!guestActive&&requireTeacher(user)};
 }
 global.NepalClassroom={setup};
 })(window);
