@@ -132,6 +132,25 @@ const thirdParty={
   fuzzy:['https://cdn.jsdelivr.net/npm/fuzzy@0.1.3/lib/fuzzy.js'],
   socket:['https://cdn.jsdelivr.net/npm/socket.io-client@2.5.0/dist/socket.io.js']
 };
+// Pinned local copies, with original CDNs retained as a fallback.
+const localVendor={
+ jquery:'./lib/vendor/jquery-3.7.1.min.js',
+ jqueryui:'./lib/vendor/jquery-ui-1.13.3.min.js',
+ fuzzy:'./lib/vendor/fuzzy-0.1.3.js',
+ 'codemirror-hint':'./lib/vendor/codemirror-5.65.20-show-hint.js',
+ 'codemirror-lint':'./lib/vendor/codemirror-5.65.20-lint.js',
+ 'codemirror-active':'./lib/vendor/codemirror-5.65.20-active-line.js',
+ 'codemirror-js':'./lib/vendor/codemirror-5.65.20-javascript.js',
+ 'codemirror-jshint':'./lib/vendor/codemirror-5.65.20-javascript-hint.js'
+};
+function primeLocalLibraries(){
+ // Download in parallel but leave evaluation in its required serial dependency order.
+ Object.values(localVendor).forEach(href=>{
+   const link=document.createElement('link');
+   link.rel='preload';link.as='script';link.href=href;
+   document.head.appendChild(link);
+ });
+}
 function unique(a){return [...new Set(a)];}
 function urlsFor(path,key){
   if(path==='@react-18')return unique([...(thirdParty.react||[]),`${legacy}/js/react18/react.production.min.js`]);
@@ -140,7 +159,7 @@ function urlsFor(path,key){
   // do not exist at the old path. Keep a local file first for future self-hosting.
   const opt=key==='soundeditor'||key==='legacyvideo'
     ? [`./lib/${path}`,...(specialSources[key]||[]),`${official}/lib/${path}`]
-    : [...(thirdParty[key]||[]),`./lib/${path}`,`${official}/lib/${path}`,`${legacy}/lib/${path}`];
+    : [...(localVendor[key]?[localVendor[key]]:[]),...(thirdParty[key]||[]),`./lib/${path}`,`${official}/lib/${path}`,`${legacy}/lib/${path}`];
   if(key==='entryjs')opt.push(`${mirror}/lib/${path}`);
   return unique(opt);
 }
@@ -1042,6 +1061,7 @@ function nepalInitPicker(){
 nepalInitPicker();
 
 async function boot(){try{
+  primeLocalLibraries();
   for(let i=0;i<deps.length;i++){await loadDependency(deps[i][0],deps[i][1],deps[i][2],i+1,deps.length);}
   if(typeof window.Entry?.init!=='function')throw Error('EntryJS 로딩 후 초기화 함수를 찾지 못했습니다.');
   const E=window.Entry;
