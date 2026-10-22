@@ -1060,7 +1060,7 @@
 
   // Load classroom UI asynchronously. The original simulator is not modified.
   const classroomScript=document.createElement('script');
-  classroomScript.src='./nepal_classroom.js?v=42';
+  classroomScript.src='./nepal_classroom.js?v=48';
   classroomScript.onload=()=>{
     if(!window.NepalClassroom){console.error('학급 모듈을 찾지 못했습니다.');return;}
     classroom=window.NepalClassroom.setup({
