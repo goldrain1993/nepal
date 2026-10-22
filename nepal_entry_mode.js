@@ -21,23 +21,29 @@
   .ne-mission-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:12px 0}
   #ne-teacher-records{margin:9px 0;padding:8px 10px;background:#18331c;border:1px solid #456c3e;border-radius:8px;font-size:11px;line-height:1.55;color:#d2ffc0}
   #ne-teacher-records[hidden]{display:none!important}
-  .ne-mission-list button.final-button{grid-column:span 2;background:#264d22;color:#d7ffb6;border-color:#a0e76a;letter-spacing:.05em}
+  .ne-mission-list button.final-button{grid-column:span 2;background:linear-gradient(135deg,#563718,#82551c);color:#ffecb4;border-color:#efc26a;letter-spacing:.05em;box-shadow:0 0 12px #f3b7462a}
   .ne-mission-list button{padding:10px 3px;font-size:12px}
   .ne-mission-list button.current{background:#9fe761;color:#11240f}
   .ne-mission-list button.passed{border-color:#8aca69;background:#173820;color:#caffb6}
   .ne-mission-list button.current.passed{background:#9fe761;color:#11240f}
-  /* Mission 5 is a scored checkpoint, visually distinguished from green FINAL. */
+  /* Mission 5 is a green checkpoint; FINAL is the special golden challenge. */
   .ne-mission-list button.mission5-button:not(.locked){
-    background:linear-gradient(135deg,#523b14,#664616);
-    color:#ffe9af;border-color:#e0aa4d;box-shadow:inset 0 0 0 1px #f4c66c44,0 0 11px #f4b84525;
-    font-weight:950
+    background:#234b29;color:#d6ffd0;border-color:#87d77f;font-weight:950
   }
   .ne-mission-list button.mission5-button.current:not(.locked){
-    background:linear-gradient(135deg,#ffe08a,#efb94e);
-    color:#352006;border-color:#ffe7a4;box-shadow:0 0 0 2px #f6d27666,0 0 16px #efb94e55
+    background:#a4e969;color:#11240f;border-color:#d3ffa3;box-shadow:0 0 13px #a4e96942
   }
   .ne-mission-list button.mission5-button.passed:not(.current):not(.locked){
-    background:#4a3a20;color:#f5dca3;border-color:#cda05a
+    background:#22442c;color:#d7ffcc;border-color:#7dbd68
+  }
+  .ne-mission-list button.final-button:not(.locked){
+    background:linear-gradient(135deg,#593916,#82551c);color:#ffedbd;border-color:#f1ca78;box-shadow:0 0 13px #e9b7553a
+  }
+  .ne-mission-list button.final-button.current:not(.locked){
+    background:linear-gradient(135deg,#ffe496,#e7b450);color:#392500;border-color:#fff0ba;box-shadow:0 0 0 2px #f8cb6b66,0 0 17px #f0c45a55
+  }
+  .ne-mission-list button.final-button.passed:not(.current):not(.locked){
+    background:#665022;color:#ffe6a8;border-color:#d9ae55
   }
   .ne-mission-list button.locked,.ne-mission-list button:disabled{background:#152019;border:1px solid #36493b;color:#697b6d;cursor:not-allowed;opacity:.82}
   .ne-mission-list button:focus-visible{outline:2px solid #b8f480;outline-offset:2px}
@@ -46,6 +52,8 @@
   #ne-learning-note{font-size:12px;color:#d4edc3;line-height:1.55;padding:10px;background:#102919;border-left:3px solid #9cdb69;margin:7px 0}
   #ne-saved-live{margin:7px 0;padding:9px 12px;background:#0a1416;border:1px solid #437060;border-radius:8px;color:#d5e9ed;font-size:13px;line-height:1.6}
   #ne-saved-live b{color:#b4eefd}
+  #ne-important-hint{display:none;margin:10px 0;padding:12px 13px;border:2px solid #f2cb65;border-radius:10px;background:#352b14;color:#ffebac;font-size:13px;line-height:1.55;font-weight:800}
+  #ne-alarm-live{display:none;margin:8px 0;padding:9px 11px;border-radius:9px;background:#601e23;color:#ffe2e4;border:1px solid #f27c87;font-weight:900}
   .ne-warning{background:#361b19;border:1px solid #e5795f;border-left:5px solid #ff8a6b;border-radius:9px;padding:16px 14px;margin:12px 0}
   .ne-warning h2{margin:3px 0 8px;font-size:22px;color:#ffbe94;line-height:1.3}
   .ne-warning p{color:#ffe4d4;font-size:13px;line-height:1.75;margin:0}
@@ -143,9 +151,9 @@
     {title:'실시간 수위값 갱신',fault:'수위값이 계속 바뀌지 않습니다!',description:'한 번 저장한 센서값으로는 실시간 변화를 반영할 수 없습니다. 반복문으로 값을 갱신해 보세요.',task:'「계속 반복하기」 안에서 「수위값」에 최신 수위 센서값을 다시 저장하도록 만드세요. 0.2초 기다리기는 권장하지만 필수는 아닙니다.',example:'수위 1.35 → 3.60 → 2.05에 따라 수위값도 계속 변함',active:true},
     {title:'수위 위험 판단',fault:'수위 위험 여부를 판단하지 못합니다!',description:'변수와 반복문을 배웠으니 이번에는 조건문을 이용해 수위 위험 여부를 계산하세요.',task:'「수위위험」 변수를 만들고 실습용 기준 수위 4m 이상은 1(위험), 4m 미만은 0(안전)이 되도록 조건문을 작성하세요. 이 판단도 「계속 반복하기」 안에서 갱신하세요.',example:'수위 3.50m → 수위위험 0 / 수위 4.80m → 수위위험 1',active:true},
     {title:'유속·진동·강수 확장',fault:'다른 센서들의 위험 신호도 만들어야 합니다!',description:'수위의 위험 판단을 유속·진동·강수 센서로 확장해 보세요.',task:'「유속값」·「진동값」·「강수값」 및 각 위험 변수를 만들고 실습용 기준 유속 3m/s 이상·진동 16 이상·강수 35mm/h 이상이면 1, 아니면 0이 되도록 반복해서 갱신하세요.',example:'유속 3.60 → 위험 1 / 진동 15.50 → 위험 0 / 강수 40 → 위험 1',active:true},
-    {title:'센서 배치·경보 알고리즘',fault:'실제 센서 데이터를 이용해 경보를 완성하세요!',description:'센서를 네팔 지형에 배치하고 4개 센서의 위험 기준·비교 방향을 엔트리 코드로 직접 정하세요. 경보 알고리즘을 완성한 후 100회 평가를 받습니다.',task:'「🗺 센서 설치 화면」에서 ① 관측 지점을 살펴보고 ② 수위·유속·진동·강수 센서를 하나씩 설치하세요. 엔트리에서 실시간 센서값과 4개의 위험신호를 갱신하고, 「위험개수」를 계산해 N개 이상(N=1~4) 위험하면 「경보결과」가 1이 되도록 구현하세요. 학생 코드로 100회 재난 평가를 받습니다.',example:'4개 센서 설치 → 엔트리에서 위험 기준과 경보 N 직접 설정 → 100회 평가 및 점수 획득',active:true},
-    {title:'리스트로 위험신호 정리',fault:'4개의 위험신호를 리스트로 정리해 보세요!',description:'미션 5의 경보 알고리즘은 유지하면서 이번에는 리스트 자료구조와 반복문만 집중 연습합니다. 100회 평가는 다음 FINAL 미션에서 다시 진행합니다.',task:'「위험목록」 리스트를 만들고 수위위험·유속위험·진동위험·강수위험을 차례대로 4칸에 저장하세요. 매번 최신 위험신호로 리스트 항목을 바꾸고, 「반복번호」와 「반복하기」를 이용해 리스트의 1~4번째 값을 확인해 「위험개수」를 계산하세요. 기존 경보결과를 유지하면 통과합니다.',example:'위험목록 [1, 0, 1, 0] → 반복해서 1의 개수 세기 → 위험개수 2',active:true},
-    {title:'FINAL 미션',fault:'지금까지 만든 재난 경보 시스템을 최종 검증하세요!',description:'센서 위치 설계·위험 조건·리스트·반복문·경보 판단을 모두 결합해 최종 재난 경보 시스템을 완성하세요.',task:'필요하면 센서 설치 화면에서 ① 관측 지점과 ② 센서 설치를 다시 확인하세요. 엔트리에서 4개의 위험신호를 「위험목록」 리스트에 저장하고 반복문으로 「위험개수」를 세어 N개 이상 위험하면 경보가 울리게 하세요. 전체 코드를 검사한 뒤 100회 재난 평가에 도전하세요.',example:'센서 위치 + 4개 위험 판단 + 리스트·반복문 + 경보 알고리즘 → FINAL 100회 평가',active:true}
+    {title:'센서 배치·경보 알고리즘',fault:'실제 센서 데이터를 이용해 경보를 완성하세요!',description:'센서를 네팔 지형에 배치하고 4개 센서의 위험 기준·비교 방향을 엔트리 코드로 직접 정하세요. 경보 알고리즘을 완성한 후 100회 평가를 받습니다.',task:'「🗺 센서 설치 화면」에서 ① 관측 지점을 살펴보고 ② 수위·유속·진동·강수 센서를 하나씩 설치하세요. 엔트리에서 실시간 센서값과 4개의 위험신호를 갱신하고, 「위험개수」를 계산해 N개 이상(N=1~4) 위험하면 「시작」 탭의 빨간 「경보 울리기」 블록이 실행되도록 구현하세요. 학생 코드로 100회 재난 평가를 받습니다.',example:'4개 센서 설치 → 엔트리에서 위험 기준과 경보 N 직접 설정 → 100회 평가 및 점수 획득',active:true},
+    {title:'리스트로 위험신호 정리',fault:'4개의 위험신호를 리스트로 정리해 보세요!',description:'미션 5의 경보 알고리즘은 유지하면서 이번에는 리스트 자료구조와 반복문만 집중 연습합니다. 100회 평가는 다음 FINAL 미션에서 다시 진행합니다.',task:'「위험목록」 리스트를 만들고 수위위험·유속위험·진동위험·강수위험을 차례대로 4칸에 저장하세요. 매번 최신 위험신호로 리스트 항목을 바꾸고, 「반복번호」와 「반복하기」를 이용해 리스트의 1~4번째 값을 확인해 「위험개수」를 계산하세요. 기존의 경보 알고리즘이 유지되도록 검사해 보세요.',example:'위험목록 [1, 0, 1, 0] → 반복해서 1의 개수 세기 → 위험개수 2',active:true},
+    {title:'FINAL 미션',fault:'지금까지 만든 재난 경보 시스템을 최종 검증하세요!',description:'센서 위치 설계·위험 조건·리스트·반복문·경보 판단을 모두 결합해 최종 재난 경보 시스템을 완성하세요.',task:'필요하면 센서 설치 화면에서 ① 관측 지점과 ② 센서 설치를 다시 확인하세요. 엔트리에서 4개의 위험신호를 「위험목록」 리스트에 저장하고 반복문으로 「위험개수」를 세어 N개 이상 위험하면 빨간 「경보 울리기」 블록이 실행되게 하세요. 전체 코드를 검사한 뒤 100회 재난 평가에 도전하세요.',example:'센서 위치 + 4개 위험 판단 + 리스트·반복문 + 경보 알고리즘 → FINAL 100회 평가',active:true}
 
   ];
   // v4.0: The NORMAL Nepal 100-run evaluation keeps its exact formula;
@@ -174,7 +182,7 @@
   }
   const trigger = document.createElement('button'); trigger.id='nepal-entry-trigger'; trigger.textContent='🧩 엔트리 개발자 모드';trigger.style.display='none';
   const layer = document.createElement('section'); layer.id='nepal-entry-layer';
-  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">7단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 실시간 반복 갱신</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 경보 알고리즘</b> → <b>⑥ 리스트 학습</b> → <b>🏆 FINAL</b></div><div id="ne-missions" class="ne-mission-list"></div><div id="ne-teacher-records" hidden></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 임무</b><div id="ne-task"></div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 <span id="ne-grade-title">경보 성능평가</span></div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">📊 엔트리 변수 상태: <b>실행 전</b></div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button></aside><div class="ne-editor-stage"><div id="ne-workspace-toolbar"><span id="ne-workspace-heading">🧩 엔트리 코딩 편집기</span><div id="ne-audio-actions"><button id="ne-entry-audio-toggle" type="button" aria-pressed="true">♫ 아리오소 ON</button><a id="ne-arioso-credit" href="https://commons.wikimedia.org/wiki/File:Violinist_CARRIE_REHKOPF-BACH_ARIOSO.ogg" target="_blank" rel="noopener noreferrer" title="연주 Carrie Rehkopf · CC BY-SA 3.0 · 음원 출처">ⓘ</a></div><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button></div><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=45"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
+  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">7단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 실시간 반복 갱신</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 경보 알고리즘</b> → <b>⑥ 리스트 학습</b> → <b>🏆 FINAL</b></div><div id="ne-missions" class="ne-mission-list"></div><div id="ne-teacher-records" hidden></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 미션</b><div id="ne-task"></div></div><div id="ne-important-hint">⭐ 중요 힌트 · <b>「N」</b>과 <b>「위험개수」</b> 변수는 미션 5의 경보 알고리즘을 만드는 데 꼭 필요합니다.</div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 <span id="ne-grade-title">경보 성능평가</span></div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">📊 엔트리 변수 상태: <b>실행 전</b></div><div id="ne-alarm-live" aria-live="polite">🚨 경보 울리기 블록 실행!</div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button></aside><div class="ne-editor-stage"><div id="ne-workspace-toolbar"><span id="ne-workspace-heading">🧩 엔트리 코딩 편집기</span><div id="ne-audio-actions"><button id="ne-entry-audio-toggle" type="button" aria-pressed="true">♫ 아리오소 ON</button><a id="ne-arioso-credit" href="https://commons.wikimedia.org/wiki/File:Violinist_CARRIE_REHKOPF-BACH_ARIOSO.ogg" target="_blank" rel="noopener noreferrer" title="연주 Carrie Rehkopf · CC BY-SA 3.0 · 음원 출처">ⓘ</a></div><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button></div><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=45"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
   // Pause the original simulator's background animation loops without altering index.html.
   // The two named rAF loops are global function declarations in the original page.
   // Their drawing work is skipped while EntryJS covers the simulator; their ordinary
@@ -251,6 +259,24 @@
       g.gain.exponentialRampToValueAtTime(.11,now+.004);
       g.gain.exponentialRampToValueAtTime(.0001,now+.11);
       o.connect(g);g.connect(ctx.destination);o.start(now);o.stop(now+.125);
+    }catch(_){}
+  }
+  function playEntryAlarmTone(){
+    if(!entrySoundOn)return;
+    try{
+      const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+      const ctx=entryAudioCtx||(entryAudioCtx=new C());
+      if(ctx.state==='suspended')ctx.resume().catch(()=>{});
+      const now=ctx.currentTime;
+      for(const [i,hz] of [790,560].entries()){
+        const osc=ctx.createOscillator(),gain=ctx.createGain(),start=now+i*.13;
+        osc.type='triangle';osc.frequency.setValueAtTime(hz,start);
+        gain.gain.setValueAtTime(.0001,start);
+        gain.gain.exponentialRampToValueAtTime(.085,start+.018);
+        gain.gain.exponentialRampToValueAtTime(.0001,start+.13);
+        osc.connect(gain);gain.connect(ctx.destination);
+        osc.start(start);osc.stop(start+.15);
+      }
     }catch(_){}
   }
   function playEntryBgm(){
@@ -623,6 +649,8 @@
     document.getElementById('ne-sensor-live').style.display='block';
     document.getElementById('ne-saved-live').style.display='block';
     document.getElementById('ne-saved-live').innerHTML='📊 엔트리 변수 상태: <b>실행 결과 대기 중</b>';
+    document.getElementById('ne-important-hint').style.display=i===4?'block':'none';
+    document.getElementById('ne-alarm-live').style.display='none';
     document.getElementById('ne-fault').textContent=m.fault;
     document.getElementById('ne-why').textContent=m.description;
     document.getElementById('ne-task').textContent=m.task;
@@ -715,10 +743,10 @@
       updateMissionButtons();
       const next=d.ok && tested+1<missions.length?'\n🔓 '+(tested===5?'FINAL 미션':'다음 미션 '+String(tested+2).padStart(2,'0'))+' 잠금이 해제되었습니다.':'';
       if(d.ok){
-        status.textContent='✅ 복구 검사 통과!\n'+(Array.isArray(d.details)?d.details.join('\n'):String(d.message||''))+next;
+        status.textContent='✅ 복구 미션 성공!\n'+(Array.isArray(d.details)?d.details.join('\n'):String(d.message||''))+next;
       }else{
         const stageName=tested===6?'FINAL 미션':'미션 '+String(tested+1).padStart(2,'0');
-        status.textContent='❌ '+stageName+' · 아직 통과하지 못했어요.\n'+explainMissionFailure(tested,d);
+        status.textContent='❌ 복구 미션 실패 · '+stageName+'\n'+explainMissionFailure(tested,d);
       }
     }
     if(d.type==='ENTRY_MISSION_STOPPED'){
@@ -727,6 +755,15 @@
       clearTimeout(p.timeout);missionStopPending=null;navigating=false;
       if(d.ok){classroom?.saveNow('mission-change');applyMission(p.target);}
       else{status.textContent='프로그램 정지 확인 실패: '+String(d.message||'다시 시도해 주세요.');updateMissionButtons();}
+    }
+    if(d.type==='NEPAL_ENTRY_ALARM'){
+      const banner=document.getElementById('ne-alarm-live');
+      if(banner){
+        banner.style.display='block';
+        if(banner._hideTimer)clearTimeout(banner._hideTimer);
+        banner._hideTimer=setTimeout(()=>{banner.style.display='none';},1350);
+      }
+      playEntryAlarmTone();
     }
     if(d.type==='ENTRY_VAR_SNAPSHOT'){
       const target=document.querySelector('#ne-saved-live b');
@@ -742,7 +779,8 @@
         }
         else if(mission===2)target.textContent='수위값 '+withUnit(v.water,'m')+' · 수위위험 '+val(r.water);
         else if(mission===3)target.textContent='유속값 '+withUnit(v.flow,'m/s')+' · 진동값 '+val(v.vibration)+' · 강수값 '+withUnit(v.rain,'mm/h')+' · 위험 '+val(r.flow)+' / '+val(r.vibration)+' / '+val(r.rain);
-        else target.textContent='위험목록 ['+(Array.isArray(d.list)?d.list.map(val).join(', '):'')+'] · 위험개수 '+val(d.dangerCount)+' · 경보결과 '+val(d.alarm);
+        else if(mission===4)target.textContent='위험개수 '+val(d.dangerCount)+' · N '+val(d.N);
+        else target.textContent='위험목록 ['+(Array.isArray(d.list)?d.list.map(val).join(', '):'')+'] · 위험개수 '+val(d.dangerCount)+' · N '+val(d.N);
       }
     }
   });
