@@ -1,4 +1,4 @@
-/** NEPAL × ENTRY v3.1 — three-button start page with role-specific Google authentication, 2/3-person groups, flood scores.
+/** NEPAL × ENTRY v3.2 — three-button start page with role-specific Google authentication, 2/3-person groups, flood scores.
  * Public board = signed-in school accounts only; code/progress = group members only.
  * Firebase rules are the authorization boundary, not this browser code.
  */
@@ -256,7 +256,12 @@ function endGuest(){
  note('게스트 체험을 종료했습니다. 진행 기록과 코드가 저장되지 않았습니다.');
  refreshButtons();
 }
-function enterTeacher(){if(!user||!requireTeacher(user)){note('등록된 교사 Google 계정으로 로그인해 주세요.');return}gate.classList.remove('show');showBoard(true);refreshButtons()}
+function enterTeacher(){
+ if(!user||!requireTeacher(user)){note('등록된 교사 Google 계정으로 로그인해 주세요.');return}
+ // Successful teacher authentication enters the ORIGINAL Nepal Flood home page,
+ // not the classroom board. The board stays available as an optional menu.
+ enterTeacherSimulator();
+}
 function enterTeacherSimulator(){if(!user||!requireTeacher(user))return;gate.classList.remove('show');board.classList.remove('show');callbacks.enterSimulator?.();refreshButtons()}
 function startLockRefresh(){if(lockRefresh)clearInterval(lockRefresh);
  lockRefresh=setInterval(()=>{if(!team||!editorLockHeld||!user)return;db.ref(lockedTeamPath+'/editorLock').transaction(old=>old?.uid===user.uid?{uid:user.uid,updatedAt:fb.database.ServerValue.TIMESTAMP}:undefined,()=>{},false).then(t=>{if(!t.committed){editorLockHeld=false;readyToSave=false;note('⚠ 다른 조원에게 편집 권한이 넘어갔습니다. 저장을 중단했습니다.')}}).catch(e=>note('⚠ 편집 잠금 유지 실패: '+e.message))},35000);

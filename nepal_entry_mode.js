@@ -1,5 +1,5 @@
 /**
- * NEPAL FLOOD × EntryJS - integration v3.1 three-button gateway · role login · flood score · 3-person groups
+ * NEPAL FLOOD × EntryJS - integration v3.2 native simulator landing · role login · flood score · 3-person groups
  * Add <script src="./nepal_entry_mode.js" defer></script> to the original index.html.
  * Keep original simulator unchanged. This overlay mounts a real EntryJS editor page in a same-origin iframe.
  * Four staged missions: water variable, water risk condition, independent flow/vibration/rain risk, list+loop alarm.
@@ -322,12 +322,20 @@
   });
   // Load classroom UI asynchronously. The original simulator is not modified.
   const classroomScript=document.createElement('script');
-  classroomScript.src='./nepal_classroom.js?v=31';
+  classroomScript.src='./nepal_classroom.js?v=32';
   classroomScript.onload=()=>{
     if(!window.NepalClassroom){console.error('학급 모듈을 찾지 못했습니다.');return;}
     classroom=window.NepalClassroom.setup({
       header:layer.querySelector('.ne-header'),iframe,totalMissions:missions.length,
-      launchEditor:launch,closeEditor:close,enterSimulator:()=>{document.querySelector('#np-gate')?.classList.remove('show');},
+      launchEditor:launch,closeEditor:close,enterSimulator:()=>{
+        // ALL three entry routes (student / teacher / guest) show the original
+        // NEPAL FLOOD DATA LAB start menu, including Start / Assessment / Help.
+        // This is the simulator's own #startScreen; no duplicate splash is made.
+        const simulatorHome=document.getElementById('startScreen');
+        if(simulatorHome)simulatorHome.classList.remove('hiddenStart');
+        document.getElementById('np-board')?.classList.remove('show');
+        document.getElementById('np-gate')?.classList.remove('show');
+      },
       isReady:()=>ready,isLayerOpen:()=>layer.classList.contains('open'),
       isBusy:()=>checking||navigating,
       restoreProgress(completed){
