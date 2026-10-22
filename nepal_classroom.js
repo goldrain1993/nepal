@@ -196,10 +196,10 @@ function refreshButtons(){
  const save=$('np-save'),boardButton=$('np-board-button'),changeButton=$('np-change');
  if(save){save.disabled=guestActive||!team;save.style.display=sessionVisible&&team?'':'none';save.textContent='💾 저장'}
  if(boardButton){boardButton.disabled=guestActive;boardButton.style.display=signedIn?'':'none'}
- if(changeButton){changeButton.style.display=signedIn?'':'none';changeButton.textContent='🚪 로그아웃'}
+ if(changeButton){changeButton.style.display=(signedIn||guestActive&&sessionVisible)?'':'none';changeButton.textContent=guestActive?'🌐 게스트 모드 종료':'🚪 로그아웃'}
  const floatingBoard=$('nepal-class-board'),floatingLogout=$('nepal-class-switch'),trigger=$('nepal-entry-trigger');
  if(floatingBoard)floatingBoard.style.display=signedIn?'':'none';
- if(floatingLogout){floatingLogout.style.display=signedIn?'':'none';floatingLogout.textContent='🚪 로그아웃'}
+ if(floatingLogout){floatingLogout.style.display=(signedIn||guestActive&&sessionVisible)?'':'none';floatingLogout.textContent=guestActive?'🌐 게스트 모드 종료':'🚪 로그아웃'}
  if(trigger)trigger.style.display=(editorActive&&!board.classList.contains('show'))?'':'none';
  const boardLogout=$('np-board-signout');if(boardLogout)boardLogout.style.display=user?'':'none';
  const status=$('np-save-label');if(status&&!editorActive)status.textContent='';
@@ -354,6 +354,8 @@ function endGuest(){
  designReady=false;
  guestActive=false;readyToSave=false;projectToRestore=null;progress=0;lastSaved='';
  callbacks.resetEditor?.();callbacks.closeEditor?.();callbacks.restoreProgress?.(0);
+ // Guest work is in-memory only: do not leak previous guest sensors into a new login.
+ callbacks.restoreDesign?.({version:1,sensors:[],alarmMode:'OR',minCount:2});
  if(typeof global.resetRank==='function')global.resetRank();
  note('게스트 체험을 종료했습니다. 진행 기록과 코드가 저장되지 않았습니다.');
  sessionActive=false;refreshButtons();
