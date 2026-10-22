@@ -518,15 +518,16 @@ async function testOneShotScenarios(scenarios, getObservations, label){
 async function checkWaterVariable(){
  if(!getVar('수위값'))return {ok:false,details:['자료 탭에서 「수위값」 변수를 직접 만들어 주세요.']};
  if(!codeHasTypes(['set_variable','nepal_live_water_sensor']))return {ok:false,details:['「수위값을 (수위 센서가 현재 측정하고 있는 실시간 값)으로 정하기」 명령을 작성하고 시작 블록 아래에 연결하세요.']};
- const water=nepalSensorValue('water');let passed=false;const details=[];
+ const water=nepalSensorValue('water');let passed=false,verifiedWater=null;const details=[];
  try{
   await stopCode();nepalTestValues.water=water;
   setVar('수위값','');await startCode();
   passed=await waitForValues(()=>numericMatches(readVar('수위값'),water),1800);
+  if(passed)verifiedWater=Number(readVar('수위값'));
   details.push(`수위 측정값 ${water.toFixed(2)}m → 수위값 ${readVar('수위값')} ${passed?'✓':'✗'}`);
  }finally{await stopCode();resetTestReadings();}
  if(passed)details.push('측정값을 단 한 번 저장하면 미션 01 성공! 다음은 위험 여부를 조건문으로 판단합니다.');
- return {ok:passed,details};
+ return {ok:passed,details,verifiedWater:passed?verifiedWater:null};
 }
 /* NEW Mission 02: move the live-water assignment into a forever loop.
  * Waiting 0.2 sec is useful for performance, but NOT required for correctness. */
@@ -537,18 +538,19 @@ async function checkContinuousWaterVariable(){
    '힌트: 「흐름」의 「계속 반복하기」 안으로 「수위값을 (실시간 수위 센서값)으로 정하기」 블록을 옮겨 보세요.'
  ]};
  const samples=[1.35,3.6,2.05,4.28,1.88];
- const details=[];let ok=true;
+ const details=[];let ok=true,verifiedWater=null;
  try{
    await stopCode();setVar('수위값','');nepalTestValues.water=samples[0];await startCode();
    for(let i=0;i<samples.length;i++){
      nepalTestValues.water=samples[i];
      const good=await waitForValues(()=>numericMatches(readVar('수위값'),samples[i]),3200);
      details.push(`수위 ${samples[i].toFixed(2)}m → 수위값 ${readVar('수위값')} ${good?'✓':'✗'}`);
+     if(good)verifiedWater=Number(readVar('수위값'));
      if(!good){ok=false;details.push('엔트리를 정지하거나 다시 시작하지 않았습니다. 수위값이 계속 갱신되어야 해요.');break}
    }
  }finally{await stopCode();resetTestReadings()}
  if(ok)details.push('실시간 센서값을 반복해서 수위값에 저장했습니다! 이제 조건문을 추가하세요.');
- return {ok,details};
+ return {ok,details,verifiedWater:ok?verifiedWater:null};
 }
 /* Mission 02 — check BOTH the EntryJS block structure and live behaviour.
  * Restarting for every test case falsely accepted a one-shot condition. We run
