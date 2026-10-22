@@ -797,7 +797,7 @@ async function checkChosenAlarmN(requireList=false){
      throw Error('4개 센서의 위험 여부는 각각 0 또는 1이 되도록 작성해야 합니다.');
    return values;
  }
- let ruleInfo=[];
+ let ruleInfo=[],studentSelectedN=null;
  let observations=Array(16).fill(null),byCount=Array.from({length:5},()=>new Set());
  try{
    await stopCode();
@@ -807,6 +807,7 @@ async function checkChosenAlarmN(requireList=false){
    await startCode();
    if(!await waitForValues(()=>Number.isInteger(Number(readVar('N')))&&Number(readVar('N'))>=1&&Number(readVar('N'))<=4,2400))
      throw Error('「N」에 설정된 경보 기준 개수를 확인하지 못했습니다. 1~4의 숫자인지 확인해 보세요.');
+   studentSelectedN=Number(readVar('N'));
    const a=await probe(lows),b=await probe(highs);
    const state=NEPAL_SENSOR_ORDER.map((key,i)=>{
      if(a[i]===b[i])throw Error(labels[i]+' 센서의 위험 판정이 측정값 변화에 반응하지 않습니다. 센서값과 비교 연산을 확인하세요.');
@@ -889,8 +890,7 @@ async function checkChosenAlarmN(requireList=false){
  if(byCount.some(set=>set.size!==1))return {ok:false,details:['같은 위험신호 개수에서는 어떤 센서가 위험하든 경보 결과가 같아야 합니다.']};
  const vals=byCount.map(set=>[...set][0]);
  const n=[1,2,3,4].find(k=>vals.every((v,i)=>v===Number(i>=k)));
- const chosenN=Number(readVar('N'));
- if(!n || n!==chosenN)return {ok:false,details:[
+ if(!n || n!==studentSelectedN)return {ok:false,details:[
    '위험신호가 「N」개 이상인 상황과 그렇지 않은 상황에서 빨간 「경보 울리기」 블록의 실행 여부가 일치하지 않았습니다.',
    '센서 판단과 위험개수, 경보 조건을 다시 확인해 보세요.'
  ]};
