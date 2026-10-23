@@ -1289,7 +1289,7 @@ function nepalFocusAuthoredObject(){
   }catch(_){}
  }
  if(best?.id&&max>0&&typeof E.container.selectObject==='function'){
-  E.container.selectObject(best.id);
+  E.container.selectObject(best.id,true);
   return {selected:best.name||best.id,blocks:max,total:nepalLiveBlockCount()};
  }
  return {selected:null,blocks:0,total:nepalLiveBlockCount()};
