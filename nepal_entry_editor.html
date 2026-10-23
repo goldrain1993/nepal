@@ -1257,11 +1257,35 @@ setInterval(()=>{
 // background uploads. On refresh the newer of cloud and local draft is restored.
 // Backup key is supplied ONLY after the authenticated parent has finished import.
 let nepalDraftKey=null,nepalLastDraft='',nepalDraftBusy=false;
+function nepalScriptBytes(project){
+ if(!project||!Array.isArray(project.objects))return 0;
+ let size=0;
+ const count=value=>{
+  if(value===null||value===undefined)return 0;
+  const x=typeof value==='string'?value:JSON.stringify(value);
+  return x&&x!=='[]'&&x!=='{}'&&x!=='null'?x.length:0;
+ };
+ for(const o of project.objects)size+=count(o?.script);
+ for(const f of project.functions||[])size+=count(f?.content);
+ return size;
+}
+function nepalLiveBlockCount(){
+ let total=0;
+ for(const object of window.Entry?.container?.objects_||[]){
+  try{const list=object?.script?.getBlockList?.(true);if(Array.isArray(list))total+=list.length}catch(_){}
+ }
+ return total;
+}
 function nepalWriteDraft(project){
  if(!nepalDraftKey||!project||!Array.isArray(project.objects))return false;
  try{
   const payload=JSON.stringify(project);
   if(payload.length>1250000||payload===nepalLastDraft)return false;
+  const older=JSON.parse(localStorage.getItem(nepalDraftKey)||'null');
+  if(nepalScriptBytes(older?.project)>20 && nepalScriptBytes(project)===0){
+    console.warn('[NEPAL] 기존 작성 블록이 없어 보이는 임시저장 덮어쓰기 차단');
+    return false;
+  }
   localStorage.setItem(nepalDraftKey,JSON.stringify({project,updatedAt:Date.now()}));
   nepalLastDraft=payload;
   return true;
@@ -1270,8 +1294,12 @@ function nepalWriteDraft(project){
 async function nepalBackupDraft(){
  if(!nepalDraftKey||nepalDraftBusy||!window.__entryReady||nepalChecking)return;
  nepalDraftBusy=true;
- try{const project=await Promise.resolve(window.Entry.exportProject());nepalWriteDraft(project)}
- catch(e){console.warn('[NEPAL] 자동 임시 저장 실패:',e)}
+ try{
+  const project=await Promise.resolve(window.Entry.exportProject());
+  if(nepalLiveBlockCount()>0 && nepalScriptBytes(project)===0){
+   console.warn('[NEPAL] 실제 엔트리 블록이 있는데 내보내기에 빠져 임시 저장을 보류합니다.');
+  }else nepalWriteDraft(project);
+ }catch(e){console.warn('[NEPAL] 자동 임시 저장 실패:',e)}
  finally{nepalDraftBusy=false}
 }
 setInterval(nepalBackupDraft,3000);
@@ -1302,6 +1330,9 @@ window.addEventListener('message',async e=>{
    const project=await Promise.resolve(window.Entry.exportProject());
    if(!project || !Array.isArray(project.objects))throw Error('유효한 엔트리 프로젝트가 아닙니다.');
    const safe=JSON.parse(JSON.stringify(project));
+   const liveCount=nepalLiveBlockCount();
+   if(liveCount>0 && nepalScriptBytes(safe)===0)
+     throw Error('실제 작업 공간에 '+liveCount+'개 블록이 있지만 저장 파일에 코드가 포함되지 않았습니다. 덮어쓰기를 중단합니다.');
    notify('ENTRY_PROJECT_EXPORTED',{token:message.token,project:safe});
   }catch(error){notify('ENTRY_PROJECT_EXPORT_ERROR',{token:message.token,message:String(error.message||error)});}
  }
@@ -1315,9 +1346,14 @@ window.addEventListener('message',async e=>{
    // EntryJS constructs its toolbox asynchronously. Reinstall our custom
    // read-only live sensors without resetting the restored student code.
    installNepalSensorReporters(window.Entry);
-   await wait(500);
+   await wait(650);
    refreshNepalBlockMenu(window.Entry,'저장된 학급 프로젝트 복원 후');
-   notify('ENTRY_PROJECT_IMPORTED',{token:message.token,ok:true});
+   const restored=await Promise.resolve(window.Entry.exportProject());
+   const scriptBytes=nepalScriptBytes(restored);
+   const expectedBytes=nepalScriptBytes(project);
+   if(expectedBytes>20&&scriptBytes<Math.min(20,expectedBytes*.2))
+     throw Error('저장된 코드에는 블록이 있지만 엔트리 작업 공간에 복원되지 않았습니다.');
+   notify('ENTRY_PROJECT_IMPORTED',{token:message.token,ok:true,scriptBytes});
   }catch(error){notify('ENTRY_PROJECT_IMPORTED',{token:message.token,ok:false,message:String(error.message||error)});}
  }
 });
