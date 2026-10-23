@@ -296,18 +296,31 @@ async function teacherSubmit(){
  finally{loginBusy=false;refreshButtons()}
 }
 async function signout(){
+ // Explicit logout must never discard an unsaved teacher or student project.
+ if(callbacks.isBusy?.()){note('검사가 끝난 뒤 로그아웃할 수 있습니다.');return false}
+ if(designReady&&(team||requireTeacher(user))){
+  try{
+   const designOK=await callbacks.flushDesign?.(false);
+   if(designOK===false){note('⚠ 센서 설계 저장이 확인되지 않아 로그아웃을 취소했습니다.');return false}
+  }catch(e){note('⚠ 센서 설계 저장 오류로 로그아웃하지 않았습니다: '+String(e.message||e));return false}
+ }
+ if(readyToSave&&(team||requireTeacher(user))){
+  if(!await saveNow('exit')){
+   note('⚠ 엔트리 블록 온라인 저장에 실패했습니다. 로그아웃하지 않고 작업을 유지합니다.');
+   return false;
+  }
+ }
  forgetTeacherSession();forgetStudentSession();
- if(designReady&&(team||requireTeacher(user)))await callbacks.flushDesign?.();
- if(requireTeacher(user)&&readyToSave)await saveNow('exit');
  designReady=false;
  if(guestActive)endGuest();
- if(team)await leaveTeam();
+ if(team){readyToSave=false;await leaveTeam();}
  clearBoard();board.classList.remove('show');
  if(auth)await auth.signOut();
  callbacks.restoreDesign?.({version:1,sensors:[],alarmMode:'OR',minCount:2});
  user=null;authRole=null;role=null;team=null;projectToRestore=null;readyToSave=false;
  callbacks.resetEditor?.();callbacks.closeEditor?.();callbacks.restoreProgress?.(0);
  landing();refreshButtons();
+ return true;
 }
 function identify(members){if(!user)return null;for(const key of memberKeys)if(members?.[key]?.uid===user.uid)return key;return null}
 function memberNames(members,c,g){return memberKeys.slice(0,groupCapacity(c,g)).map((slot,i)=>members?.[slot]?.displayName||`${i+1}번 조원 미등록`).join(' · ')}
