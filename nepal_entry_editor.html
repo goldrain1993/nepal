@@ -1370,12 +1370,21 @@ window.addEventListener('message',async e=>{
    // EntryJS constructs its toolbox asynchronously. Reinstall our custom
    // read-only live sensors without resetting the restored student code.
    installNepalSensorReporters(window.Entry);
-   await wait(700);
+   await wait(600);
    refreshNepalBlockMenu(window.Entry,'저장된 학급 프로젝트 복원 후');
-   const view=nepalFocusAuthoredObject();
-   const restored=await Promise.resolve(window.Entry.exportProject());
-   const scriptBytes=nepalScriptBytes(restored);
    const expectedBytes=nepalScriptBytes(project);
+   let view=nepalFocusAuthoredObject();
+   let restored=await Promise.resolve(window.Entry.exportProject());
+   let scriptBytes=nepalScriptBytes(restored);
+   // Busy classroom devices may finish generating EntryJS objects after loadProject.
+   // Verify in several short attempts rather than checking one arbitrary frame.
+   for(let attempt=0;expectedBytes>20&&
+       (scriptBytes<Math.min(20,expectedBytes*.2)||view.total===0)&&attempt<8;attempt++){
+     await wait(350);
+     view=nepalFocusAuthoredObject();
+     restored=await Promise.resolve(window.Entry.exportProject());
+     scriptBytes=nepalScriptBytes(restored);
+   }
    if(expectedBytes>20&&(scriptBytes<Math.min(20,expectedBytes*.2)||view.total===0))
      throw Error('기존에 작성한 블록이 실제 편집 작업 공간에 복원되지 않았습니다. 자동 저장을 중단합니다.');
    console.info('[NEPAL 복원 검증]',{sourceScriptBytes:expectedBytes,restoredScriptBytes:scriptBytes,liveBlocks:view.total,selectedObject:view.selected});
