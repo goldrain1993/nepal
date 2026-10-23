@@ -456,12 +456,14 @@ async function saveNow(reason='manual'){
  finally{saveBusy=false;if(queued){queued=false;setTimeout(()=>saveNow('auto'),500)}}
 }
 // Record progress in Firebase and verify the server committed it.
+// Progress belongs to the registered group and does not require the single
+// EntryJS code-editor lock (a different teammate may currently hold it).
 // On older published Firebase rules, the first four steps also mirror
 // to the existing /progress key as a backwards-compatible stopgap.
 async function saveProgress(n){
  const teacherSave=requireTeacher(user)&&sessionActive;
- if(guestActive||!user||!db||(!teacherSave&&(!team||!editorLockHeld))){
-  if(!guestActive&&user)note('⚠ 미션 통과 기록을 저장하지 못했습니다: 편집 권한을 확인하세요.');
+ if(guestActive||!user||!db||(!teacherSave&&(!team||!requireStudent(user)))){
+  if(!guestActive&&user)note('⚠ 미션 통과 기록을 저장하지 못했습니다: 학교 계정·조원 등록·연결 상태를 확인하세요.');
   return false;
  }
  const value=Math.max(progress,Math.min(missionTotal,Math.max(0,Number(n)||0)));
