@@ -11,6 +11,7 @@ const TRIPLE_GROUPS=new Set(['1-13','2-2','3-15','5-2','7-6','8-2','9-1','10-4',
 const groupCapacity=(c,g)=>TRIPLE_GROUPS.has(c+'-'+g)?3:2;
 const memberKeys=['student1','student2','student3'];
 const ROOT='nepal-v27/public/classes',PRIVATE='nepal-v27/private/classes',BACKUP='nepal-entry-v27-backup:',LOCK_MS=120000;
+const PROGRESS_FALLBACK_SINCE=Date.parse('2026-10-23T00:30:00Z');
 const css=document.createElement('style');
 css.textContent=`
 #np-gate,#np-board{position:fixed;inset:0;z-index:15000;background:rgba(2,11,7,.98);color:#edffdf;display:none;overflow:auto;font:14px/1.6 system-ui,'Malgun Gothic',sans-serif}
@@ -108,7 +109,7 @@ const simulatorCaptions=['시작하기','형성평가 바로가기','이용 방�
 let team=null,role=null,editorLockHeld=false,codeListener=null,boardListener=null,projectToRestore=null;
 let teacherScores={floodBest:null,mission5NoListBest:null,finalBest:null};
 let designReady=false,designSavedAt=0;
-let progress=0,missionTotal=4,callbacks={},saveBusy=false,queued=false,readyToSave=false,restoring=false,importPending=null,exportPending=null,rpcId=0,headerStatus=null,lastSaved='',autosave=null,lockRefresh=null,lockedTeamPath='';
+let progress=0,missionTotal=4,progressSaved=0,progressRetry=null,callbacks={},saveBusy=false,queued=false,readyToSave=false,restoring=false,importPending=null,exportPending=null,rpcId=0,headerStatus=null,lastSaved='',autosave=null,lockRefresh=null,lockedTeamPath='';
 function teamPath(c,g){return `${ROOT}/c${c}/teams/g${g}`}
 function workPath(c,g){return `${PRIVATE}/c${c}/teams/g${g}`}
 function teacherPath(){return user&&requireTeacher(user)?'nepal-v27/private/teacherWork/'+user.uid:null}
@@ -280,7 +281,7 @@ async function joinTeam(){await initReady;if(!user||!db||!requireStudent(user)){
   }
   members=(await memRef.once('value')).val()||{};
   if(identify(members)!==slot)throw Error('계정 등록 확인에 실패했습니다.');
-  team={c,g};role=slot;readyToSave=false;designReady=false;editorLockHeld=false;progress=0;lastSaved='';
+  team={c,g};role=slot;readyToSave=false;designReady=false;editorLockHeld=false;progress=0;progressSaved=0;progressRetry=null;lastSaved='';
   const [progressSnap,progressV3Snap,codeSnap,designSnap]=await Promise.all([
    db.ref(root+'/progress').once('value'),db.ref(root+'/progressV3').once('value'),
    db.ref(workPath(c,g)+'/code').once('value'),db.ref(workPath(c,g)+'/design').once('value')
@@ -290,9 +291,10 @@ async function joinTeam(){await initReady;if(!user||!db||!requireStudent(user)){
   const previousProgress=progressSnap.val()||{};
   const currentProgress=progressV3Snap.val();
   const oldCompleted=Number(previousProgress.completed)||0;
-  const oldAligned=previousProgress.schemaVersion===2?oldCompleted:(oldCompleted>=2?oldCompleted+1:oldCompleted);
+  const oldAligned=Number(previousProgress.updatedAt)>=PROGRESS_FALLBACK_SINCE?oldCompleted:previousProgress.schemaVersion===2?oldCompleted:(oldCompleted>=2?oldCompleted+1:oldCompleted);
   progress=Math.max(0,Math.min(missionTotal,currentProgress?
-    Number(currentProgress.completed)||0:Math.min(4,oldAligned)));
+    Math.max(Number(currentProgress.completed)||0,Math.min(4,oldAligned)):Math.min(4,oldAligned)));
+  progressSaved=progress;progressRetry=null;
   const cloudCode=codeSnap.val();const local=localRestore();
   try{projectToRestore=cloudCode?.payload?JSON.parse(cloudCode.payload):(local?.project||null)}catch(e){throw Error('온라인 엔트리 코드 형식 오류: '+e.message)}
   callbacks.resetEditor?.();callbacks.restoreProgress?.(progress);
@@ -397,6 +399,7 @@ async function enterTeacher(){
   const restored=callbacks.restoreDesign?.(previousDesign);
   if(restored===false)throw Error('교사 센서 설계 복원 실패');
   progress=Math.max(0,Math.min(missionTotal,Number(progressSnap.val()?.completed)||0));
+  progressSaved=progress;progressRetry=null;
   callbacks.resetEditor?.();callbacks.restoreProgress?.(progress);
   designReady=true;enterTeacherSimulator();note('🧑‍🏫 교사 모드');
  }catch(e){
@@ -452,17 +455,46 @@ async function saveNow(reason='manual'){
  }catch(e){note('⚠ 온라인 저장 실패: '+String(e.message||e)+' · 현재 브라우저에 보조 저장이 있다면 같은 계정으로 다시 확인하세요.');return false}
  finally{saveBusy=false;if(queued){queued=false;setTimeout(()=>saveNow('auto'),500)}}
 }
+// Record progress in Firebase and verify the server committed it.
+// On older published Firebase rules, the first four steps also mirror
+// to the existing /progress key as a backwards-compatible stopgap.
 async function saveProgress(n){
  const teacherSave=requireTeacher(user)&&sessionActive;
- if(guestActive||!user||(!teacherSave&&(!team||!editorLockHeld)))return;
- const value=Math.max(progress,Math.min(missionTotal,Math.max(0,Number(n)||0)));progress=value;
+ if(guestActive||!user||!db||(!teacherSave&&(!team||!editorLockHeld))){
+  if(!guestActive&&user)note('⚠ 미션 통과 기록을 저장하지 못했습니다: 편집 권한을 확인하세요.');
+  return false;
+ }
+ const value=Math.max(progress,Math.min(missionTotal,Math.max(0,Number(n)||0)));
+ progress=value;
+ const path=teacherSave?teacherPath():teamPath(team.c,team.g);
+ let newOK=false,legacyOK=false,saveError=null;
  try{
-  await db.ref(teacherSave?teacherPath()+'/progressV3':teamPath(team.c,team.g)+'/progressV3').transaction(old=>({
+  const tx=await db.ref(path+'/progressV3').transaction(old=>({
    completed:Math.max(Number(old?.completed)||0,value),
    schemaVersion:3,updatedAt:fb.database.ServerValue.TIMESTAMP
   }),()=>{},false);
-  note('✓ '+(value===7?'FINAL 미션':('미션 '+value))+'까지 통과 · 온라인 저장 완료');
- }catch(e){note('⚠ 미션 진행도 저장 실패: '+e.message)}
+  newOK=!!tx.committed&&Number(tx.snapshot?.val()?.completed)>=value;
+  if(!newOK)saveError=new Error('서버에서 진행도 저장을 확인할 수 없습니다.');
+ }catch(error){saveError=error;}
+ // Existing /progress Firebase rules allow 0..4 but not a fifth stage.
+ if(!teacherSave&&value>=1&&value<=4){
+  try{
+   const tx=await db.ref(path+'/progress').transaction(old=>{
+    if(old&&Number(old.completed)>=value)return; // already reached this stage
+    return {completed:value,updatedAt:fb.database.ServerValue.TIMESTAMP};
+   },()=>{},false);
+   legacyOK=!!tx.committed||Number(tx.snapshot?.val()?.completed)>=value;
+  }catch(error){if(!saveError)saveError=error;}
+ }
+ if(newOK||legacyOK){
+  progressSaved=Math.max(progressSaved,value);
+  progressRetry=null;
+  note('✓ '+(value===7?'FINAL':value===5?'SEMI FINAL':'미션 '+value)+' · 현황판 진행도 저장 완료'+(newOK?'':' (기존 경로)'));
+  return true;
+ }
+ progressRetry=value;
+ note('⚠ 미션은 통과했지만 현황판 저장 실패! Firebase 규칙에서 progressV3 권한을 확인하세요. '+String(saveError?.message||saveError||'저장 권한 확인 필요'));
+ return false;
 }
 /** Save four editable sensors and alarm design for student teams or teacher's private workspace. */
 async function saveSimulatorDesign(design,reason='auto'){
@@ -534,10 +566,9 @@ function boardCards(data,c){
  for(let g=1;g<=GROUP_COUNT;g++){
   const d=data?.['g'+g]||{},mem=d.members||{};
   const rawProgress=Number(d.progress?.completed)||0;
-  const oldAligned=d.progress?.schemaVersion===2?rawProgress:(rawProgress>=2?rawProgress+1:rawProgress);
+  const oldAligned=Number(d.progress?.updatedAt)>=PROGRESS_FALLBACK_SINCE?rawProgress:d.progress?.schemaVersion===2?rawProgress:(rawProgress>=2?rawProgress+1:rawProgress);
   const progressV3=d.progressV3;
-  const value=Math.max(0,Math.min(missionTotal,progressV3?
-    Number(progressV3.completed)||0:Math.min(4,oldAligned)));
+  const value=Math.max(0,Math.min(missionTotal,Math.max(Number(progressV3?.completed)||0,Math.min(4,oldAligned))));
   const flood=d.floodBest||null,floodScore=scoreOf(flood);
   const mission5=d.mission5NoListBest||null,mission5Score=scoreOf(mission5);
   // Legacy key "mission5Best" held the old FINAL/100-run result.
