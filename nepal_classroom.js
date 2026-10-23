@@ -340,16 +340,44 @@ async function openEditor(){
   },()=>{},false);
   if(!lock.committed)throw Error('같은 조의 다른 조원이 엔트리를 편집 중입니다. 2분 이상 사용하지 않거나 조원이 편집기를 닫으면 다시 시도할 수 있습니다.');
   editorLockHeld=true;lockedTeamPath=workPath(c,g);
-  const code=(await db.ref(workPath(c,g)+'/code').once('value')).val();
+  const [codeSnap,progressSnap,oldProgressSnap]=await Promise.all([
+    db.ref(workPath(c,g)+'/code').once('value'),
+    db.ref(teamPath(c,g)+'/progressV3').once('value'),
+    db.ref(teamPath(c,g)+'/progress').once('value')
+  ]);
+  const code=codeSnap.val();
   const local=localRestore();projectToRestore=code?.payload?JSON.parse(code.payload):(local?.project||null);
-  readyToSave=false;callbacks.resetEditor?.();callbacks.launchEditor?.();startLockRefresh();
+  const current=Number(progressSnap.val()?.completed)||0;
+  const earlier=oldProgressSnap.val(),oldCompleted=Number(earlier?.completed)||0;
+  const aligned=Number(earlier?.updatedAt)>=PROGRESS_FALLBACK_SINCE?oldCompleted:
+    earlier?.schemaVersion===2?oldCompleted:(oldCompleted>=2?oldCompleted+1:oldCompleted);
+  progress=Math.max(progress,Math.min(missionTotal,Math.max(current,Math.min(4,aligned))));
+  progressSaved=Math.max(progressSaved,current,Math.min(4,aligned));
+  readyToSave=false;callbacks.resetEditor?.();callbacks.restoreProgress?.(progress);callbacks.launchEditor?.();startLockRefresh();
  }catch(e){note('엔트리 입장 실패: '+String(e.message||e));if(editorLockHeld)await releaseLock().catch(()=>{});}
 }
+// Leaving is a save checkpoint: protect local mission achievements and design.
 async function closeEditing(){
- if(guestActive){callbacks.closeEditor?.();return}
- if(requireTeacher(user)){if(readyToSave)await saveNow('exit');callbacks.closeEditor?.();return}
- if(readyToSave)await saveNow('exit');readyToSave=false;
- callbacks.closeEditor?.();await releaseLock().catch(e=>note('편집 잠금 해제 실패: '+e.message));
+ if(guestActive){callbacks.closeEditor?.();return true}
+ if(callbacks.isBusy?.()){note('검사가 끝난 뒤 시뮬레이션으로 돌아갈 수 있습니다.');return false}
+ if(!user||!db){note('Google 로그인 상태와 연결을 확인하고 다시 시도하세요.');return false}
+ const teacherSession=requireTeacher(user)&&sessionActive,studentSession=!!team&&requireStudent(user);
+ if(!teacherSession&&!studentSession)return false;
+ const n=Math.max(progress,Math.min(missionTotal,Number(callbacks.getMissionProgress?.())||0));
+ note('☁️ 미션 진행도·센서 설계·엔트리 코드를 저장하는 중…');
+ const progressOK=n===0||await saveProgress(n);
+ let designOK=true;
+ try{designOK=designReady?(await callbacks.flushDesign?.(false))!==false:true}
+ catch(e){designOK=false;note('⚠ 센서 설계 저장 오류: '+String(e.message||e))}
+ const codeOK=!readyToSave||await saveNow('exit');
+ if(!progressOK||!designOK||!codeOK){
+  note('⚠ '+[!progressOK?'미션 진행도':null,!designOK?'센서 설계':null,!codeOK?'엔트리 코드':null].filter(Boolean).join('·')+' 저장 실패. 편집기를 그대로 유지했습니다. 다시 시도하세요.');
+  return false;
+ }
+ if(!teacherSession){readyToSave=false;await releaseLock().catch(e=>note('편집 잠금 해제 실패: '+String(e.message||e)))}
+ callbacks.closeEditor?.();
+ note('✓ 미션 진행도·센서 설계·엔트리 코드 저장 후 시뮬레이션 복귀');
+ return true;
 }
 // Guest is a deliberately in-memory, unauthenticated experience. Never claim a team,
 // access a classroom database, save progress/grades/projects, or create a local backup.
@@ -510,7 +538,7 @@ async function saveSimulatorDesign(design,reason='auto'){
   // Shared per-group Firebase path: other groups cannot read or write it.
   await db.ref(path).set({version:1,payload:encoded,updatedBy:uid,updatedAt:fb.database.ServerValue.TIMESTAMP});
   designSavedAt=Date.now();
-  if(reason==='manual')note('✓ '+c+'반 '+g+'조 센서 배치와 위험 기준이 온라인에 저장되었습니다.');
+  if(reason==='manual')note('✓ '+(teacherSave?'교사 계정':team.c+'반 '+team.g+'조')+' 센서 배치와 위험 기준 온라인 저장 완료');
   return true;
  }catch(e){
   note('⚠ 센서 설계 저장 실패: '+String(e.message||e));
@@ -646,7 +674,18 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
  const buttons=document.createElement('div');buttons.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto';
  buttons.innerHTML='<span id="np-save-label" class="np-saveinfo"></span><button id="np-save">💾 저장</button><button id="np-board-button">📊 현황판</button><button id="np-change">🚪 로그아웃</button>';
  opts.header.insertBefore(buttons,opts.header.lastElementChild);headerStatus=$('np-save-label');
- $('np-save').onclick=()=>saveNow('manual');$('np-board-button').onclick=()=>showBoard(false);
+ $('np-save').onclick=async()=>{
+   if(guestActive){note('🌐 게스트 모드는 저장되지 않습니다.');return}
+   if(!user){note('Google 계정 로그인 후 저장할 수 있습니다.');return}
+   const n=Math.max(progress,Math.min(missionTotal,Number(callbacks.getMissionProgress?.())||0));
+   let designOK=true;
+   try{designOK=designReady?(await callbacks.flushDesign?.(true))!==false:true}
+   catch(e){designOK=false;note('⚠ 센서 설계 저장 오류: '+String(e.message||e))}
+   const progressOK=n===0||await saveProgress(n);
+   const codeOK=!readyToSave||await saveNow('manual');
+   if(designOK&&progressOK&&codeOK)note('✓ 미션 진행도·센서 설계·엔트리 코드 저장 완료');
+   else note('⚠ 일부 저장 실패: '+[!designOK?'센서 설계':null,!progressOK?'미션 진행도':null,!codeOK?'엔트리 코드':null].filter(Boolean).join('·'));
+ };$('np-board-button').onclick=()=>showBoard(false);
  $('np-enter-guest').onclick=enterGuest;$('np-change').onclick=()=>guestActive?showLogin():signout();
  $('np-role-student').onclick=()=>selectRole('student');$('np-role-teacher').onclick=teacherSubmit;
  $('np-back').onclick=landing;
