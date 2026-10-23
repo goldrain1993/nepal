@@ -532,7 +532,7 @@ async function recordStageBest(key,label,result){
  }catch(e){note('⚠ '+label+' 점수 저장 오류: '+e.message);return false}
 }
 async function recordMission5Result(result){
- return recordStageBest('mission5NoListBest','미션 5',result);
+ return recordStageBest('mission5NoListBest','SEMI FINAL',result);
 }
 async function recordFinalResult(result){
  return recordStageBest('finalBest','FINAL 미션',result);
@@ -603,7 +603,7 @@ function boardCards(data,c){
           aria-label="${c}반 ${g}조 ${esc(label)} 등록 삭제">등록 삭제</button>`:'';
       return `<div class="np-member-entry"><span>${esc(label)}</span>${button}</div>`;
     }).join(''):esc(memberNames(mem,c,g));
-  html+=`<article class="np-team ${mine?'mine':''}"><div class="np-teamhead"><span style="display:flex;align-items:center;gap:6px">${medal}${g}조 ${mine?'(우리 조)':''}</span><span>${value}/${missionTotal}</span></div><div class="np-members">${membersHtml}</div><div class="np-score">🌊 형성평가: ${floodScore===null?'미응시':`${esc(displayRank97(floodScore,flood.rank))} · ${floodScore}점`}</div><div class="np-score">🧩 미션 5: ${mission5Score===null?'미응시':`${esc(displayRank97(mission5Score,mission5.rank))} · ${mission5Score}점 (N=${Number(mission5.n)})`}</div><div class="np-score">🏆 FINAL 미션: ${finalScore===null?'미응시':`${esc(displayRank97(finalScore,final.rank))} · ${finalScore}점 (N=${Number(final.n)})`}</div><div class="np-track"><div style="width:${Math.round(100*value/missionTotal)}%"></div></div><div class="np-caption">${value===0?'진행 전':value===missionTotal?'FINAL 미션 완료':`미션 ${value}까지 통과`}</div></article>`;
+  html+=`<article class="np-team ${mine?'mine':''}"><div class="np-teamhead"><span style="display:flex;align-items:center;gap:6px">${medal}${g}조 ${mine?'(우리 조)':''}</span><span>${value}/${missionTotal}</span></div><div class="np-members">${membersHtml}</div><div class="np-score">🌊 형성평가: ${floodScore===null?'미응시':`${esc(displayRank97(floodScore,flood.rank))} · ${floodScore}점`}</div><div class="np-score">🥈 SEMI FINAL: ${mission5Score===null?'미응시':`${esc(displayRank97(mission5Score,mission5.rank))} · ${mission5Score}점 (N=${Number(mission5.n)})`}</div><div class="np-score">🏆 FINAL 미션: ${finalScore===null?'미응시':`${esc(displayRank97(finalScore,final.rank))} · ${finalScore}점 (N=${Number(final.n)})`}</div><div class="np-track"><div style="width:${Math.round(100*value/missionTotal)}%"></div></div><div class="np-caption">${value===0?'진행 전': value===missionTotal?'FINAL 미션 완료':value===5?'SEMI FINAL 완료':`미션 ${value}까지 통과`}</div></article>`;
  }
  $('np-grid').innerHTML=html;
 }
@@ -611,7 +611,7 @@ function clearBoard(){if(boardListener){boardListener.ref.off('value',boardListe
 function loadBoard(){if(!user||!db)return;$('np-board-msg').textContent='현황을 불러오는 중…';const c=Number($('np-board-class').value);clearBoard();if(!valid(c,1))return;
  const ref=db.ref(`${ROOT}/c${c}/teams`);const cb=snap=>{ $('np-board-msg').textContent=''; if(board.classList.contains('show')&&Number($('np-board-class').value)===c)boardCards(snap.val()||{},c)};
  ref.on('value',cb,err=>{ $('np-grid').innerHTML=''; $('np-board-msg').textContent='현황판 접근 실패: '+err.message+'\nFirebase 콘솔 → Realtime Database → 규칙에서 v3.0 firebase.rules.json 전체를 붙여 넣고 [게시]를 눌러야 합니다. 교사 Google UID가 규칙에 포함되어 있는지도 확인하세요.'; });boardListener={ref,cb};
- $('np-board-info').textContent='학교 학생/등록 교사 Google 계정으로만 조회 · '+c+'반 15개 조 · 금메달 순서: FINAL → 미션 5 → 형성평가';
+ $('np-board-info').textContent='학교 학생/등록 교사 Google 계정으로만 조회 · '+c+'반 15개 조 · 금메달 순서: FINAL → SEMI FINAL → 형성평가';
 }
 // Teacher removes one group membership without needing to know Firebase UID.
 async function deleteAdminMember(c,g,slot,button){
