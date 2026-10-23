@@ -1276,6 +1276,24 @@ function nepalLiveBlockCount(){
  }
  return total;
 }
+// After loading a complete project, the default selected starter object can
+// otherwise show an empty script editor despite other objects holding code.
+// Select an object with ACTUAL blocks so learners see the restored work.
+function nepalFocusAuthoredObject(){
+ const E=window.Entry,objects=E?.container?.objects_||[];
+ let best=null,max=-1;
+ for(const object of objects){
+  try{
+   const count=object?.script?.getBlockList?.(true)?.length||0;
+   if(count>max){max=count;best=object}
+  }catch(_){}
+ }
+ if(best?.id&&max>0&&typeof E.container.selectObject==='function'){
+  E.container.selectObject(best.id);
+  return {selected:best.name||best.id,blocks:max,total:nepalLiveBlockCount()};
+ }
+ return {selected:null,blocks:0,total:nepalLiveBlockCount()};
+}
 function nepalWriteDraft(project){
  if(!nepalDraftKey||!project||!Array.isArray(project.objects))return false;
  try{
@@ -1342,18 +1360,26 @@ window.addEventListener('message',async e=>{
    const project=message.project;
    if(!project || !Array.isArray(project.objects))throw Error('저장된 프로젝트 데이터가 잘못되었습니다.');
    await stopCode();
+   // Critical: loadProject adds objects onto the existing project in some
+   // EntryJS versions. Clear the starter EntryBot project FIRST. Otherwise
+   // EntryJS may select a blank default object and hide saved student blocks.
+   if(typeof window.Entry.clearProject!=='function')
+     throw Error('엔트리 기존 프로젝트 초기화 API가 없어 안전하게 복원할 수 없습니다.');
+   await Promise.resolve(window.Entry.clearProject());
    await Promise.resolve(window.Entry.loadProject(project));
    // EntryJS constructs its toolbox asynchronously. Reinstall our custom
    // read-only live sensors without resetting the restored student code.
    installNepalSensorReporters(window.Entry);
-   await wait(650);
+   await wait(700);
    refreshNepalBlockMenu(window.Entry,'저장된 학급 프로젝트 복원 후');
+   const view=nepalFocusAuthoredObject();
    const restored=await Promise.resolve(window.Entry.exportProject());
    const scriptBytes=nepalScriptBytes(restored);
    const expectedBytes=nepalScriptBytes(project);
-   if(expectedBytes>20&&scriptBytes<Math.min(20,expectedBytes*.2))
-     throw Error('저장된 코드에는 블록이 있지만 엔트리 작업 공간에 복원되지 않았습니다.');
-   notify('ENTRY_PROJECT_IMPORTED',{token:message.token,ok:true,scriptBytes});
+   if(expectedBytes>20&&(scriptBytes<Math.min(20,expectedBytes*.2)||view.total===0))
+     throw Error('기존에 작성한 블록이 실제 편집 작업 공간에 복원되지 않았습니다. 자동 저장을 중단합니다.');
+   console.info('[NEPAL 복원 검증]',{sourceScriptBytes:expectedBytes,restoredScriptBytes:scriptBytes,liveBlocks:view.total,selectedObject:view.selected});
+   notify('ENTRY_PROJECT_IMPORTED',{token:message.token,ok:true,scriptBytes,liveBlocks:view.total,selectedObject:view.selected});
   }catch(error){notify('ENTRY_PROJECT_IMPORTED',{token:message.token,ok:false,message:String(error.message||error)});}
  }
 });
