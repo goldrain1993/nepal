@@ -102,7 +102,15 @@ function src(url){return new Promise((resolve,reject)=>{const s=document.createE
 let fb=null,db=null,auth=null,user=null,schoolDomain='',teacherUids=[],initError='',initDone=false;
 let requestedRole='student',authRole=null,loginBusy=false;
 let guestActive=false;
-let sessionActive=false; // a retained Google credential is NOT a classroom login until this session chooses a role.
+let sessionActive=false;
+const TEACHER_SESSION_KEY='nepal-v27-teacher-tab-session';
+function readTeacherSession(){try{const s=JSON.parse(sessionStorage.getItem(TEACHER_SESSION_KEY)||'null');return s?.role==='teacher'&&typeof s.uid==='string'?s:null}catch(_){return null}}
+function rememberTeacherSession(editorOpen){
+ if(!sessionActive||!requireTeacher(user))return;
+ try{sessionStorage.setItem(TEACHER_SESSION_KEY,JSON.stringify({role:'teacher',uid:user.uid,editor:!!editorOpen}))}catch(e){console.warn('교사 복원 상태 저장 실패',e)}
+}
+function forgetTeacherSession(){try{sessionStorage.removeItem(TEACHER_SESSION_KEY)}catch(_){}}
+
 let nativeStart=null,nativeButtons=[],nativeStudentPanel=null;
 const loginCaptions=['🎒 학생 로그인','🧑‍🏫 교사 로그인','🌐 게스트 입장'];
 const simulatorCaptions=['시작하기','형성평가 바로가기','이용 방법 보기'];
@@ -115,7 +123,17 @@ function workPath(c,g){return `${PRIVATE}/c${c}/teams/g${g}`}
 function teacherPath(){return user&&requireTeacher(user)?'nepal-v27/private/teacherWork/'+user.uid:null}
 function backupKey(){return guestActive||!user?null:requireTeacher(user)?BACKUP+user.uid+':teacher':team?BACKUP+user.uid+':c'+team.c+'g'+team.g:null}
 function localBackUp(project){const key=backupKey();if(!key)return;try{localStorage.setItem(key,JSON.stringify({project,updatedAt:Date.now()}))}catch(e){console.warn('로컬 보조 백업 공간 부족',e)}}
-function localRestore(){try{return JSON.parse(localStorage.getItem(backupKey())||'null')}catch(_){return null}}
+function localRestore(){try{const key=backupKey();return key?JSON.parse(localStorage.getItem(key)||'null'):null}catch(_){return null}}
+function latestProject(cloud,local){
+ let remote=null;
+ if(cloud?.payload){remote=JSON.parse(cloud.payload);if(!Array.isArray(remote?.objects))throw Error('온라인 엔트리 코드 형식 오류')}
+ const draft=local?.project;
+ if(draft&&Array.isArray(draft.objects)&&Number(local.updatedAt)>Number(cloud?.updatedAt||0)){
+  note('🛟 새로고침 직전 엔트리 블록의 최신 임시 저장본을 복구합니다.');
+  return draft;
+ }
+ return remote||(draft&&Array.isArray(draft.objects)?draft:null);
+}
 function updateNativeCaptions(){
  if(nativeButtons.length!==3)return;
  const names=sessionActive?simulatorCaptions:loginCaptions;
@@ -247,6 +265,7 @@ async function teacherSubmit(){
  finally{loginBusy=false;refreshButtons()}
 }
 async function signout(){
+ forgetTeacherSession();
  if(designReady&&(team||requireTeacher(user)))await callbacks.flushDesign?.();
  if(requireTeacher(user)&&readyToSave)await saveNow('exit');
  designReady=false;
@@ -296,7 +315,7 @@ async function joinTeam(){await initReady;if(!user||!db||!requireStudent(user)){
     Math.max(Number(currentProgress.completed)||0,Math.min(4,oldAligned)):Math.min(4,oldAligned)));
   progressSaved=progress;progressRetry=null;
   const cloudCode=codeSnap.val();const local=localRestore();
-  try{projectToRestore=cloudCode?.payload?JSON.parse(cloudCode.payload):(local?.project||null)}catch(e){throw Error('온라인 엔트리 코드 형식 오류: '+e.message)}
+  try{projectToRestore=latestProject(cloudCode,local)}catch(e){throw Error('온라인 엔트리 코드 형식 오류: '+e.message)}
   callbacks.resetEditor?.();callbacks.restoreProgress?.(progress);
   // Restore the complete sensor layout BEFORE enabling design autosave.
   // Without this gate an empty default canvas could overwrite a group's cloud data.
@@ -322,7 +341,7 @@ async function openEditor(){
    if(readyToSave&&callbacks.isReady?.()){callbacks.launchEditor?.();return;}
    try{
      const cloud=(await db.ref(teacherPath()+'/code').once('value')).val();
-     projectToRestore=cloud?.payload?JSON.parse(cloud.payload):localRestore()?.project||null;
+     projectToRestore=latestProject(cloud,localRestore());
      readyToSave=false;editorLockHeld=false;
      callbacks.resetEditor?.();callbacks.restoreProgress?.(progress);
      callbacks.launchEditor?.();
@@ -346,7 +365,7 @@ async function openEditor(){
     db.ref(teamPath(c,g)+'/progress').once('value')
   ]);
   const code=codeSnap.val();
-  const local=localRestore();projectToRestore=code?.payload?JSON.parse(code.payload):(local?.project||null);
+  const local=localRestore();projectToRestore=latestProject(code,local);
   const current=Number(progressSnap.val()?.completed)||0;
   const earlier=oldProgressSnap.val(),oldCompleted=Number(earlier?.completed)||0;
   const aligned=Number(earlier?.updatedAt)>=PROGRESS_FALLBACK_SINCE?oldCompleted:
@@ -423,13 +442,16 @@ async function enterTeacher(){
   const raw=designSnap.val();
   let previousDesign={version:1,sensors:[],alarmMode:'OR',minCount:2};
   if(raw?.payload)previousDesign=JSON.parse(raw.payload);
-  projectToRestore=codeSnap.val()?.payload?JSON.parse(codeSnap.val().payload):localRestore()?.project||null;
+  projectToRestore=latestProject(codeSnap.val(),localRestore());
   const restored=callbacks.restoreDesign?.(previousDesign);
   if(restored===false)throw Error('교사 센서 설계 복원 실패');
   progress=Math.max(0,Math.min(missionTotal,Number(progressSnap.val()?.completed)||0));
   progressSaved=progress;progressRetry=null;
   callbacks.resetEditor?.();callbacks.restoreProgress?.(progress);
-  designReady=true;enterTeacherSimulator();note('🧑‍🏫 교사 모드');
+  designReady=true;enterTeacherSimulator();
+  const old=readTeacherSession();
+  rememberTeacherSession(old?.uid===user.uid&&old?.editor===true);
+  note('🧑‍🏫 교사 모드 · 저장 기록 복원 완료');
  }catch(e){
   designReady=false;note('⚠ 교사 기록을 불러오지 못했습니다. 기존 기록 보호를 위해 저장을 중지합니다: '+String(e.message||e));
   throw e;
@@ -462,7 +484,13 @@ async function onEntryReady(){if(guestActive)return;if(requireTeacher(user)){if(
  try{if(projectToRestore?.objects&&Array.isArray(projectToRestore.objects)){note('저장된 엔트리 블록을 복원하는 중…');await rpc('import',projectToRestore);note('✓ 이전 조별 엔트리 블록 복원 완료');}
    else note(requireTeacher(user)?'교사 모드 · 새 엔트리 작업을 시작합니다.':'새 조의 엔트리 작업을 시작합니다.');readyToSave=true;
  }catch(e){note('⚠ 블록 복원 실패: '+e.message+' · 기존 파일 보호를 위해 자동 저장을 중지합니다.');}
- finally{restoring=false}}
+ finally{
+  restoring=false;
+  if(readyToSave){
+   const key=backupKey();
+   if(key)callbacks.iframe.contentWindow?.postMessage({type:'NEPAL_DRAFT_BACKUP_KEY',key},location.origin);
+  }
+ }}
 async function saveNow(reason='manual'){
  if(guestActive){if(reason==='manual')note('🌐 게스트 모드는 저장하지 않습니다. 학교 계정으로 로그인하면 조별 저장을 사용할 수 있습니다.');return false}
  const teacherSave=requireTeacher(user)&&sessionActive;
@@ -699,9 +727,18 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
  $('np-board-refresh').onclick=loadBoard;$('np-board-close').onclick=closeBoard;
  $('np-board-signout').onclick=signout;
  $('np-teacher-sim').onclick=()=>{if(requireTeacher(user))enterTeacherSimulator();else if(team){board.classList.remove('show');clearBoard()}else note('학생은 반·조에 먼저 등록해야 합니다.');refreshButtons()};
- if(!autosave)autosave=setInterval(()=>{if((team||requireTeacher(user)&&sessionActive)&&readyToSave&&!restoring&&opts.isLayerOpen?.()&&!opts.isBusy?.())saveNow('auto')},18000);
+ if(!autosave)autosave=setInterval(()=>{if((team||requireTeacher(user)&&sessionActive)&&readyToSave&&!restoring&&opts.isLayerOpen?.()&&!opts.isBusy?.())saveNow('auto')},8000);
  setupNativeHome();refreshButtons();
- return{refreshUI:refreshButtons,showGate,showBoard,onEntryReady,saveNow,saveProgress,saveSimulatorDesign,recordFloodResult,recordMission5Result,recordFinalResult,openEditor,closeEditing,enterTeacherSimulator,showLogin,signout,receiveFrameMessage,getTeam:()=>team,getTeacherScores:()=>teacherScores,isDesignReady:()=>designReady&&!guestActive&&(!!team&&requireStudent(user)||sessionActive&&requireTeacher(user)),isGuest:()=>guestActive,isTeacher:()=>sessionActive&&!guestActive&&requireTeacher(user)};
+ initReady.then(async()=>{
+  const stored=readTeacherSession();
+  if(!stored||!user||!requireTeacher(user)||stored.uid!==user.uid)return;
+  try{
+   const reopen=stored.editor===true;
+   await enterTeacher();
+   if(reopen)await openEditor();
+  }catch(e){note('⚠ 교사 작업 자동 복원 실패: '+String(e.message||e))}
+ }).catch(e=>console.warn('교사 세션 복원 준비 실패',e));
+ return{rememberEditorState:open=>rememberTeacherSession(open),refreshUI:refreshButtons,showGate,showBoard,onEntryReady,saveNow,saveProgress,saveSimulatorDesign,recordFloodResult,recordMission5Result,recordFinalResult,openEditor,closeEditing,enterTeacherSimulator,showLogin,signout,receiveFrameMessage,getTeam:()=>team,getTeacherScores:()=>teacherScores,isDesignReady:()=>designReady&&!guestActive&&(!!team&&requireStudent(user)||sessionActive&&requireTeacher(user)),isGuest:()=>guestActive,isTeacher:()=>sessionActive&&!guestActive&&requireTeacher(user)};
 }
 global.NepalClassroom={setup};
 })(window);

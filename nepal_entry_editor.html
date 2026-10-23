@@ -1253,11 +1253,49 @@ setInterval(()=>{
    running:nepalIsRunning()
  });
 },700);
+// Store small, frequent same-browser drafts independently of Firebase's slower
+// background uploads. On refresh the newer of cloud and local draft is restored.
+// Backup key is supplied ONLY after the authenticated parent has finished import.
+let nepalDraftKey=null,nepalLastDraft='',nepalDraftBusy=false;
+function nepalWriteDraft(project){
+ if(!nepalDraftKey||!project||!Array.isArray(project.objects))return false;
+ try{
+  const payload=JSON.stringify(project);
+  if(payload.length>1250000||payload===nepalLastDraft)return false;
+  localStorage.setItem(nepalDraftKey,JSON.stringify({project,updatedAt:Date.now()}));
+  nepalLastDraft=payload;
+  return true;
+ }catch(e){console.warn('[NEPAL] 임시 블록 저장 실패:',e);return false}
+}
+async function nepalBackupDraft(){
+ if(!nepalDraftKey||nepalDraftBusy||!window.__entryReady||nepalChecking)return;
+ nepalDraftBusy=true;
+ try{const project=await Promise.resolve(window.Entry.exportProject());nepalWriteDraft(project)}
+ catch(e){console.warn('[NEPAL] 자동 임시 저장 실패:',e)}
+ finally{nepalDraftBusy=false}
+}
+setInterval(nepalBackupDraft,3000);
+window.addEventListener('pagehide',()=>{
+ if(!nepalDraftKey||!window.__entryReady||nepalChecking)return;
+ try{
+  const project=window.Entry.exportProject();
+  if(project&&typeof project.then!=='function')nepalWriteDraft(project);
+ }catch(e){console.warn('[NEPAL] 페이지 종료시 임시 저장 실패:',e)}
+});
 // Export/import the complete EntryJS workspace for group-level auto backup.
 // Do not create a new project or clear students' blocks while exporting.
 window.addEventListener('message',async e=>{
  if(e.source!==window.parent || e.origin!==location.origin)return;
  const message=e.data||{};
+ if(message.type==='NEPAL_DRAFT_BACKUP_KEY'){
+  const key=message.key;
+  // Accept only this app's short namespaced key; never arbitrary storage keys.
+  if(typeof key==='string'&&key.startsWith('nepal-entry-v27-backup:')&&key.length<300){
+   nepalDraftKey=key;
+   nepalLastDraft='';
+   nepalBackupDraft();
+  }
+ }
  if(message.type==='NEPAL_EXPORT_PROJECT'){
   try{
    if(!window.__entryReady || nepalChecking)throw Error('검사 중이거나 엔트리 준비 전입니다.');
