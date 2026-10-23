@@ -61,7 +61,7 @@
                   }
                 },
                 "progress": {
-                  ".write": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr') && (data.parent().child('members/student1/uid').val() === auth.uid || data.parent().child('members/student2/uid').val() === auth.uid || root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student3/uid').val() === auth.uid) && root.child('nepal-v27/private/classes/'+$class+'/teams/'+$group+'/editorLock/uid').val() === auth.uid",
+                  ".write": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr') && (data.parent().child('members/student1/uid').val() === auth.uid || data.parent().child('members/student2/uid').val() === auth.uid || root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student3/uid').val() === auth.uid)",
                   ".validate": "newData.hasChildren(['completed','updatedAt']) && (!data.hasChild('completed') || newData.child('completed').val() >= data.child('completed').val())",
                   "completed": {
                     ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 4"
@@ -96,7 +96,7 @@
                   }
                 },
                 "progressV3": {
-                  ".write": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr') && (data.parent().child('members/student1/uid').val() === auth.uid || data.parent().child('members/student2/uid').val() === auth.uid || root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student3/uid').val() === auth.uid) && root.child('nepal-v27/private/classes/'+$class+'/teams/'+$group+'/editorLock/uid').val() === auth.uid",
+                  ".write": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr') && (data.parent().child('members/student1/uid').val() === auth.uid || data.parent().child('members/student2/uid').val() === auth.uid || root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student3/uid').val() === auth.uid)",
                   ".validate": "newData.hasChildren(['completed','schemaVersion','updatedAt']) && newData.child('schemaVersion').val() === 3 && (!data.hasChild('completed') || newData.child('completed').val() >= data.child('completed').val())",
                   "completed": {
                     ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 7"
