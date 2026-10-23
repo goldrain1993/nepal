@@ -167,6 +167,12 @@ function latestProject(cloud,local){
   note('🛡 온라인에 작성된 블록이 있어 빈 임시 저장본 대신 온라인 코드를 불러옵니다.');
   return remote;
  }
+ if(draftBytes>20 && remoteBytes===0){
+  // A previously erroneous empty online save must never hide an older valid
+  // local authored project. Restore the last known good blocks.
+  note('🛟 온라인에 빈 프로젝트가 있어 블록이 남아 있는 브라우저 백업을 복원합니다.');
+  return draft;
+ }
  if(hasDraft&&Number(local.updatedAt)>Number(cloud?.updatedAt||0)){
   note('🛟 새로고침 직전 엔트리 블록의 최신 임시 저장본을 복구합니다.');
   return draft;
