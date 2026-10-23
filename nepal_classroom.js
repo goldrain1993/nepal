@@ -559,7 +559,7 @@ async function onEntryReady(){if(guestActive)return;if(requireTeacher(user)){if(
     const desiredBytes=projectScriptBytes(projectToRestore);
     if(desiredBytes>20 && Number(imported?.scriptBytes||0)<Math.min(20,desiredBytes*.2))
       throw Error('저장된 코딩 블록의 복원이 확인되지 않았습니다. 원본 보호를 위해 온라인 자동 저장을 중단합니다.');
-    note('✓ 이전 엔트리 블록 복원 확인 · 코드 약 '+desiredBytes+'자');
+    note('✓ 엔트리 블록 복원 확인 · 화면에 '+Number(imported?.liveBlocks||0)+'개 블록 · 코드 '+desiredBytes+'자');
   }
    else note(requireTeacher(user)?'교사 모드 · 새 엔트리 작업을 시작합니다.':'새 조의 엔트리 작업을 시작합니다.');readyToSave=true;
  }catch(e){note('⚠ 블록 복원 실패: '+e.message+' · 기존 파일 보호를 위해 자동 저장을 중지합니다.');}
