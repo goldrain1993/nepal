@@ -110,6 +110,23 @@ function rememberTeacherSession(editorOpen){
  try{sessionStorage.setItem(TEACHER_SESSION_KEY,JSON.stringify({role:'teacher',uid:user.uid,editor:!!editorOpen}))}catch(e){console.warn('교사 복원 상태 저장 실패',e)}
 }
 function forgetTeacherSession(){try{sessionStorage.removeItem(TEACHER_SESSION_KEY)}catch(_){}}
+// A student is restored only when Firebase Auth still identifies the SAME
+// authorized member of the SAME existing group. Never auto-register a slot.
+const STUDENT_SESSION_KEY='nepal-v27-student-tab-session';
+function readStudentSession(){
+ try{
+  const saved=JSON.parse(sessionStorage.getItem(STUDENT_SESSION_KEY)||'null');
+  return saved?.role==='student'&&typeof saved.uid==='string'&&valid(saved.c,saved.g)&&
+    memberKeys.includes(saved.slot)?saved:null;
+ }catch(_){return null}
+}
+function rememberStudentSession(editorOpen){
+ if(!sessionActive||!requireStudent(user)||!team||!role)return;
+ try{sessionStorage.setItem(STUDENT_SESSION_KEY,JSON.stringify({
+  role:'student',uid:user.uid,c:team.c,g:team.g,slot:role,editor:!!editorOpen
+ }))}catch(e){console.warn('학생 화면 복원 상태 저장 실패',e)}
+}
+function forgetStudentSession(){try{sessionStorage.removeItem(STUDENT_SESSION_KEY)}catch(_){}}
 
 let nativeStart=null,nativeButtons=[],nativeStudentPanel=null;
 const loginCaptions=['🎒 학생 로그인','🧑‍🏫 교사 로그인','🌐 게스트 입장'];
@@ -265,7 +282,7 @@ async function teacherSubmit(){
  finally{loginBusy=false;refreshButtons()}
 }
 async function signout(){
- forgetTeacherSession();
+ forgetTeacherSession();forgetStudentSession();
  if(designReady&&(team||requireTeacher(user)))await callbacks.flushDesign?.();
  if(requireTeacher(user)&&readyToSave)await saveNow('exit');
  designReady=false;
@@ -329,6 +346,9 @@ async function joinTeam(){await initReady;if(!user||!db||!requireStudent(user)){
   if(restored===false)throw Error('센서 설계를 복원하지 못했습니다. 저장된 정보를 보호하기 위해 자동 저장을 시작하지 않습니다.');
   designReady=true;
   gate.classList.remove('show');callbacks.enterSimulator?.();
+  const remembered=readStudentSession();
+  rememberStudentSession(remembered?.uid===user.uid&&remembered?.c===c&&remembered?.g===g&&
+    remembered?.slot===slot&&remembered?.editor===true);
   note('✓ '+c+'반 '+g+'조 · '+memberNames(members,c,g)+' · 네팔 홍수 시뮬레이션에 입장했습니다.');
  }catch(e){designReady=false;note('입장 실패: '+String(e.message||e));if(editorLockHeld){await releaseLock().catch(()=>{});team=null;readyToSave=false}}
  finally{refreshButtons()}
@@ -365,14 +385,24 @@ async function openEditor(){
     db.ref(teamPath(c,g)+'/progress').once('value')
   ]);
   const code=codeSnap.val();
-  const local=localRestore();projectToRestore=latestProject(code,local);
+  // Returning from the simulator must not destroy the live workspace that
+  // was already safely uploaded, unless another teammate changed the code.
+  const reuseEditor=callbacks.isReady?.()&&readyToSave===false&&
+    typeof code?.payload==='string'&&lastSaved===code.payload;
+  const local=localRestore();
+  if(!reuseEditor)projectToRestore=latestProject(code,local);
   const current=Number(progressSnap.val()?.completed)||0;
   const earlier=oldProgressSnap.val(),oldCompleted=Number(earlier?.completed)||0;
   const aligned=Number(earlier?.updatedAt)>=PROGRESS_FALLBACK_SINCE?oldCompleted:
     earlier?.schemaVersion===2?oldCompleted:(oldCompleted>=2?oldCompleted+1:oldCompleted);
   progress=Math.max(progress,Math.min(missionTotal,Math.max(current,Math.min(4,aligned))));
   progressSaved=Math.max(progressSaved,current,Math.min(4,aligned));
-  readyToSave=false;callbacks.resetEditor?.();callbacks.restoreProgress?.(progress);callbacks.launchEditor?.();startLockRefresh();
+  if(reuseEditor){
+   readyToSave=true;callbacks.restoreProgress?.(progress);callbacks.launchEditor?.();startLockRefresh();
+   note('✓ 이전 엔트리 블록을 그대로 이어서 편집합니다.');
+  }else{
+   readyToSave=false;callbacks.resetEditor?.();callbacks.restoreProgress?.(progress);callbacks.launchEditor?.();startLockRefresh();
+  }
  }catch(e){note('엔트리 입장 실패: '+String(e.message||e));if(editorLockHeld)await releaseLock().catch(()=>{});}
 }
 // Leaving is a save checkpoint: protect local mission achievements and design.
@@ -402,6 +432,7 @@ async function closeEditing(){
 // access a classroom database, save progress/grades/projects, or create a local backup.
 async function enterGuest(){
  try{
+  forgetStudentSession();forgetTeacherSession();
   if(team)await leaveTeam();
   if(auth?.currentUser)await auth.signOut();
   designReady=false;
@@ -730,6 +761,27 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
  if(!autosave)autosave=setInterval(()=>{if((team||requireTeacher(user)&&sessionActive)&&readyToSave&&!restoring&&opts.isLayerOpen?.()&&!opts.isBusy?.())saveNow('auto')},8000);
  setupNativeHome();refreshButtons();
  initReady.then(async()=>{
+  const savedStudent=readStudentSession();
+  if(savedStudent){
+   if(!user||!requireStudent(user)||savedStudent.uid!==user.uid)forgetStudentSession();
+   else{
+    try{
+     // Check EXISTING membership first; do not claim an empty spot at boot.
+     const member=(await db.ref(teamPath(savedStudent.c,savedStudent.g)+'/members/'+savedStudent.slot).once('value')).val();
+     if(!member||member.uid!==user.uid){forgetStudentSession();return;}
+     $('np-class').value=String(savedStudent.c);
+     $('np-group').value=String(savedStudent.g);
+     $('np-name').value=member.displayName;
+     await joinTeam();
+     if(team?.c===savedStudent.c&&team?.g===savedStudent.g&&designReady&&savedStudent.editor)
+       await openEditor();
+     return;
+    }catch(error){
+     note('⚠ 학생 작업 자동 복원 실패: '+String(error.message||error));
+     return;
+    }
+   }
+  }
   const stored=readTeacherSession();
   if(!stored||!user||!requireTeacher(user)||stored.uid!==user.uid)return;
   try{
@@ -738,7 +790,7 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
    if(reopen)await openEditor();
   }catch(e){note('⚠ 교사 작업 자동 복원 실패: '+String(e.message||e))}
  }).catch(e=>console.warn('교사 세션 복원 준비 실패',e));
- return{rememberEditorState:open=>rememberTeacherSession(open),refreshUI:refreshButtons,showGate,showBoard,onEntryReady,saveNow,saveProgress,saveSimulatorDesign,recordFloodResult,recordMission5Result,recordFinalResult,openEditor,closeEditing,enterTeacherSimulator,showLogin,signout,receiveFrameMessage,getTeam:()=>team,getTeacherScores:()=>teacherScores,isDesignReady:()=>designReady&&!guestActive&&(!!team&&requireStudent(user)||sessionActive&&requireTeacher(user)),isGuest:()=>guestActive,isTeacher:()=>sessionActive&&!guestActive&&requireTeacher(user)};
+ return{rememberEditorState:open=>{rememberTeacherSession(open);rememberStudentSession(open)},refreshUI:refreshButtons,showGate,showBoard,onEntryReady,saveNow,saveProgress,saveSimulatorDesign,recordFloodResult,recordMission5Result,recordFinalResult,openEditor,closeEditing,enterTeacherSimulator,showLogin,signout,receiveFrameMessage,getTeam:()=>team,getTeacherScores:()=>teacherScores,isDesignReady:()=>designReady&&!guestActive&&(!!team&&requireStudent(user)||sessionActive&&requireTeacher(user)),isGuest:()=>guestActive,isTeacher:()=>sessionActive&&!guestActive&&requireTeacher(user)};
 }
 global.NepalClassroom={setup};
 })(window);
