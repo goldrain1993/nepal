@@ -159,11 +159,19 @@ function latestProject(cloud,local){
  let remote=null;
  if(cloud?.payload){remote=JSON.parse(cloud.payload);if(!Array.isArray(remote?.objects))throw Error('온라인 엔트리 코드 형식 오류')}
  const draft=local?.project;
- if(draft&&Array.isArray(draft.objects)&&Number(local.updatedAt)>Number(cloud?.updatedAt||0)){
+ const hasDraft=draft&&Array.isArray(draft.objects);
+ const remoteBytes=projectScriptBytes(remote),draftBytes=projectScriptBytes(draft);
+ // A newer EMPTY browser draft can otherwise hide a successfully saved
+ // teacher project forever. Always preserve existing authored server scripts.
+ if(remoteBytes>20 && draftBytes===0){
+  note('🛡 온라인에 작성된 블록이 있어 빈 임시 저장본 대신 온라인 코드를 불러옵니다.');
+  return remote;
+ }
+ if(hasDraft&&Number(local.updatedAt)>Number(cloud?.updatedAt||0)){
   note('🛟 새로고침 직전 엔트리 블록의 최신 임시 저장본을 복구합니다.');
   return draft;
  }
- return remote||(draft&&Array.isArray(draft.objects)?draft:null);
+ return remote||(hasDraft?draft:null);
 }
 function updateNativeCaptions(){
  if(nativeButtons.length!==3)return;
