@@ -1269,6 +1269,13 @@ function nepalScriptBytes(project){
  for(const f of project.functions||[])size+=count(f?.content);
  return size;
 }
+function nepalLiveBlockCount(){
+ let total=0;
+ for(const object of window.Entry?.container?.objects_||[]){
+  try{const list=object?.script?.getBlockList?.(true);if(Array.isArray(list))total+=list.length}catch(_){}
+ }
+ return total;
+}
 function nepalWriteDraft(project){
  if(!nepalDraftKey||!project||!Array.isArray(project.objects))return false;
  try{
@@ -1287,8 +1294,12 @@ function nepalWriteDraft(project){
 async function nepalBackupDraft(){
  if(!nepalDraftKey||nepalDraftBusy||!window.__entryReady||nepalChecking)return;
  nepalDraftBusy=true;
- try{const project=await Promise.resolve(window.Entry.exportProject());nepalWriteDraft(project)}
- catch(e){console.warn('[NEPAL] 자동 임시 저장 실패:',e)}
+ try{
+  const project=await Promise.resolve(window.Entry.exportProject());
+  if(nepalLiveBlockCount()>0 && nepalScriptBytes(project)===0){
+   console.warn('[NEPAL] 실제 엔트리 블록이 있는데 내보내기에 빠져 임시 저장을 보류합니다.');
+  }else nepalWriteDraft(project);
+ }catch(e){console.warn('[NEPAL] 자동 임시 저장 실패:',e)}
  finally{nepalDraftBusy=false}
 }
 setInterval(nepalBackupDraft,3000);
@@ -1319,6 +1330,9 @@ window.addEventListener('message',async e=>{
    const project=await Promise.resolve(window.Entry.exportProject());
    if(!project || !Array.isArray(project.objects))throw Error('유효한 엔트리 프로젝트가 아닙니다.');
    const safe=JSON.parse(JSON.stringify(project));
+   const liveCount=nepalLiveBlockCount();
+   if(liveCount>0 && nepalScriptBytes(safe)===0)
+     throw Error('실제 작업 공간에 '+liveCount+'개 블록이 있지만 저장 파일에 코드가 포함되지 않았습니다. 덮어쓰기를 중단합니다.');
    notify('ENTRY_PROJECT_EXPORTED',{token:message.token,project:safe});
   }catch(error){notify('ENTRY_PROJECT_EXPORT_ERROR',{token:message.token,message:String(error.message||error)});}
  }
