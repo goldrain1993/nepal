@@ -141,6 +141,20 @@ function teacherPath(){return user&&requireTeacher(user)?'nepal-v27/private/teac
 function backupKey(){return guestActive||!user?null:requireTeacher(user)?BACKUP+user.uid+':teacher':team?BACKUP+user.uid+':c'+team.c+'g'+team.g:null}
 function localBackUp(project){const key=backupKey();if(!key)return;try{localStorage.setItem(key,JSON.stringify({project,updatedAt:Date.now()}))}catch(e){console.warn('로컬 보조 백업 공간 부족',e)}}
 function localRestore(){try{const key=backupKey();return key?JSON.parse(localStorage.getItem(key)||'null'):null}catch(_){return null}}
+// Only measure EntryJS code-bearing fields. Objects can contain sprite media
+// even if their actual programming scripts are empty.
+function projectScriptBytes(project){
+ if(!project||!Array.isArray(project.objects))return 0;
+ const scriptSize=value=>{
+  if(value===null||value===undefined)return 0;
+  const str=typeof value==='string'?value:JSON.stringify(value);
+  return str&&str!=='[]'&&str!=='{}'&&str!=='null'?str.length:0;
+ };
+ let total=0;
+ for(const o of project.objects)total+=scriptSize(o?.script);
+ for(const f of project.functions||[])total+=scriptSize(f?.content);
+ return total;
+}
 function latestProject(cloud,local){
  let remote=null;
  if(cloud?.payload){remote=JSON.parse(cloud.payload);if(!Array.isArray(remote?.objects))throw Error('온라인 엔트리 코드 형식 오류')}
@@ -504,7 +518,7 @@ async function leaveTeam(){if(!team)return;
 async function switchTeam(){await signout()}
 function receiveFrameMessage(d){if(d.type==='ENTRY_PROJECT_EXPORTED'&&exportPending?.token===d.token){const x=exportPending;exportPending=null;clearTimeout(x.timeout);x.resolve(d.project)}
  if(d.type==='ENTRY_PROJECT_EXPORT_ERROR'&&exportPending?.token===d.token){const x=exportPending;exportPending=null;clearTimeout(x.timeout);x.reject(Error(d.message||'내보내기 실패'))}
- if(d.type==='ENTRY_PROJECT_IMPORTED'&&importPending?.token===d.token){const x=importPending;importPending=null;clearTimeout(x.timeout);d.ok?x.resolve():x.reject(Error(d.message||'코드 불러오기 실패'))}
+ if(d.type==='ENTRY_PROJECT_IMPORTED'&&importPending?.token===d.token){const x=importPending;importPending=null;clearTimeout(x.timeout);d.ok?x.resolve(d):x.reject(Error(d.message||'코드 불러오기 실패'))}
 }
 function rpc(action,project){return new Promise((resolve,reject)=>{
  const token=++rpcId,timeout=setTimeout(()=>{if(action==='export')exportPending=null;else importPending=null;reject(Error('엔트리 '+action+' 시간 초과'))},19000);
@@ -512,7 +526,14 @@ function rpc(action,project){return new Promise((resolve,reject)=>{
  callbacks.iframe.contentWindow?.postMessage(action==='export'?{type:'NEPAL_EXPORT_PROJECT',token}:{type:'NEPAL_IMPORT_PROJECT',token,project},location.origin);
 })}
 async function onEntryReady(){if(guestActive)return;if(requireTeacher(user)){if(!designReady)return;}else if(!team||!editorLockHeld)return;readyToSave=false;restoring=true;
- try{if(projectToRestore?.objects&&Array.isArray(projectToRestore.objects)){note('저장된 엔트리 블록을 복원하는 중…');await rpc('import',projectToRestore);note('✓ 이전 조별 엔트리 블록 복원 완료');}
+ try{if(projectToRestore?.objects&&Array.isArray(projectToRestore.objects)){
+    note('저장된 엔트리 블록을 복원하는 중…');
+    const imported=await rpc('import',projectToRestore);
+    const desiredBytes=projectScriptBytes(projectToRestore);
+    if(desiredBytes>20 && Number(imported?.scriptBytes||0)<Math.min(20,desiredBytes*.2))
+      throw Error('저장된 코딩 블록의 복원이 확인되지 않았습니다. 원본 보호를 위해 온라인 자동 저장을 중단합니다.');
+    note('✓ 이전 엔트리 블록 복원 확인 · 코드 약 '+desiredBytes+'자');
+  }
    else note(requireTeacher(user)?'교사 모드 · 새 엔트리 작업을 시작합니다.':'새 조의 엔트리 작업을 시작합니다.');readyToSave=true;
  }catch(e){note('⚠ 블록 복원 실패: '+e.message+' · 기존 파일 보호를 위해 자동 저장을 중지합니다.');}
  finally{
@@ -526,9 +547,19 @@ async function saveNow(reason='manual'){
  if(guestActive){if(reason==='manual')note('🌐 게스트 모드는 저장하지 않습니다. 학교 계정으로 로그인하면 조별 저장을 사용할 수 있습니다.');return false}
  const teacherSave=requireTeacher(user)&&sessionActive;
  if(!user||!readyToSave||!db||(!teacherSave&&(!team||!editorLockHeld))){if(reason==='manual')note('아직 편집 또는 저장 준비가 되지 않았습니다.');return false}
- if(saveBusy){queued=true;return false}if(!callbacks.isReady?.())return false;saveBusy=true;
+ if(saveBusy){
+  if(reason==='auto'){queued=true;return true;}
+  for(let i=0;i<48&&saveBusy;i++)await new Promise(resolve=>setTimeout(resolve,125));
+  if(saveBusy){note('⚠ 기존 저장 작업이 아직 끝나지 않았습니다. 다시 저장해 주세요.');return false}
+ }
+ if(!callbacks.isReady?.()){note('⚠ 엔트리 블록 불러오기가 끝나지 않았습니다.');return false}
+ saveBusy=true;
  try{const project=await rpc('export');if(!project||!Array.isArray(project.objects))throw Error('엔트리 프로젝트 구조 오류');
   const encoded=JSON.stringify(project);if(encoded.length>MAX_PROJECT_SIZE)throw Error('코드 용량이 1.25MB를 넘었습니다. 이미지/소리를 줄여 주세요.');
+  const newScriptBytes=projectScriptBytes(project);
+  const referenceBytes=projectScriptBytes(projectToRestore);
+  if(referenceBytes>20 && newScriptBytes<Math.min(20,referenceBytes*.2))
+   throw Error('저장된 블록이 새 코드에서 사라진 것으로 감지됐습니다. 기존 온라인 프로젝트 보호를 위해 저장을 중단합니다.');
   localBackUp(project);
   if(reason==='auto'&&lastSaved===encoded)return true;
   const path=teacherSave?teacherPath()+'/code':workPath(team.c,team.g)+'/code';
@@ -537,8 +568,17 @@ async function saveNow(reason='manual'){
    const snap=await db.ref(workPath(team.c,team.g)+'/editorLock').once('value');
    if(snap.val()?.uid!==user.uid)throw Error('이 조의 편집 권한을 잃었습니다.');
   }
-  await db.ref(path).set({payload:encoded,updatedAt:fb.database.ServerValue.TIMESTAMP,updatedBy:user.uid});
-  lastSaved=encoded;note('✓ '+(teacherSave?'교사':'조별')+' 블록 온라인 저장 완료 · '+new Date().toLocaleTimeString('ko-KR'));return true;
+  const codeRef=db.ref(path);
+  await codeRef.set({payload:encoded,updatedAt:fb.database.ServerValue.TIMESTAMP,updatedBy:user.uid});
+  if(reason!=='auto'){
+    const readback=(await codeRef.once('value')).val();
+    if(readback?.payload!==encoded||readback?.updatedBy!==user.uid)
+      throw Error('서버에 저장된 엔트리 코드가 현재 블록과 일치하지 않습니다.');
+  }
+  lastSaved=encoded;
+  projectToRestore=project;
+  note('✓ '+(teacherSave?'교사':'조별')+' 블록 온라인 저장 확인 · 코드 약 '+newScriptBytes+'자 · '+new Date().toLocaleTimeString('ko-KR'));
+  return true;
  }catch(e){note('⚠ 온라인 저장 실패: '+String(e.message||e)+' · 현재 브라우저에 보조 저장이 있다면 같은 계정으로 다시 확인하세요.');return false}
  finally{saveBusy=false;if(queued){queued=false;setTimeout(()=>saveNow('auto'),500)}}
 }
