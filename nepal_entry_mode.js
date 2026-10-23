@@ -1101,12 +1101,13 @@
 
   // Load classroom UI asynchronously. The original simulator is not modified.
   const classroomScript=document.createElement('script');
-  classroomScript.src='./nepal_classroom.js?v=50';
+  classroomScript.src='./nepal_classroom.js?v=51';
   classroomScript.onload=()=>{
     if(!window.NepalClassroom){console.error('학급 모듈을 찾지 못했습니다.');return;}
     classroom=window.NepalClassroom.setup({
       header:layer.querySelector('.ne-header'),iframe,totalMissions:missions.length,
-      restoreDesign:restoreSimulatorDesign,flushDesign:()=>flushSimulatorDesign(false),
+      restoreDesign:restoreSimulatorDesign,flushDesign:force=>flushSimulatorDesign(!!force),
+      getMissionProgress:()=>{const i=passed.findIndex(ok=>!ok);return i<0?missions.length:i;},
       launchEditor:launch,closeEditor:close,enterSimulator:()=>{
         // ALL three entry routes (student / teacher / guest) show the original
         // NEPAL FLOOD DATA LAB start menu, including Start / Assessment / Help.
