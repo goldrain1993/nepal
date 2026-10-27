@@ -134,7 +134,7 @@ const simulatorCaptions=['시작하기','형성평가 바로가기','이용 방�
 let team=null,role=null,editorLockHeld=false,codeListener=null,boardListener=null,projectToRestore=null;
 let teacherScores={floodBest:null,mission5NoListBest:null,finalBest:null};
 let designReady=false,designSavedAt=0;
-let progress=0,missionTotal=4,progressSaved=0,progressRetry=null,callbacks={},saveBusy=false,queued=false,readyToSave=false,restoring=false,importPending=null,exportPending=null,rpcId=0,headerStatus=null,lastSaved='',autosave=null,lockRefresh=null,lockedTeamPath='';
+let progress=0,missionTotal=4,progressSaved=0,progressRetry=null,lastProgressSaveError='',retryingProgress=false,lastProgressRetryAt=0,callbacks={},saveBusy=false,queued=false,readyToSave=false,restoring=false,importPending=null,exportPending=null,rpcId=0,headerStatus=null,lastSaved='',autosave=null,lockRefresh=null,lockedTeamPath='';
 function teamPath(c,g){return `${ROOT}/c${c}/teams/g${g}`}
 function workPath(c,g){return `${PRIVATE}/c${c}/teams/g${g}`}
 function teacherPath(){return user&&requireTeacher(user)?'nepal-v27/private/teacherWork/'+user.uid:null}
@@ -156,6 +156,24 @@ function localBackUp(project){
 }
 function localRestore(){try{const key=backupKey();return key?JSON.parse(localStorage.getItem(key)||'null'):null}catch(_){return null}}
 function localRecovery(){try{const key=backupKey();return key?JSON.parse(localStorage.getItem(key+':recovery')||'null'):null}catch(_){return null}}
+function pendingProgressKey(){const k=backupKey();return k?k+':progress-pending':null}
+function pendingProgress(){try{const k=pendingProgressKey(),n=k?Number(localStorage.getItem(k)):0;return Number.isInteger(n)&&n>=1&&n<=missionTotal?n:0}catch(_){return 0}}
+function queueProgress(n){try{const k=pendingProgressKey();if(k)localStorage.setItem(k,String(Math.max(pendingProgress(),n)))}catch(_){}}
+function clearQueuedProgress(n){try{const k=pendingProgressKey();if(k&&pendingProgress()<=n)localStorage.removeItem(k)}catch(_){}}
+function progressErrorText(error){
+ const e=String(error?.code||error?.message||error||'서버 저장 여부 확인 실패');
+ if(/permission[_ -]*denied/i.test(e))return 'Firebase 권한 거부(PERMISSION_DENIED): progressV3 보안 규칙 게시 여부를 확인하세요.';
+ if(/offline|network|unavailable|timeout|disconnect|connection/i.test(e))return '연결이 불안정합니다. 온라인 연결 시 다시 저장합니다.';
+ return e.slice(0,180);
+}
+function retryPendingProgress(){
+ if(retryingProgress||!db||!user||guestActive||!(team||requireTeacher(user)&&sessionActive))return;
+ const pending=pendingProgress();if(!pending)return;
+ if(pending<=progressSaved){clearQueuedProgress(progressSaved);return}
+ if(Date.now()-lastProgressRetryAt<15000)return;
+ lastProgressRetryAt=Date.now();retryingProgress=true;
+ saveProgress(pending).finally(()=>{retryingProgress=false});
+}
 // Only measure EntryJS code-bearing fields. Objects can contain sprite media
 // even if their actual programming scripts are empty.
 // Detect unexpectedly truncated exports, even when some blocks remain.
@@ -396,6 +414,7 @@ async function joinTeam(){await initReady;if(!user||!db||!requireStudent(user)){
   if(restored===false)throw Error('센서 설계를 복원하지 못했습니다. 저장된 정보를 보호하기 위해 자동 저장을 시작하지 않습니다.');
   designReady=true;
   gate.classList.remove('show');callbacks.enterSimulator?.();
+  setTimeout(retryPendingProgress,1500);
   const remembered=readStudentSession();
   rememberStudentSession(remembered?.uid===user.uid&&remembered?.c===c&&remembered?.g===g&&
     remembered?.slot===slot&&remembered?.editor===true);
@@ -536,6 +555,7 @@ async function enterTeacher(){
   progressSaved=progress;progressRetry=null;
   callbacks.resetEditor?.();callbacks.restoreProgress?.(progress);
   designReady=true;enterTeacherSimulator();
+  setTimeout(retryPendingProgress,1500);
   const old=readTeacherSession();
   rememberTeacherSession(old?.uid===user.uid&&old?.editor===true);
   note('🧑‍🏫 교사 모드 · 저장 기록 복원 완료');
@@ -664,6 +684,12 @@ async function saveProgress(n){
   newOK=!!tx.committed&&Number(tx.snapshot?.val()?.completed)>=value;
   if(!newOK)saveError=new Error('서버에서 진행도 저장을 확인할 수 없습니다.');
  }catch(error){saveError=error;}
+ // A concurrent login may already have saved the same or higher progress.
+ // Verify on the server before reporting a failure to the learner.
+ if(!newOK){
+  try{const stored=(await db.ref(path+'/progressV3').once('value')).val();newOK=Number(stored?.completed)>=value}
+  catch(error){if(!saveError)saveError=error}
+ }
  // Existing /progress Firebase rules allow 0..4 but not a fifth stage.
  if(!teacherSave&&value>=1&&value<=4){
   try{
@@ -676,12 +702,14 @@ async function saveProgress(n){
  }
  if(newOK||legacyOK){
   progressSaved=Math.max(progressSaved,value);
-  progressRetry=null;
+  progressRetry=null;lastProgressSaveError='';clearQueuedProgress(value);
   note('✓ '+(value===7?'FINAL':value===5?'SEMI FINAL':'미션 '+value)+' · 현황판 진행도 저장 완료'+(newOK?'':' (기존 경로)'));
   return true;
  }
- progressRetry=value;
- note('⚠ 미션은 통과했지만 현황판 저장 실패! Firebase 규칙에서 progressV3 권한을 확인하세요. '+String(saveError?.message||saveError||'저장 권한 확인 필요'));
+ progressRetry=value;queueProgress(value);
+ lastProgressSaveError=progressErrorText(saveError);
+ console.warn('[NEPAL 진행도 저장 실패]',{stage:value,reason:String(saveError?.code||saveError?.message||saveError)});
+ note('⚠ 현황판 저장 대기 · '+lastProgressSaveError);
  return false;
 }
 /** Save four editable sensors and alarm design for student teams or teacher's private workspace. */
@@ -873,6 +901,8 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
  $('np-board-signout').onclick=signout;
  $('np-teacher-sim').onclick=()=>{if(requireTeacher(user))enterTeacherSimulator();else if(team){board.classList.remove('show');clearBoard()}else note('학생은 반·조에 먼저 등록해야 합니다.');refreshButtons()};
  if(!autosave)autosave=setInterval(()=>{if((team||requireTeacher(user)&&sessionActive)&&readyToSave&&!restoring&&opts.isLayerOpen?.()&&!opts.isBusy?.())saveNow('auto')},8000);
+  setInterval(retryPendingProgress,45000);
+  window.addEventListener('online',retryPendingProgress);
  setupNativeHome();refreshButtons();
  initReady.then(async()=>{
   const savedStudent=readStudentSession();
@@ -904,7 +934,7 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
    if(reopen)await openEditor();
   }catch(e){note('⚠ 교사 작업 자동 복원 실패: '+String(e.message||e))}
  }).catch(e=>console.warn('교사 세션 복원 준비 실패',e));
- return{rememberEditorState:open=>{rememberTeacherSession(open);rememberStudentSession(open)},refreshUI:refreshButtons,showGate,showBoard,onEntryReady,saveNow,saveProgress,saveSimulatorDesign,recordFloodResult,recordMission5Result,recordFinalResult,openEditor,closeEditing,enterTeacherSimulator,showLogin,signout,receiveFrameMessage,getTeam:()=>team,getTeacherScores:()=>teacherScores,isDesignReady:()=>designReady&&!guestActive&&(!!team&&requireStudent(user)||sessionActive&&requireTeacher(user)),isGuest:()=>guestActive,isTeacher:()=>sessionActive&&!guestActive&&requireTeacher(user)};
+ return{rememberEditorState:open=>{rememberTeacherSession(open);rememberStudentSession(open)},refreshUI:refreshButtons,showGate,showBoard,onEntryReady,saveNow,saveProgress,getProgressSaveError:()=>lastProgressSaveError,saveSimulatorDesign,recordFloodResult,recordMission5Result,recordFinalResult,openEditor,closeEditing,enterTeacherSimulator,showLogin,signout,receiveFrameMessage,getTeam:()=>team,getTeacherScores:()=>teacherScores,isDesignReady:()=>designReady&&!guestActive&&(!!team&&requireStudent(user)||sessionActive&&requireTeacher(user)),isGuest:()=>guestActive,isTeacher:()=>sessionActive&&!guestActive&&requireTeacher(user)};
 }
 global.NepalClassroom={setup};
 })(window);
