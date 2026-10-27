@@ -515,8 +515,9 @@
     const el=syncStatus(),txt=syncText(),button=retryButton();if(!el||!txt)return;
     const label=step===5?'SEMI FINAL':step===7?'FINAL':'미션 '+step;
     el.classList.toggle('is-error',result!==true);
+    const why=classroom?.getProgressSaveError?.()||'연결 또는 데이터베이스 권한을 확인해 주세요.';
     txt.textContent=result===true?'☁️ '+label+' 진행도 현황판 저장 확인 ✓':
-      '⚠ '+label+'은 통과했지만 현황판 저장 실패! 다시 저장을 누르거나 선생님께 알려 주세요.';
+      '⚠ '+label+' 통과 · 현황판 저장 대기: '+why+' · ↻ 진행도 다시 저장 버튼으로 재시도';
     if(button)button.hidden=result===true;
   }
   function persistMissionProgress(completed){
@@ -1062,7 +1063,7 @@
 
   // Load classroom UI asynchronously. The original simulator is not modified.
   const classroomScript=document.createElement('script');
-  classroomScript.src='./nepal_classroom.js?v=57';
+  classroomScript.src='./nepal_classroom.js?v=58';
   classroomScript.onload=()=>{
     if(!window.NepalClassroom){console.error('학급 모듈을 찾지 못했습니다.');return;}
     classroom=window.NepalClassroom.setup({
@@ -1081,6 +1082,7 @@
       },
       isReady:()=>ready,isLayerOpen:()=>layer.classList.contains('open'),
       isBusy:()=>checking||navigating,
+      onProgressSaved(completed){reportProgressSave(completed,true,progressSaveTicket)},
       restoreProgress(completed){
         const n=Math.max(0,Math.min(missions.length,Number(completed)||0));
         passed.fill(false);
