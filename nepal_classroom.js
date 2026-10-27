@@ -704,6 +704,7 @@ async function saveProgress(n){
   progressSaved=Math.max(progressSaved,value);
   progressRetry=null;lastProgressSaveError='';clearQueuedProgress(value);
   note('✓ '+(value===7?'FINAL':value===5?'SEMI FINAL':'미션 '+value)+' · 현황판 진행도 저장 완료'+(newOK?'':' (기존 경로)'));
+  callbacks.onProgressSaved?.(value);
   return true;
  }
  progressRetry=value;queueProgress(value);
