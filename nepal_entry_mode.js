@@ -703,7 +703,7 @@
       ready=true;
       projectRestoring=true;
       pushSensorMeasurement();updateMissionButtons();
-      status.textContent=teacherPreview()?'🧑‍🏫 교사 모드 · 저장된 코딩 결과가 복원되었습니다.':'미션을 읽고 엔트리 블록을 연결해 보세요.';
+      status.textContent='저장된 코딩 블록을 검증하고 있습니다…';
       // A saved student project may still be importing after EntryJS is initialized.
       // Keep the mascot visible until BOTH the editor and saved blocks are ready.
       Promise.resolve().then(()=>classroom?.onEntryReady?.()).then(result=>{
