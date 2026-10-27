@@ -143,6 +143,8 @@ function localBackUp(project){const key=backupKey();if(!key)return;try{localStor
 function localRestore(){try{const key=backupKey();return key?JSON.parse(localStorage.getItem(key)||'null'):null}catch(_){return null}}
 // Only measure EntryJS code-bearing fields. Objects can contain sprite media
 // even if their actual programming scripts are empty.
+// Detect unexpectedly truncated exports, even when some blocks remain.
+function isSuspiciousLoss(before,after){return before>100&&before-after>=100&&after<before*.55}
 function projectScriptBytes(project){
  if(!project||!Array.isArray(project.objects))return 0;
  const scriptSize=value=>{
@@ -159,25 +161,16 @@ function latestProject(cloud,local){
  let remote=null;
  if(cloud?.payload){remote=JSON.parse(cloud.payload);if(!Array.isArray(remote?.objects))throw Error('온라인 엔트리 코드 형식 오류')}
  const draft=local?.project;
- const hasDraft=draft&&Array.isArray(draft.objects);
- const remoteBytes=projectScriptBytes(remote),draftBytes=projectScriptBytes(draft);
- // A newer EMPTY browser draft can otherwise hide a successfully saved
- // teacher project forever. Always preserve existing authored server scripts.
- if(remoteBytes>20 && draftBytes===0){
-  note('🛡 온라인에 작성된 블록이 있어 빈 임시 저장본 대신 온라인 코드를 불러옵니다.');
-  return remote;
- }
- if(draftBytes>20 && remoteBytes===0){
-  // A previously erroneous empty online save must never hide an older valid
-  // local authored project. Restore the last known good blocks.
-  note('🛟 온라인에 빈 프로젝트가 있어 블록이 남아 있는 브라우저 백업을 복원합니다.');
-  return draft;
- }
- if(hasDraft&&Number(local.updatedAt)>Number(cloud?.updatedAt||0)){
-  note('🛟 새로고침 직전 엔트리 블록의 최신 임시 저장본을 복구합니다.');
-  return draft;
- }
- return remote||(hasDraft?draft:null);
+ const candidates=[
+  {name:'온라인 코드',value:remote,time:Number(cloud?.updatedAt)||0},
+  {name:'브라우저 임시 저장본',value:draft,time:Number(local?.updatedAt)||0}
+ ].filter(x=>Array.isArray(x.value?.objects));
+ if(!candidates.length)return null;
+ const richer=candidates.reduce((a,b)=>projectScriptBytes(a.value)>=projectScriptBytes(b.value)?a:b);
+ const filtered=candidates.filter(x=>!isSuspiciousLoss(projectScriptBytes(richer.value),projectScriptBytes(x.value)));
+ const selected=filtered.sort((a,b)=>b.time-a.time)[0]||richer;
+ if(selected.name!=='온라인 코드')note('🛟 '+selected.name+'으로 코드를 복원합니다.');
+ return selected.value;
 }
 function updateNativeCaptions(){
  if(nativeButtons.length!==3)return;
@@ -459,7 +452,7 @@ async function closeEditing(){
  let designOK=true;
  try{designOK=designReady?(await callbacks.flushDesign?.(false))!==false:true}
  catch(e){designOK=false;note('⚠ 센서 설계 저장 오류: '+String(e.message||e))}
- const codeOK=!readyToSave||await saveNow('exit');
+ const codeOK=readyToSave && await saveNow('exit');
  if(!progressOK||!designOK||!codeOK){
   note('⚠ '+[!progressOK?'미션 진행도':null,!designOK?'센서 설계':null,!codeOK?'엔트리 코드':null].filter(Boolean).join('·')+' 저장 실패. 편집기를 그대로 유지했습니다. 다시 시도하세요.');
   return false;
@@ -584,18 +577,33 @@ async function saveNow(reason='manual'){
  try{const project=await rpc('export');if(!project||!Array.isArray(project.objects))throw Error('엔트리 프로젝트 구조 오류');
   const encoded=JSON.stringify(project);if(encoded.length>MAX_PROJECT_SIZE)throw Error('코드 용량이 1.25MB를 넘었습니다. 이미지/소리를 줄여 주세요.');
   const newScriptBytes=projectScriptBytes(project);
-  const referenceBytes=projectScriptBytes(projectToRestore);
-  if(referenceBytes>20 && newScriptBytes<Math.min(20,referenceBytes*.2))
-   throw Error('저장된 블록이 새 코드에서 사라진 것으로 감지됐습니다. 기존 온라인 프로젝트 보호를 위해 저장을 중단합니다.');
-  localBackUp(project);
   if(reason==='auto'&&lastSaved===encoded)return true;
   const path=teacherSave?teacherPath()+'/code':workPath(team.c,team.g)+'/code';
   if(!teacherSave){
-   // The same group shares one editor lock. Only lock holder may save.
    const snap=await db.ref(workPath(team.c,team.g)+'/editorLock').once('value');
    if(snap.val()?.uid!==user.uid)throw Error('이 조의 편집 권한을 잃었습니다.');
   }
   const codeRef=db.ref(path);
+  const previous=(await codeRef.once('value')).val();
+  let oldProject=null;
+  if(previous?.payload){
+   oldProject=JSON.parse(previous.payload);
+   if(!Array.isArray(oldProject?.objects))throw Error('서버 기존 코드 형식 오류 · 원본 보호를 위해 저장하지 않습니다.');
+  }
+  // Check the ACTUAL cloud payload, not only the previously selected draft.
+  // An import failure must not silently replace earlier student work.
+  const referenceBytes=Math.max(projectScriptBytes(projectToRestore),
+    projectScriptBytes(localRestore()?.project),projectScriptBytes(oldProject));
+  if(isSuspiciousLoss(referenceBytes,newScriptBytes)){
+   if(reason==='auto')throw Error('저장 블록이 크게 감소하여 자동 덮어쓰기를 차단했습니다.');
+   if(!window.confirm('기존 코드의 절반 이상이 없어졌습니다.\\n직접 블록을 대량 삭제했나요?\\n[취소]를 눌러 이전 블록을 보호하세요.'))
+    throw Error('블록이 급감한 저장을 취소했습니다.');
+  }
+  if(newScriptBytes===0&&referenceBytes>0)
+   throw Error('빈 코드로 기존 프로젝트를 덮어쓰지 않도록 저장을 차단했습니다.');
+  if(oldProject && projectScriptBytes(oldProject)>projectScriptBytes(localRestore()?.project))
+   localBackUp(oldProject);
+  localBackUp(project);
   await codeRef.set({payload:encoded,updatedAt:fb.database.ServerValue.TIMESTAMP,updatedBy:user.uid});
   if(reason!=='auto'){
     const readback=(await codeRef.once('value')).val();
@@ -823,7 +831,7 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
    try{designOK=designReady?(await callbacks.flushDesign?.(true))!==false:true}
    catch(e){designOK=false;note('⚠ 센서 설계 저장 오류: '+String(e.message||e))}
    const progressOK=n===0||await saveProgress(n);
-   const codeOK=!readyToSave||await saveNow('manual');
+   const codeOK=readyToSave ? await saveNow('manual') : !opts.isLayerOpen?.();
    if(designOK&&progressOK&&codeOK)note('✓ 미션 진행도·센서 설계·엔트리 코드 저장 완료');
    else note('⚠ 일부 저장 실패: '+[!designOK?'센서 설계':null,!progressOK?'미션 진행도':null,!codeOK?'엔트리 코드':null].filter(Boolean).join('·'));
  };$('np-board-button').onclick=()=>showBoard(false);
