@@ -677,10 +677,12 @@ async function saveProgress(n){
  const path=teacherSave?teacherPath():teamPath(team.c,team.g);
  let newOK=false,legacyOK=false,saveError=null;
  try{
-  const tx=await db.ref(path+'/progressV3').transaction(old=>({
-   completed:Math.max(Number(old?.completed)||0,value),
-   schemaVersion:3,updatedAt:fb.database.ServerValue.TIMESTAMP
-  }),()=>{},false);
+  const tx=await db.ref(path+'/progressV3').transaction(old=>{
+   // Rechecking the same milestone must not move the first-reached timestamp.
+   const completed=Number(old?.completed)||0;
+   if(completed>=value)return;
+   return {completed:value,schemaVersion:3,updatedAt:fb.database.ServerValue.TIMESTAMP};
+  },()=>{},false);
   newOK=!!tx.committed&&Number(tx.snapshot?.val()?.completed)>=value;
   if(!newOK)saveError=new Error('서버에서 진행도 저장을 확인할 수 없습니다.');
  }catch(error){saveError=error;}
@@ -785,23 +787,33 @@ function boardCards(data,c){
   const rawProgress=Number(d.progress?.completed)||0;
   const oldAligned=Number(d.progress?.updatedAt)>=PROGRESS_FALLBACK_SINCE?rawProgress:d.progress?.schemaVersion===2?rawProgress:(rawProgress>=2?rawProgress+1:rawProgress);
   const progressV3=d.progressV3;
-  const value=Math.max(0,Math.min(missionTotal,Math.max(Number(progressV3?.completed)||0,Math.min(4,oldAligned))));
+  const v3Completed=Number(progressV3?.completed)||0;
+  const legacyCompleted=Math.min(4,oldAligned);
+  const value=Math.max(0,Math.min(missionTotal,Math.max(v3Completed,legacyCompleted)));
+  // Milestone timestamps only count if they belong to the CURRENT stage.
+  // The legacy field may preserve an earlier reached time for stages 1-4.
+  const reachedTimes=[];
+  if(value>0&&v3Completed===value&&Number(progressV3?.updatedAt)>0)
+   reachedTimes.push(Number(progressV3.updatedAt));
+  if(value>0&&legacyCompleted===value&&Number(d.progress?.updatedAt)>0)
+   reachedTimes.push(Number(d.progress.updatedAt));
+  const reachedAt=reachedTimes.length?Math.min(...reachedTimes):null;
   const flood=d.floodBest||null,floodScore=scoreOf(flood);
   const mission5=d.mission5NoListBest||null,mission5Score=scoreOf(mission5);
   // Legacy key "mission5Best" held the old FINAL/100-run result.
   const final=d.finalBest||d.mission5Best||null,finalScore=scoreOf(final);
   const members=Object.values(mem).filter(x=>x?.uid);
-  const firstJoin=Math.min(...members.map(x=>Number(x.joinedAt)).filter(n=>Number.isFinite(n)&&n>0));
-  const finished=Number(progressV3?.updatedAt||d.progress?.updatedAt);
-  const duration=Number.isFinite(firstJoin)&&Number.isFinite(finished)&&finished>=firstJoin?finished-firstJoin:null;
-  entries.push({g,mem,value,flood,floodScore,mission5,mission5Score,final,finalScore,
-    duration,hasTeam:members.length>0,mine:team?.c===c&&team?.g===g});
+  entries.push({g,mem,value,reachedAt,flood,floodScore,mission5,mission5Score,final,finalScore,
+    hasTeam:members.length>0,mine:team?.c===c&&team?.g===g});
  }
  // An unattempted score is 0 for ranking, but still displays as '미응시' in the board.
  // FINAL is always first. SEMI FINAL is used while no group has completed mission 6.
  // Mission progress outranks formative assessment; formative scores break ties only before
  // anyone has completed any programming mission.
- const participants=entries.filter(e=>e.hasTeam);
+ // An existing group may have recorded progress even if member registrations
+ // were later cleared. Its activity still qualifies for the medal.
+ const participants=entries.filter(e=>e.hasTeam||e.value>0||e.finalScore!==null||
+  e.mission5Score!==null||e.floodScore!==null);
  const hasMission6Plus=participants.some(e=>e.value>=6);
  const anyMissionCompleted=participants.some(e=>e.value>0);
  const ranked=participants.sort((a,b)=>{
@@ -816,7 +828,14 @@ function boardCards(data,c){
    const floodDiff=(b.floodScore??0)-(a.floodScore??0);
    if(floodDiff!==0)return floodDiff;
   }
-  if(a.duration!==null&&b.duration!==null&&a.duration!==b.duration)return a.duration-b.duration;
+  if(a.value>0&&a.value===b.value){
+   // Reached the same mission? The earlier timestamp wins.
+   if(a.reachedAt!==null&&b.reachedAt!==null&&a.reachedAt!==b.reachedAt)
+    return a.reachedAt-b.reachedAt;
+   // Missing timestamps cannot be claimed to be faster than known ones.
+   if(a.reachedAt===null&&b.reachedAt!==null)return 1;
+   if(b.reachedAt===null&&a.reachedAt!==null)return -1;
+  }
   return a.g-b.g;
  });
  // A group with only mission progress must still get the first-place medal.
@@ -843,7 +862,7 @@ function clearBoard(){if(boardListener){boardListener.ref.off('value',boardListe
 function loadBoard(){if(!user||!db)return;$('np-board-msg').textContent='현황을 불러오는 중…';const c=Number($('np-board-class').value);clearBoard();if(!valid(c,1))return;
  const ref=db.ref(`${ROOT}/c${c}/teams`);const cb=snap=>{ $('np-board-msg').textContent=''; if(board.classList.contains('show')&&Number($('np-board-class').value)===c)boardCards(snap.val()||{},c)};
  ref.on('value',cb,err=>{ $('np-grid').innerHTML=''; $('np-board-msg').textContent='현황판 접근 실패: '+err.message+'\nFirebase 콘솔 → Realtime Database → 규칙에서 v3.0 firebase.rules.json 전체를 붙여 넣고 [게시]를 눌러야 합니다. 교사 Google UID가 규칙에 포함되어 있는지도 확인하세요.'; });boardListener={ref,cb};
- $('np-board-info').textContent='학교 학생/등록 교사 Google 계정으로만 조회 · '+c+'반 15개 조 · 금메달 순서: FINAL → (미션 6 완료 전) SEMI FINAL → 미션 진행도 → (모두 미션 미완료 시) 형성평가';
+ $('np-board-info').textContent='학교 학생/등록 교사 Google 계정으로만 조회 · '+c+'반 15개 조 · 금메달 순서: FINAL → (미션 6 완료 전) SEMI FINAL → 미션 진행도(동점 시 먼저 도달한 조) → (모두 미션 미완료 시) 형성평가';
 }
 // Teacher removes one group membership without needing to know Firebase UID.
 async function deleteAdminMember(c,g,slot,button){
