@@ -733,20 +733,35 @@ function boardCards(data,c){
   const firstJoin=Math.min(...members.map(x=>Number(x.joinedAt)).filter(n=>Number.isFinite(n)&&n>0));
   const finished=Number(progressV3?.updatedAt||d.progress?.updatedAt);
   const duration=Number.isFinite(firstJoin)&&Number.isFinite(finished)&&finished>=firstJoin?finished-firstJoin:null;
-  // Score availability takes priority over all other scores: FINAL > M5 > flood.
-  const tier=finalScore!==null?3:mission5Score!==null?2:floodScore!==null?1:0;
-  const qualifyingScore=tier===3?finalScore:tier===2?mission5Score:tier===1?floodScore:null;
   entries.push({g,mem,value,flood,floodScore,mission5,mission5Score,final,finalScore,
-    tier,qualifyingScore,duration,hasTeam:members.length>0,mine:team?.c===c&&team?.g===g});
+    duration,hasTeam:members.length>0,mine:team?.c===c&&team?.g===g});
  }
- const ranked=entries.filter(e=>e.hasTeam).sort((a,b)=>{
-  if(a.tier!==b.tier)return b.tier-a.tier;
-  if(a.qualifyingScore!==b.qualifyingScore)return (b.qualifyingScore??-1)-(a.qualifyingScore??-1);
+ // An unattempted score is 0 for ranking, but still displays as '미응시' in the board.
+ // FINAL is always first. SEMI FINAL is used while no group has completed mission 6.
+ // Mission progress outranks formative assessment; formative scores break ties only before
+ // anyone has completed any programming mission.
+ const participants=entries.filter(e=>e.hasTeam);
+ const hasMission6Plus=participants.some(e=>e.value>=6);
+ const anyMissionCompleted=participants.some(e=>e.value>0);
+ const ranked=participants.sort((a,b)=>{
+  const finalDiff=(b.finalScore??0)-(a.finalScore??0);
+  if(finalDiff!==0)return finalDiff;
+  if(!hasMission6Plus){
+   const semiDiff=(b.mission5Score??0)-(a.mission5Score??0);
+   if(semiDiff!==0)return semiDiff;
+  }
   if(a.value!==b.value)return b.value-a.value;
+  if(!anyMissionCompleted){
+   const floodDiff=(b.floodScore??0)-(a.floodScore??0);
+   if(floodDiff!==0)return floodDiff;
+  }
   if(a.duration!==null&&b.duration!==null&&a.duration!==b.duration)return a.duration-b.duration;
   return a.g-b.g;
  });
- const gold=ranked[0]?.tier>0?ranked[0].g:null;
+ // A group with only mission progress must still get the first-place medal.
+ // No medal is awarded to a class with no recorded activity at all.
+ const first=ranked[0];
+ const gold=first&&(first.value>0||first.finalScore!==null||first.mission5Score!==null||first.floodScore!==null)?first.g:null;
  let html='';
  for(const e of entries){
   const {g,mem,value,flood,floodScore,mission5,mission5Score,final,finalScore,mine}=e;
@@ -767,7 +782,7 @@ function clearBoard(){if(boardListener){boardListener.ref.off('value',boardListe
 function loadBoard(){if(!user||!db)return;$('np-board-msg').textContent='현황을 불러오는 중…';const c=Number($('np-board-class').value);clearBoard();if(!valid(c,1))return;
  const ref=db.ref(`${ROOT}/c${c}/teams`);const cb=snap=>{ $('np-board-msg').textContent=''; if(board.classList.contains('show')&&Number($('np-board-class').value)===c)boardCards(snap.val()||{},c)};
  ref.on('value',cb,err=>{ $('np-grid').innerHTML=''; $('np-board-msg').textContent='현황판 접근 실패: '+err.message+'\nFirebase 콘솔 → Realtime Database → 규칙에서 v3.0 firebase.rules.json 전체를 붙여 넣고 [게시]를 눌러야 합니다. 교사 Google UID가 규칙에 포함되어 있는지도 확인하세요.'; });boardListener={ref,cb};
- $('np-board-info').textContent='학교 학생/등록 교사 Google 계정으로만 조회 · '+c+'반 15개 조 · 금메달 순서: FINAL → SEMI FINAL → 형성평가';
+ $('np-board-info').textContent='학교 학생/등록 교사 Google 계정으로만 조회 · '+c+'반 15개 조 · 금메달 순서: FINAL → (미션 6 완료 전) SEMI FINAL → 미션 진행도 → (모두 미션 미완료 시) 형성평가';
 }
 // Teacher removes one group membership without needing to know Firebase UID.
 async function deleteAdminMember(c,g,slot,button){
