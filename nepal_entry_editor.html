@@ -1300,12 +1300,22 @@ function nepalWriteDraft(project){
   const payload=JSON.stringify(project);
   if(payload.length>1250000||payload===nepalLastDraft)return false;
   const older=JSON.parse(localStorage.getItem(nepalDraftKey)||'null');
-  if(nepalScriptBytes(older?.project)>20 && nepalScriptBytes(project)===0){
-    console.warn('[NEPAL] 기존 작성 블록이 없어 보이는 임시저장 덮어쓰기 차단');
+  const recoveryKey=nepalDraftKey+':recovery';
+  const recovery=JSON.parse(localStorage.getItem(recoveryKey)||'null');
+  const previousBytes=Math.max(nepalScriptBytes(older?.project),nepalScriptBytes(recovery?.project));
+  const nextBytes=nepalScriptBytes(project);
+  if(previousBytes>100&&previousBytes-nextBytes>=100&&nextBytes<previousBytes*.55){
+    console.warn('[NEPAL] 불완전한 내보내기로 코드 백업이 사라지는 것을 차단');
     return false;
   }
-  localStorage.setItem(nepalDraftKey,JSON.stringify({project,updatedAt:Date.now()}));
+  const snapshot={project,updatedAt:Date.now()};
+  localStorage.setItem(nepalDraftKey,JSON.stringify(snapshot));
   nepalLastDraft=payload;
+  // Independent second copy: do not overwrite it with a smaller export.
+  if(nextBytes>nepalScriptBytes(recovery?.project)){
+    try{localStorage.setItem(recoveryKey,JSON.stringify(snapshot))}
+    catch(error){console.warn('[NEPAL] 추가 복구 사본 공간 부족',error)}
+  }
   return true;
  }catch(e){console.warn('[NEPAL] 임시 블록 저장 실패:',e);return false}
 }
@@ -1379,13 +1389,13 @@ window.addEventListener('message',async e=>{
    // Busy classroom devices may finish generating EntryJS objects after loadProject.
    // Verify in several short attempts rather than checking one arbitrary frame.
    for(let attempt=0;expectedBytes>20&&
-       (scriptBytes<Math.min(20,expectedBytes*.2)||view.total===0)&&attempt<8;attempt++){
+       (scriptBytes<Math.max(20,expectedBytes*.55)||view.total===0)&&attempt<8;attempt++){
      await wait(350);
      view=nepalFocusAuthoredObject();
      restored=await Promise.resolve(window.Entry.exportProject());
      scriptBytes=nepalScriptBytes(restored);
    }
-   if(expectedBytes>20&&(scriptBytes<Math.min(20,expectedBytes*.2)||view.total===0))
+   if(expectedBytes>20&&(scriptBytes<Math.max(20,expectedBytes*.55)||view.total===0))
      throw Error('기존에 작성한 블록이 실제 편집 작업 공간에 복원되지 않았습니다. 자동 저장을 중단합니다.');
    console.info('[NEPAL 복원 검증]',{sourceScriptBytes:expectedBytes,restoredScriptBytes:scriptBytes,liveBlocks:view.total,selectedObject:view.selected});
    notify('ENTRY_PROJECT_IMPORTED',{token:message.token,ok:true,scriptBytes,liveBlocks:view.total,selectedObject:view.selected});
