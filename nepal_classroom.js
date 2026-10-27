@@ -468,6 +468,12 @@ async function closeEditing(){
  let designOK=true;
  try{designOK=designReady?(await callbacks.flushDesign?.(false))!==false:true}
  catch(e){designOK=false;note('⚠ 센서 설계 저장 오류: '+String(e.message||e))}
+ if(!readyToSave&&!restoring){
+  if(!teacherSession)await releaseLock().catch(e=>note('잠금 해제 실패: '+String(e.message||e)));
+  callbacks.closeEditor?.();
+  note('⚠ 복원되지 않은 블록은 온라인에 덮어쓰지 않았습니다. 개발자 모드에 다시 들어와 복원해 주세요.');
+  return true;
+ }
  const codeOK=readyToSave && await saveNow('exit');
  if(!progressOK||!designOK||!codeOK){
   note('⚠ '+[!progressOK?'미션 진행도':null,!designOK?'센서 설계':null,!codeOK?'엔트리 코드':null].filter(Boolean).join('·')+' 저장 실패. 편집기를 그대로 유지했습니다. 다시 시도하세요.');
