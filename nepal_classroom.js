@@ -139,8 +139,23 @@ function teamPath(c,g){return `${ROOT}/c${c}/teams/g${g}`}
 function workPath(c,g){return `${PRIVATE}/c${c}/teams/g${g}`}
 function teacherPath(){return user&&requireTeacher(user)?'nepal-v27/private/teacherWork/'+user.uid:null}
 function backupKey(){return guestActive||!user?null:requireTeacher(user)?BACKUP+user.uid+':teacher':team?BACKUP+user.uid+':c'+team.c+'g'+team.g:null}
-function localBackUp(project){const key=backupKey();if(!key)return;try{localStorage.setItem(key,JSON.stringify({project,updatedAt:Date.now()}))}catch(e){console.warn('로컬 보조 백업 공간 부족',e)}}
+function localBackUp(project){
+ const key=backupKey();if(!key||!Array.isArray(project?.objects))return;
+ try{
+  const current=localRestore(),recovery=localRecovery();
+  const richest=[current,recovery].filter(x=>Array.isArray(x?.project?.objects))
+   .sort((x,y)=>projectScriptBytes(y.project)-projectScriptBytes(x.project))[0];
+  if(richest&&projectScriptBytes(richest.project)>projectScriptBytes(recovery?.project))
+   localStorage.setItem(key+':recovery',JSON.stringify(richest));
+  if(isSuspiciousLoss(projectScriptBytes(current?.project),projectScriptBytes(project)))return;
+  const snapshot={project,updatedAt:Date.now()};
+  localStorage.setItem(key,JSON.stringify(snapshot));
+  if(projectScriptBytes(project)>projectScriptBytes(richest?.project))
+   localStorage.setItem(key+':recovery',JSON.stringify(snapshot));
+ }catch(e){console.warn('로컬 엔트리 코드 백업 오류:',e)}
+}
 function localRestore(){try{const key=backupKey();return key?JSON.parse(localStorage.getItem(key)||'null'):null}catch(_){return null}}
+function localRecovery(){try{const key=backupKey();return key?JSON.parse(localStorage.getItem(key+':recovery')||'null'):null}catch(_){return null}}
 // Only measure EntryJS code-bearing fields. Objects can contain sprite media
 // even if their actual programming scripts are empty.
 // Detect unexpectedly truncated exports, even when some blocks remain.
@@ -163,7 +178,8 @@ function latestProject(cloud,local){
  const draft=local?.project;
  const candidates=[
   {name:'온라인 코드',value:remote,time:Number(cloud?.updatedAt)||0},
-  {name:'브라우저 임시 저장본',value:draft,time:Number(local?.updatedAt)||0}
+  {name:'브라우저 임시 저장본',value:draft,time:Number(local?.updatedAt)||0},
+  {name:'블록 복구 사본',value:localRecovery()?.project,time:Number(localRecovery()?.updatedAt)||0}
  ].filter(x=>Array.isArray(x.value?.objects));
  if(!candidates.length)return null;
  const richer=candidates.reduce((a,b)=>projectScriptBytes(a.value)>=projectScriptBytes(b.value)?a:b);
@@ -545,12 +561,12 @@ function rpc(action,project){return new Promise((resolve,reject)=>{
  const p={resolve,reject,token,timeout};if(action==='export')exportPending=p;else importPending=p;
  callbacks.iframe.contentWindow?.postMessage(action==='export'?{type:'NEPAL_EXPORT_PROJECT',token}:{type:'NEPAL_IMPORT_PROJECT',token,project},location.origin);
 })}
-async function onEntryReady(){if(guestActive)return;if(requireTeacher(user)){if(!designReady)return;}else if(!team||!editorLockHeld)return;readyToSave=false;restoring=true;
+async function onEntryReady(){if(guestActive)return true;if(requireTeacher(user)){if(!designReady)return false;}else if(!team||!editorLockHeld)return false;readyToSave=false;restoring=true;
  try{if(projectToRestore?.objects&&Array.isArray(projectToRestore.objects)){
     note('저장된 엔트리 블록을 복원하는 중…');
     const imported=await rpc('import',projectToRestore);
     const desiredBytes=projectScriptBytes(projectToRestore);
-    if(desiredBytes>20 && Number(imported?.scriptBytes||0)<Math.min(20,desiredBytes*.2))
+    if(desiredBytes>20 && Number(imported?.scriptBytes||0)<Math.max(20,desiredBytes*.55))
       throw Error('저장된 코딩 블록의 복원이 확인되지 않았습니다. 원본 보호를 위해 온라인 자동 저장을 중단합니다.');
     note('✓ 엔트리 블록 복원 확인 · 화면에 '+Number(imported?.liveBlocks||0)+'개 블록 · 코드 '+desiredBytes+'자');
   }
@@ -562,7 +578,9 @@ async function onEntryReady(){if(guestActive)return;if(requireTeacher(user)){if(
    const key=backupKey();
    if(key)callbacks.iframe.contentWindow?.postMessage({type:'NEPAL_DRAFT_BACKUP_KEY',key},location.origin);
   }
- }}
+ }
+ return readyToSave;
+}
 async function saveNow(reason='manual'){
  if(guestActive){if(reason==='manual')note('🌐 게스트 모드는 저장하지 않습니다. 학교 계정으로 로그인하면 조별 저장을 사용할 수 있습니다.');return false}
  const teacherSave=requireTeacher(user)&&sessionActive;
@@ -593,7 +611,7 @@ async function saveNow(reason='manual'){
   // Check the ACTUAL cloud payload, not only the previously selected draft.
   // An import failure must not silently replace earlier student work.
   const referenceBytes=Math.max(projectScriptBytes(projectToRestore),
-    projectScriptBytes(localRestore()?.project),projectScriptBytes(oldProject));
+    projectScriptBytes(localRestore()?.project),projectScriptBytes(localRecovery()?.project),projectScriptBytes(oldProject));
   if(isSuspiciousLoss(referenceBytes,newScriptBytes)){
    if(reason==='auto')throw Error('저장 블록이 크게 감소하여 자동 덮어쓰기를 차단했습니다.');
    if(!window.confirm('기존 코드의 절반 이상이 없어졌습니다.\\n직접 블록을 대량 삭제했나요?\\n[취소]를 눌러 이전 블록을 보호하세요.'))
