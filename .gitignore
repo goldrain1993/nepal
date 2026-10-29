@@ -1,0 +1,12 @@
+# Local secrets & Firebase deployment artifacts
+.env
+.env.*
+!.env.example
+.firebase/
+.firebase-debug.log
+firebase-debug.log
+functions/node_modules/
+functions/.env
+functions/.env.*
+functions/.secret.local
+node_modules/
