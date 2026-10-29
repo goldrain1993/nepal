@@ -99,7 +99,30 @@ async function submit(){
 }
 async function teacherOpen(t){
  shell('📊 수행평가 제출·채점 현황','최종 제출본을 확인하고 AI 채점 제안을 참고하여 교사가 점수를 확정합니다.');
- el('na-body').innerHTML='<div class="na-card">AI 점수는 학생에게 공개되지 않습니다. 교사가 [AI 1차 채점]을 누른 경우에만 서버를 호출합니다. 서버 미배포 시에는 교사 직접 채점이 가능합니다.</div><div class="na-card"><h3>학생 제출 목록</h3><div id="na-roster">조회 중…</div></div><div id="na-review"></div>';
+ el('na-body').innerHTML='<div class="na-card"><h3>🛡 학생 제출 공개 설정</h3><p>처음에는 학생에게 수행평가 버튼이 보이지 않습니다. 시험 제출과 Firebase 권한 확인을 마친 뒤 학생 제출을 열어 주세요.</p><button class="na-btn" id="na-publish" type="button">설정 확인 중…</button><div id="na-publish-state" class="na-muted"></div></div><div class="na-card">AI 점수는 학생에게 공개되지 않습니다. 교사가 [AI 1차 채점]을 누른 경우에만 서버를 호출합니다. 서버 미배포 시에는 교사 직접 채점이 가능합니다.</div><div class="na-card"><h3>학생 제출 목록</h3><div id="na-roster">조회 중…</div></div><div id="na-review"></div>';
+ let enabled=false;
+ const configRef=ctx.db.ref(ROOT+'/config/enabled');
+ const publish=el('na-publish'),status=el('na-publish-state');
+ publish.disabled=true;
+ try{
+  const enabledSnap=await configRef.once('value');
+  enabled=enabledSnap.val()===true;
+  status.textContent=enabled?'학생 제출 공개 중':'학생에게 아직 비공개 상태입니다.';
+  publish.textContent=enabled?'⛔ 학생 제출 닫기':'📢 학생 제출 열기';
+  publish.disabled=false;
+  publish.onclick=async()=>{
+   if(!confirm(enabled?'학생이 새롭게 제출 화면에 접근하지 못하도록 닫을까요?\n기존 제출 기록은 보존됩니다.':'학생에게 수행평가 작성·제출 화면을 공개할까요?\nFirebase 보안 규칙과 제출 흐름을 먼저 확인해 주세요.'))return;
+   publish.disabled=true;
+   try{
+    await configRef.set(!enabled);
+    enabled=!enabled;
+    status.textContent=enabled?'학생 제출 공개 중':'학생에게 아직 비공개 상태입니다.';
+    publish.textContent=enabled?'⛔ 학생 제출 닫기':'📢 학생 제출 열기';
+    message(enabled?'✓ 학생 수행평가 제출 기능을 열었습니다.':'✓ 학생 수행평가 제출 기능을 닫았습니다.');
+   }catch(e){message('공개 설정 실패: '+String(e.code||e.message||e))}
+   finally{publish.disabled=false}
+  };
+ }catch(e){publish.textContent='Firebase 규칙 게시 후 공개 설정 가능';status.textContent='설정 조회 실패: '+String(e.code||e.message||e)}
  try{
   const snap=await ctx.db.ref(ROOT+'/index').once('value');
   if(t!==token)return;
