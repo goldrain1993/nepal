@@ -143,6 +143,7 @@ function src(url){return new Promise((resolve,reject)=>{const s=document.createE
 let fb=null,db=null,auth=null,user=null,schoolDomain='',teacherUids=[],initError='',initDone=false;
 let requestedRole='student',authRole=null,loginBusy=false;
 let guestActive=false;
+let assessmentEnabled=false;
 let sessionActive=false;
 const TEACHER_SESSION_KEY='nepal-v27-teacher-tab-session';
 function readTeacherSession(){try{const s=JSON.parse(sessionStorage.getItem(TEACHER_SESSION_KEY)||'null');return s?.role==='teacher'&&typeof s.uid==='string'?s:null}catch(_){return null}}
@@ -329,6 +330,10 @@ async function init(){
   await auth.setPersistence(fb.auth.Auth.Persistence.LOCAL);
   await new Promise(resolve=>{const off=auth.onAuthStateChanged(u=>{syncAuth(u);resolve();off();},e=>{initError=e.message;resolve();});});
   auth.onAuthStateChanged(syncAuth);
+  // Student-facing assessment stays hidden until the teacher explicitly opens it.
+  db.ref('nepal-v27/private/assessments/config/enabled').on('value',snap=>{
+   assessmentEnabled=snap.val()===true;refreshButtons();
+  },error=>{assessmentEnabled=false;refreshButtons();console.warn('수행평가 공개 설정:',error)});
   if(guestActive&&auth.currentUser)await auth.signOut();
  }catch(e){initError=String(e.message||e);console.error('NEPAL Firebase 초기화 오류:',e)}
  finally{initDone=true;refreshButtons()}
@@ -341,7 +346,9 @@ function refreshButtons(){
  const save=$('np-save'),boardButton=$('np-board-button'),changeButton=$('np-change'),assessmentButton=$('np-assessment');
  if(save){const hasWorkspace=!!(team||requireTeacher(user)&&designReady);save.disabled=guestActive||!hasWorkspace;save.style.display=sessionVisible&&hasWorkspace?'':'none';save.textContent='💾 저장'}
  if(boardButton){boardButton.disabled=guestActive;boardButton.style.display=signedIn?'':'none'}
- if(assessmentButton)assessmentButton.style.display=signedIn?'':'none';
+ if(assessmentButton)assessmentButton.style.display=signedIn&&(requireTeacher(user)||assessmentEnabled)?'':'none';
+ const boardAssessment=$('np-board-assessment');
+ if(boardAssessment)boardAssessment.style.display=signedIn&&(requireTeacher(user)||assessmentEnabled)?'':'none';
  if(changeButton){changeButton.style.display=(signedIn||guestActive&&sessionVisible)?'':'none';changeButton.textContent=guestActive?'🌐 게스트 모드 종료':'🚪 로그아웃'}
  const floatingBoard=$('nepal-class-board'),floatingLogout=$('nepal-class-switch'),trigger=$('nepal-entry-trigger');
  if(floatingBoard)floatingBoard.style.display=signedIn?'':'none';
@@ -1043,6 +1050,9 @@ let assessmentModuleLoading=null;
 async function openAssessment(){
  if(!user||guestActive||!sessionActive||!(team||requireTeacher(user))){
   note('학교 계정으로 로그인한 후 수행평가를 열어 주세요.');return;
+ }
+ if(!requireTeacher(user)&&!assessmentEnabled){
+  note('수행평가는 선생님이 시작할 때 열립니다.');return;
  }
  try{
   await initReady;
