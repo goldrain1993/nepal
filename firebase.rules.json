@@ -359,6 +359,13 @@
             "$uid": {
               ".write": false
             }
+          },
+          "config": {
+            "enabled": {
+              ".read": "(auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr')) || (auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.uid === 'GIoPe92By9esQ6H0KcJjvYoPiyN2' && auth.token.email.toLowerCase() === 'goldrain1993@gmail.com')",
+              ".write": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.uid === 'GIoPe92By9esQ6H0KcJjvYoPiyN2' && auth.token.email.toLowerCase() === 'goldrain1993@gmail.com'",
+              ".validate": "newData.isBoolean()"
+            }
           }
         }
       }
