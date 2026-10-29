@@ -296,9 +296,6 @@
                 "aiUse": {
                   ".validate": "newData.isString() && newData.val().length <= 1300"
                 }
-              },
-              "$other": {
-                ".validate": false
               }
             }
           },
@@ -339,9 +336,6 @@
                 "aiUse": {
                   ".validate": "newData.isString() && newData.val().length <= 1300"
                 }
-              },
-              "$other": {
-                ".validate": false
               }
             }
           },
@@ -350,20 +344,14 @@
             "$uid": {
               ".read": "((auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr')) && auth.uid === $uid)",
               ".write": "((auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr')) && auth.uid === $uid) && !data.exists() && newData.exists()",
-              ".validate": "newData.hasChildren(['classId','groupId','displayName','submittedAt','codeBytes']) && newData.child('classId').isString() && newData.child('classId').val().matches(/^c([1-9]|1[01])$/) && newData.child('groupId').isString() && newData.child('groupId').val().matches(/^g([1-9]|[12][0-9]|30)$/) && newData.child('displayName').isString() && newData.child('displayName').val().length <= 60 && newData.child('codeBytes').isNumber() && newData.child('codeBytes').val() >= 1 && newData.child('codeBytes').val() <= 1250000 && newData.child('submittedAt').isNumber()",
-              "$other": {
-                ".validate": false
-              }
+              ".validate": "newData.hasChildren(['classId','groupId','displayName','submittedAt','codeBytes']) && newData.child('classId').isString() && newData.child('classId').val().matches(/^c([1-9]|1[01])$/) && newData.child('groupId').isString() && newData.child('groupId').val().matches(/^g([1-9]|[12][0-9]|30)$/) && newData.child('displayName').isString() && newData.child('displayName').val().length <= 60 && newData.child('codeBytes').isNumber() && newData.child('codeBytes').val() >= 1 && newData.child('codeBytes').val() <= 1250000 && newData.child('submittedAt').isNumber()"
             }
           },
           "reviews": {
             ".read": "(auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.uid === 'GIoPe92By9esQ6H0KcJjvYoPiyN2' && auth.token.email.toLowerCase() === 'goldrain1993@gmail.com')",
             "$uid": {
               ".write": "(auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.uid === 'GIoPe92By9esQ6H0KcJjvYoPiyN2' && auth.token.email.toLowerCase() === 'goldrain1993@gmail.com')",
-              ".validate": "newData.hasChildren(['design','implementation','report','note','reviewedAt','reviewedBy']) && (newData.child('design').val() === 30 || newData.child('design').val() === 25 || newData.child('design').val() === 20 || newData.child('design').val() === 15) && (newData.child('implementation').val() === 30 || newData.child('implementation').val() === 25 || newData.child('implementation').val() === 20 || newData.child('implementation').val() === 15) && (newData.child('report').val() === 40 || newData.child('report').val() === 30 || newData.child('report').val() === 20 || newData.child('report').val() === 10) && newData.child('note').isString() && newData.child('note').val().length <= 2400 && newData.child('reviewedBy').val() === auth.uid && newData.child('reviewedAt').isNumber()",
-              "$other": {
-                ".validate": false
-              }
+              ".validate": "newData.hasChildren(['design','implementation','report','note','reviewedAt','reviewedBy']) && (newData.child('design').val() === 30 || newData.child('design').val() === 25 || newData.child('design').val() === 20 || newData.child('design').val() === 15) && (newData.child('implementation').val() === 30 || newData.child('implementation').val() === 25 || newData.child('implementation').val() === 20 || newData.child('implementation').val() === 15) && (newData.child('report').val() === 40 || newData.child('report').val() === 30 || newData.child('report').val() === 20 || newData.child('report').val() === 10) && newData.child('note').isString() && newData.child('note').val().length <= 2400 && newData.child('reviewedBy').val() === auth.uid && newData.child('reviewedAt').isNumber()"
             }
           },
           "aiReviews": {
