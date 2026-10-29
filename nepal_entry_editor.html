@@ -645,7 +645,7 @@ async function testContinuousRiskScenarios(scenarios,expectedForScenario,label){
        const issue=measurements.length?
          `「${measurements.join('」·「')}」에 저장된 값이 각 센서의 측정값과 다릅니다. 센서마다 서로 다른 측정값을 올바르게 읽는지 확인해 보세요.`:
          risks.length?`「${risks.join('」·「')}」의 안전·위험 판단이 측정값과 맞지 않습니다. 기준값 경계에서도 올바르게 판단하는지 확인해 보세요.`:
-         '센서가 변한 뒤에도 일부 결과가 제때 바뀌지 않았습니다. 측정과 위험 판단이 계속 갱신되는지 확인해 보세요.';
+         '센서가 변한 뒤에도 일부 결과가 제때 바뀌지 않았습니다. 측정값과 위험 판단 결과가 계속 바뀌는지 확인해 보세요.';
        details.push(issue);
        return {ok:false,details,studentFeedback:issue,failedStep:i+1};
      }
@@ -790,7 +790,7 @@ async function checkChosenAlarmN(requireList=false){
  async function probe(readings){
    Object.assign(nepalTestValues,readings);
    const ready=await waitForValues(()=>NEPAL_SENSOR_ORDER.every((key,i)=>numericMatches(readVar(valueVars[i]),readings[key])),5000);
-   if(!ready)throw Error('실시간 센서값이 반복해서 갱신되지 않습니다. 「계속 반복하기」의 센서값 저장을 확인하세요.');
+   if(!ready)throw Error('실시간 센서값이 계속 바뀌지 않습니다. 「계속 반복하기」의 센서값 저장을 확인하세요.');
    await wait(260);
    const values=riskVars.map(name=>Number(readVar(name)));
    if(values.some((val,i)=>readVar(riskVars[i])==='' || !Number.isFinite(val) || (val!==0&&val!==1)))
