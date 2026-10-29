@@ -60,8 +60,16 @@ exports.gradeNepalAssessment=onCall({
  try{
   const submitted=(await root.child('submissions/'+uid).once('value')).val();
   if(!submitted?.fields||!submitted.codeSnapshot)throw new HttpsError('not-found','제출된 수행평가 자료가 없습니다.');
-  const safeFields=Object.fromEntries(Object.entries(submitted.fields).map(([k,v])=>[k,anonymize(v)]));
+  // Remove the submitted student's displayed name as well as common contact patterns.
+  const displayName=String(submitted.displayName||'').trim();
+  const scrub=v=>{
+   let text=anonymize(v);
+   if(displayName.length>=2)text=text.split(displayName).join('[학생]');
+   return text;
+  };
+  const safeFields=Object.fromEntries(Object.entries(submitted.fields).map(([k,v])=>[k,scrub(v)]));
   const evidence=codeEvidence(submitted.codeSnapshot);
+  if(evidence.scriptsExcerpt)evidence.scriptsExcerpt=scrub(evidence.scriptsExcerpt);
   const publicRef='nepal-v27/public/classes/'+submitted.classId+'/teams/'+submitted.groupId;
   const [finalSnap,semiSnap,progressSnap]=await Promise.all([
    db.ref(publicRef+'/finalBest').once('value'),
