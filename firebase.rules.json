@@ -257,6 +257,121 @@
               ".validate": false
             }
           }
+        },
+        "assessments": {
+          "drafts": {
+            "$uid": {
+              ".read": "((auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr')) && auth.uid === $uid)",
+              ".write": "((auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr')) && auth.uid === $uid) && newData.exists()",
+              ".validate": "newData.hasChildren(['classId','groupId','fields','updatedAt']) && newData.child('classId').isString() && newData.child('groupId').isString() && newData.child('updatedAt').isNumber()",
+              "fields": {
+                ".validate": "newData.hasChildren(['purpose','io','scenes','algorithm','functions','test1','test2','changes','contribution','aiUse'])",
+                "purpose": {
+                  ".validate": "newData.isString() && newData.val().length <= 1600"
+                },
+                "io": {
+                  ".validate": "newData.isString() && newData.val().length <= 1700"
+                },
+                "scenes": {
+                  ".validate": "newData.isString() && newData.val().length <= 1700"
+                },
+                "algorithm": {
+                  ".validate": "newData.isString() && newData.val().length <= 2300"
+                },
+                "functions": {
+                  ".validate": "newData.isString() && newData.val().length <= 2400"
+                },
+                "test1": {
+                  ".validate": "newData.isString() && newData.val().length <= 1500"
+                },
+                "test2": {
+                  ".validate": "newData.isString() && newData.val().length <= 1500"
+                },
+                "changes": {
+                  ".validate": "newData.isString() && newData.val().length <= 1800"
+                },
+                "contribution": {
+                  ".validate": "newData.isString() && newData.val().length <= 1300"
+                },
+                "aiUse": {
+                  ".validate": "newData.isString() && newData.val().length <= 1300"
+                }
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "submissions": {
+            "$uid": {
+              ".read": "(((auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr')) && auth.uid === $uid)) || (auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.uid === 'GIoPe92By9esQ6H0KcJjvYoPiyN2' && auth.token.email.toLowerCase() === 'goldrain1993@gmail.com')",
+              ".write": "((auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr')) && auth.uid === $uid) && !data.exists() && newData.exists() && (root.child('nepal-v27/public/classes/'+newData.child('classId').val()+'/teams/'+newData.child('groupId').val()+'/members/student1/uid').val() === auth.uid || root.child('nepal-v27/public/classes/'+newData.child('classId').val()+'/teams/'+newData.child('groupId').val()+'/members/student2/uid').val() === auth.uid || root.child('nepal-v27/public/classes/'+newData.child('classId').val()+'/teams/'+newData.child('groupId').val()+'/members/student3/uid').val() === auth.uid)",
+              ".validate": "newData.hasChildren(['classId','groupId','displayName','fields','submittedAt','codeSnapshot','codeBytes','version']) && newData.child('classId').isString() && newData.child('classId').val().matches(/^c([1-9]|1[01])$/) && newData.child('groupId').isString() && newData.child('groupId').val().matches(/^g([1-9]|[12][0-9]|30)$/) && newData.child('displayName').isString() && newData.child('displayName').val().length <= 60 && newData.child('codeSnapshot').isString() && newData.child('codeSnapshot').val().length > 0 && newData.child('codeSnapshot').val().length <= 1250000 && newData.child('codeBytes').isNumber() && newData.child('codeBytes').val() === newData.child('codeSnapshot').val().length && newData.child('submittedAt').isNumber() && newData.child('version').val() === 1",
+              "fields": {
+                ".validate": "newData.hasChildren(['purpose','io','scenes','algorithm','functions','test1','test2','changes','contribution','aiUse'])",
+                "purpose": {
+                  ".validate": "newData.isString() && newData.val().length <= 1600"
+                },
+                "io": {
+                  ".validate": "newData.isString() && newData.val().length <= 1700"
+                },
+                "scenes": {
+                  ".validate": "newData.isString() && newData.val().length <= 1700"
+                },
+                "algorithm": {
+                  ".validate": "newData.isString() && newData.val().length <= 2300"
+                },
+                "functions": {
+                  ".validate": "newData.isString() && newData.val().length <= 2400"
+                },
+                "test1": {
+                  ".validate": "newData.isString() && newData.val().length <= 1500"
+                },
+                "test2": {
+                  ".validate": "newData.isString() && newData.val().length <= 1500"
+                },
+                "changes": {
+                  ".validate": "newData.isString() && newData.val().length <= 1800"
+                },
+                "contribution": {
+                  ".validate": "newData.isString() && newData.val().length <= 1300"
+                },
+                "aiUse": {
+                  ".validate": "newData.isString() && newData.val().length <= 1300"
+                }
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "index": {
+            ".read": "(auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.uid === 'GIoPe92By9esQ6H0KcJjvYoPiyN2' && auth.token.email.toLowerCase() === 'goldrain1993@gmail.com')",
+            "$uid": {
+              ".read": "((auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr')) && auth.uid === $uid)",
+              ".write": "((auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr')) && auth.uid === $uid) && !data.exists() && newData.exists()",
+              ".validate": "newData.hasChildren(['classId','groupId','displayName','fields','submittedAt','codeBytes']) && newData.child('classId').isString() && newData.child('classId').val().matches(/^c([1-9]|1[01])$/) && newData.child('groupId').isString() && newData.child('groupId').val().matches(/^g([1-9]|[12][0-9]|30)$/) && newData.child('displayName').isString() && newData.child('displayName').val().length <= 60 && newData.child('codeBytes').isNumber() && newData.child('codeBytes').val() >= 1 && newData.child('codeBytes').val() <= 1250000 && newData.child('submittedAt').isNumber()",
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "reviews": {
+            ".read": "(auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.uid === 'GIoPe92By9esQ6H0KcJjvYoPiyN2' && auth.token.email.toLowerCase() === 'goldrain1993@gmail.com')",
+            "$uid": {
+              ".write": "(auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.uid === 'GIoPe92By9esQ6H0KcJjvYoPiyN2' && auth.token.email.toLowerCase() === 'goldrain1993@gmail.com')",
+              ".validate": "newData.hasChildren(['design','implementation','report','note','reviewedAt','reviewedBy']) && (newData.child('design').val() === 30 || newData.child('design').val() === 25 || newData.child('design').val() === 20 || newData.child('design').val() === 15) && (newData.child('implementation').val() === 30 || newData.child('implementation').val() === 25 || newData.child('implementation').val() === 20 || newData.child('implementation').val() === 15) && (newData.child('report').val() === 40 || newData.child('report').val() === 30 || newData.child('report').val() === 20 || newData.child('report').val() === 10) && newData.child('note').isString() && newData.child('note').val().length <= 2400 && newData.child('reviewedBy').val() === auth.uid && newData.child('reviewedAt').isNumber()",
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "aiReviews": {
+            ".read": "(auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.uid === 'GIoPe92By9esQ6H0KcJjvYoPiyN2' && auth.token.email.toLowerCase() === 'goldrain1993@gmail.com')",
+            "$uid": {
+              ".write": false
+            }
+          }
         }
       }
     },
