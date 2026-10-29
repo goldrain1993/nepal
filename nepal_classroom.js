@@ -101,7 +101,7 @@ gate.innerHTML=`<div class="np-gate-hero">
  </div><div class="np-student-footer"><button type="button" id="np-back" class="np-btn np-back">← 돌아가기</button><button type="submit" id="np-enter" class="np-btn np-student-submit">입장하기</button></div></form>
  <div class="np-progress-message" id="np-gate-msg" aria-live="polite"></div>
 </div></div>`;
-board.innerHTML=`<div class="np-wrap"><div class="np-head"><div><div class="np-title">📊 네팔 홍수 · 엔트리 통합 현황판</div><div class="np-sub" id="np-board-info">학교 구글 계정 · 등급/점수는 100회 형성평가 최고 기록</div></div><label>반 선택 <select id="np-board-class">${classOpts}</select></label></div><section id="np-teacher-admin" hidden class="np-note" style="margin-top:16px"><strong>🧑‍🏫 조별 학생 등록·미션 관리</strong><p style="font-size:12px;margin:4px 0 0"><b>조 추가</b>는 현재 반에 16조·17조 등을 하나씩 만듭니다. 학생이 새 조로 이동하려면 이전 조의 등록을 삭제한 뒤 새 조로 로그인하게 해 주세요. 기존 기록은 이동하지 않습니다. <b>미션 초기화</b>는 해당 조의 미션·SEMI FINAL·FINAL 기록만 초기화하며 코드·형성평가는 보존합니다.</p><button class="np-add-group" id="np-add-group" type="button">＋ 이 반에 조 추가</button><span class="np-group-count" id="np-group-count"></span></section><div class="np-boardgrid" id="np-grid"></div><div class="np-actions"><button class="np-btn alt" id="np-board-close">← 돌아가기</button><button class="np-btn alt" id="np-teacher-sim">🌊 시뮬레이션 보기</button><button class="np-btn alt" id="np-board-refresh">↻ 새로고침</button><button class="np-btn alt" id="np-board-signout">로그아웃</button></div><div class="np-msg" id="np-board-msg"></div></div>`;
+board.innerHTML=`<div class="np-wrap"><div class="np-head"><div><div class="np-title">📊 네팔 홍수 · 엔트리 통합 현황판</div><div class="np-sub" id="np-board-info">학교 구글 계정 · 등급/점수는 100회 형성평가 최고 기록</div></div><label>반 선택 <select id="np-board-class">${classOpts}</select></label></div><section id="np-teacher-admin" hidden class="np-note" style="margin-top:16px"><strong>🧑‍🏫 조별 학생 등록·미션 관리</strong><p style="font-size:12px;margin:4px 0 0"><b>조 추가</b>는 현재 반에 16조·17조 등을 하나씩 만듭니다. 학생이 새 조로 이동하려면 이전 조의 등록을 삭제한 뒤 새 조로 로그인하게 해 주세요. 기존 기록은 이동하지 않습니다. <b>미션 초기화</b>는 해당 조의 미션·SEMI FINAL·FINAL 기록만 초기화하며 코드·형성평가는 보존합니다.</p><button class="np-add-group" id="np-add-group" type="button">＋ 이 반에 조 추가</button><span class="np-group-count" id="np-group-count"></span></section><div class="np-boardgrid" id="np-grid"></div><div class="np-actions"><button class="np-btn alt" id="np-board-close">← 돌아가기</button><button class="np-btn alt" id="np-teacher-sim">🌊 시뮬레이션 보기</button><button class="np-btn alt" id="np-board-refresh">↻ 새로고침</button><button class="np-btn" id="np-board-assessment">📝 수행평가 제출·채점</button><button class="np-btn alt" id="np-board-signout">로그아웃</button></div><div class="np-msg" id="np-board-msg"></div></div>`;
 const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const cleanName=s=>String(s||'').replace(/\s+/g,' ').trim().slice(0,MAX_NAME);
 function validClass(c){return Number.isInteger(c)&&c>=1&&c<=CLASS_COUNT}
@@ -338,9 +338,10 @@ function refreshButtons(){
  const sessionVisible=sessionActive;
  const signedIn=!guestActive&&sessionVisible&&!!((team&&user)||(!team&&requireTeacher(user)));
  const editorActive=sessionVisible&&!!(team||guestActive||requireTeacher(user));
- const save=$('np-save'),boardButton=$('np-board-button'),changeButton=$('np-change');
+ const save=$('np-save'),boardButton=$('np-board-button'),changeButton=$('np-change'),assessmentButton=$('np-assessment');
  if(save){const hasWorkspace=!!(team||requireTeacher(user)&&designReady);save.disabled=guestActive||!hasWorkspace;save.style.display=sessionVisible&&hasWorkspace?'':'none';save.textContent='💾 저장'}
  if(boardButton){boardButton.disabled=guestActive;boardButton.style.display=signedIn?'':'none'}
+ if(assessmentButton)assessmentButton.style.display=signedIn?'':'none';
  if(changeButton){changeButton.style.display=(signedIn||guestActive&&sessionVisible)?'':'none';changeButton.textContent=guestActive?'🌐 게스트 모드 종료':'🚪 로그아웃'}
  const floatingBoard=$('nepal-class-board'),floatingLogout=$('nepal-class-switch'),trigger=$('nepal-entry-trigger');
  if(floatingBoard)floatingBoard.style.display=signedIn?'':'none';
@@ -1038,11 +1039,25 @@ function closeBoard(){board.classList.remove('show');clearBoard();if(boardFromGa
  }refreshButtons()}
 function showGate(){if(guestActive||team||requireTeacher(user)){openEditor();return}landing()}
 function showLogin(){if(guestActive){endGuest();landing();return}if(team||requireTeacher(user)){signout();return}landing()}
+let assessmentModuleLoading=null;
+async function openAssessment(){
+ if(!user||guestActive||!sessionActive||!(team||requireTeacher(user))){
+  note('학교 계정으로 로그인한 후 수행평가를 열어 주세요.');return;
+ }
+ try{
+  await initReady;
+  if(!assessmentModuleLoading)assessmentModuleLoading=src('./nepal_assessment.js?v=1').catch(error=>{assessmentModuleLoading=null;throw error});
+  await assessmentModuleLoading;
+  await global.NepalAssessment.open({
+   fb,db,user,team,isTeacher:requireTeacher(user),workPath
+  });
+ }catch(error){note('수행평가 화면 오류: '+String(error.message||error))}
+}
 function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
  const originalEnterSimulator=callbacks.enterSimulator;
  callbacks.enterSimulator=()=>{showNativeHome(true);originalEnterSimulator?.()};
  const buttons=document.createElement('div');buttons.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto';
- buttons.innerHTML='<span id="np-save-label" class="np-saveinfo"></span><button id="np-save">💾 저장</button><button id="np-board-button">📊 현황판</button><button id="np-change">🚪 로그아웃</button>';
+ buttons.innerHTML='<span id="np-save-label" class="np-saveinfo"></span><button id="np-save">💾 저장</button><button id="np-board-button">📊 현황판</button><button id="np-assessment">📝 수행평가</button><button id="np-change">🚪 로그아웃</button>';
  opts.header.insertBefore(buttons,opts.header.lastElementChild);headerStatus=$('np-save-label');
  $('np-save').onclick=async()=>{
    if(guestActive){note('🌐 게스트 모드는 저장되지 않습니다.');return}
@@ -1056,6 +1071,7 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
    if(designOK&&progressOK&&codeOK)note('✓ 미션 진행도·센서 설계·엔트리 코드 저장 완료');
    else note('⚠ 일부 저장 실패: '+[!designOK?'센서 설계':null,!progressOK?'미션 진행도':null,!codeOK?'엔트리 코드':null].filter(Boolean).join('·'));
  };$('np-board-button').onclick=()=>showBoard(false);
+ $('np-assessment').onclick=openAssessment;
  $('np-enter-guest').onclick=enterGuest;$('np-change').onclick=()=>guestActive?showLogin():signout();
  $('np-role-student').onclick=()=>selectRole('student');$('np-role-teacher').onclick=teacherSubmit;
  $('np-back').onclick=landing;
@@ -1075,6 +1091,7 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
    else deleteAdminMember(c,g,button.dataset.slot,button);
  });
  $('np-board-refresh').onclick=loadBoard;$('np-board-close').onclick=closeBoard;
+ $('np-board-assessment').onclick=openAssessment;
  $('np-board-signout').onclick=signout;
  $('np-teacher-sim').onclick=()=>{if(requireTeacher(user))enterTeacherSimulator();else if(team){board.classList.remove('show');clearBoard()}else note('학생은 반·조에 먼저 등록해야 합니다.');refreshButtons()};
  if(!autosave)autosave=setInterval(()=>{if((team||requireTeacher(user)&&sessionActive)&&readyToSave&&!restoring&&opts.isLayerOpen?.()&&!opts.isBusy?.())saveNow('auto')},8000);
