@@ -834,7 +834,7 @@ function displayRank97(score,rank){
 function boardCards(data,c){
  const entries=[];
  const scoreOf=x=>x&&Number.isFinite(Number(x.score))?Number(x.score):null;
- for(let g=1;g<=GROUP_COUNT;g++){
+ for(let g=1;g<=knownGroupCount(c);g++){
   const d=data?.['g'+g]||{},mem=d.members||{};
   const rawProgress=Number(d.progress?.completed)||0;
   const oldAligned=Number(d.progress?.updatedAt)>=PROGRESS_FALLBACK_SINCE?rawProgress:d.progress?.schemaVersion===2?rawProgress:(rawProgress>=2?rawProgress+1:rawProgress);
@@ -910,11 +910,77 @@ function boardCards(data,c){
  }
  $('np-grid').innerHTML=html;
 }
-function clearBoard(){if(boardListener){boardListener.ref.off('value',boardListener.cb);boardListener=null}}
-function loadBoard(){if(!user||!db)return;$('np-board-msg').textContent='현황을 불러오는 중…';const c=Number($('np-board-class').value);clearBoard();if(!valid(c,1))return;
- const ref=db.ref(`${ROOT}/c${c}/teams`);const cb=snap=>{ $('np-board-msg').textContent=''; if(board.classList.contains('show')&&Number($('np-board-class').value)===c)boardCards(snap.val()||{},c)};
- ref.on('value',cb,err=>{ $('np-grid').innerHTML=''; $('np-board-msg').textContent='현황판 접근 실패: '+err.message+'\nFirebase 콘솔 → Realtime Database → 규칙에서 v3.0 firebase.rules.json 전체를 붙여 넣고 [게시]를 눌러야 합니다. 교사 Google UID가 규칙에 포함되어 있는지도 확인하세요.'; });boardListener={ref,cb};
- $('np-board-info').textContent='학교 학생/등록 교사 Google 계정으로만 조회 · '+c+'반 15개 조 · 금메달 순서: FINAL → (미션 6 완료 전) SEMI FINAL → 미션 진행도(동점 시 먼저 도달한 조) → (모두 미션 미완료 시) 형성평가';
+function clearBoard(){
+ if(!boardListener)return;
+ boardListener.ref.off('value',boardListener.cb);
+ boardListener.settingsRef?.off('value',boardListener.settingsCb);
+ boardListener=null;
+}
+function updateGroupCountUI(c){
+ const count=knownGroupCount(c),info=$('np-group-count'),btn=$('np-add-group');
+ if(info)info.textContent=c+'반: '+count+'개 조 · 최대 '+MAX_GROUP_COUNT+'개';
+ if(btn){btn.disabled=count>=MAX_GROUP_COUNT;btn.textContent=count>=MAX_GROUP_COUNT?'조 추가 한도 도달':'＋ 이 반에 '+(count+1)+'조 추가';}
+}
+async function addGroupToClass(){
+ if(!requireTeacher(user)||!sessionActive||!db)return;
+ const c=Number($('np-board-class').value);
+ if(!validClass(c))return;
+ const current=await readGroupCount(c);
+ if(current>=MAX_GROUP_COUNT){
+  $('np-board-msg').textContent=c+'반은 추가 가능한 최대 조 수('+MAX_GROUP_COUNT+'조)에 도달했습니다.';
+  return;
+ }
+ if(!confirm(c+'반에 '+(current+1)+'조를 새로 추가할까요?\\n\\n기존 1~'+current+'조는 변경되지 않고, 새 조는 2명까지 등록할 수 있습니다.'))return;
+ const button=$('np-add-group');button.disabled=true;
+ try{
+  const ref=db.ref(`${ROOT}/c${c}/settings/groupCount`);
+  const result=await ref.transaction(old=>{
+   const count=normalizeGroupCount(old);
+   return count<MAX_GROUP_COUNT?count+1:undefined;
+  },()=>{},false);
+  if(!result.committed){
+   $('np-board-msg').textContent='다른 교사가 조를 추가했거나 최대 조 수에 도달했습니다. 현황판을 확인해 주세요.';
+   return;
+  }
+  const count=normalizeGroupCount(result.snapshot.val());
+  groupCounts[c]=count;
+  updateGroupCountUI(c);
+  $('np-board-msg').textContent='✓ '+c+'반 '+count+'조를 추가했습니다. 학생은 이 반을 선택하면 '+count+'조까지 로그인할 수 있습니다.';
+  if(Number($('np-class').value)===c)refreshGroupOptions(c,$('np-group').value);
+ }catch(error){
+  $('np-board-msg').textContent='⚠ 조 추가 실패: '+String(error.code||error.message||error)+
+   '\\nFirebase Realtime Database → 규칙에 새 조 설정 권한이 게시되어 있는지 확인하세요.';
+ }finally{if(button.isConnected)button.disabled=knownGroupCount(c)>=MAX_GROUP_COUNT}
+}
+function loadBoard(){
+ if(!user||!db)return;
+ $('np-board-msg').textContent='현황을 불러오는 중…';
+ const c=Number($('np-board-class').value);
+ clearBoard();if(!validClass(c))return;
+ let latestTeams=null;
+ const render=()=>{
+  if(!board.classList.contains('show')||Number($('np-board-class').value)!==c)return;
+  if(latestTeams!==null)boardCards(latestTeams,c);
+  updateGroupCountUI(c);
+  $('np-board-info').textContent='학교 학생/등록 교사 Google 계정으로만 조회 · '+c+'반 '+knownGroupCount(c)+'개 조 · 금메달: FINAL → SEMI FINAL(미션6 전) → 미션 진행도(동점 시 먼저 도달한 조) → 형성평가(미션 전)';
+ };
+ const ref=db.ref(`${ROOT}/c${c}/teams`);
+ const cb=snap=>{$('np-board-msg').textContent='';latestTeams=snap.val()||{};render()};
+ ref.on('value',cb,error=>{
+  $('np-grid').innerHTML='';
+  $('np-board-msg').textContent='현황판 접근 실패: '+error.message+'\nFirebase Realtime Database 보안 규칙을 확인하세요.';
+ });
+ const settingsRef=db.ref(`${ROOT}/c${c}/settings/groupCount`);
+ const settingsCb=snap=>{
+  groupCounts[c]=normalizeGroupCount(snap.val());
+  render();
+ };
+ settingsRef.on('value',settingsCb,error=>{
+  console.warn('[NEPAL] 추가 조 설정 구독 실패:',error);
+  render(); // Legacy 15-team boards must continue to work before rules publish.
+ });
+ boardListener={ref,cb,settingsRef,settingsCb};
+ render();
 }
 // Teacher removes one group membership without needing to know Firebase UID.
 async function deleteAdminMember(c,g,slot,button){
@@ -998,6 +1064,7 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
   refreshGroupOptions(c);
  });
  $('np-board-class').onchange=loadBoard;
+ $('np-add-group').onclick=addGroupToClass;
  $('np-grid').addEventListener('click',event=>{
    const button=event.target.closest('button.np-delete-member,button.np-reset-missions');
    if(!button||!requireTeacher(user)||!board.contains(button))return;
