@@ -901,9 +901,18 @@ async function resetGroupMissions(c,g,button){
  if(button)button.disabled=true;
  try{
   const ref=db.ref(teamPath(c,g));
-  await ref.update({progress:null,progressV3:null,mission5NoListBest:null,finalBest:null,mission5Best:null});
+  const keys=['progress','progressV3','mission5NoListBest','finalBest','mission5Best'];
+  const before=(await ref.once('value')).val()||{};
+  // Only delete EXISTING nodes: deleting an absent node does not satisfy the
+  // teacher's restricted data.exists() && !newData.exists() security rule.
+  const changes=Object.fromEntries(keys.filter(k=>before[k]!=null).map(k=>[k,null]));
+  if(!Object.keys(changes).length){
+   $('np-board-msg').textContent='✓ '+label+'은 초기화할 미션 기록이 없습니다.';
+   return;
+  }
+  await ref.update(changes);
   const snapshot=(await ref.once('value')).val()||{};
-  if(['progress','progressV3','mission5NoListBest','finalBest','mission5Best'].some(k=>snapshot[k]!=null))
+  if(keys.some(k=>snapshot[k]!=null))
    throw Error('일부 기록이 아직 남아 있습니다.');
   $('np-board-msg').textContent='✓ '+label+' 미션 진행도·SEMI FINAL·FINAL 초기화 확인. (코드·형성평가·학생 등록 보존)';
  }catch(error){
