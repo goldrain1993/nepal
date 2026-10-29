@@ -224,6 +224,10 @@ function showNativeHome(active){
 }
 function showNativeStudent(){
  if(sessionActive)return;
+ // Every new student entry starts with an explicit choice, preventing
+ // an accidentally reused class/group from an earlier login.
+ $('np-class').value='';
+ $('np-group').value='';
  gate.classList.remove('show');
  if(nativeStart){nativeStart.classList.remove('hiddenStart');nativeStart.classList.add('np-student-active');}
  if(nativeStudentPanel)nativeStudentPanel.hidden=false;
