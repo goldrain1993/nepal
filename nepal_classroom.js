@@ -133,6 +133,8 @@ function renderGroupOptions(c,count,selected=''){
 async function refreshGroupOptions(c,selected=''){
  const ticket=++groupSelectTicket;
  if(!validClass(c)){renderGroupOptions(c,GROUP_COUNT);return}
+ // The class can be chosen before Firebase finishes initializing.
+ await initReady;
  const n=await readGroupCount(c);
  if(ticket!==groupSelectTicket||Number($('np-class').value)!==c)return;
  renderGroupOptions(c,n,selected);
