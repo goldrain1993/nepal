@@ -159,6 +159,13 @@
                   ".write": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.uid === 'GIoPe92By9esQ6H0KcJjvYoPiyN2' && auth.token.email.toLowerCase() === 'goldrain1993@gmail.com' && data.exists() && !newData.exists()"
                 }
               }
+            },
+            "settings": {
+              "groupCount": {
+                ".read": true,
+                ".write": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.uid === 'GIoPe92By9esQ6H0KcJjvYoPiyN2' && auth.token.email.toLowerCase() === 'goldrain1993@gmail.com' && newData.exists()",
+                ".validate": "newData.isNumber() && newData.val() >= 16 && newData.val() <= 30 && ((!data.exists() && newData.val() === 16) || (data.isNumber() && newData.val() === data.val() + 1))"
+              }
             }
           }
         }
