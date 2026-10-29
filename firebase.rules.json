@@ -350,7 +350,7 @@
             "$uid": {
               ".read": "((auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr')) && auth.uid === $uid)",
               ".write": "((auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr')) && auth.uid === $uid) && !data.exists() && newData.exists()",
-              ".validate": "newData.hasChildren(['classId','groupId','displayName','fields','submittedAt','codeBytes']) && newData.child('classId').isString() && newData.child('classId').val().matches(/^c([1-9]|1[01])$/) && newData.child('groupId').isString() && newData.child('groupId').val().matches(/^g([1-9]|[12][0-9]|30)$/) && newData.child('displayName').isString() && newData.child('displayName').val().length <= 60 && newData.child('codeBytes').isNumber() && newData.child('codeBytes').val() >= 1 && newData.child('codeBytes').val() <= 1250000 && newData.child('submittedAt').isNumber()",
+              ".validate": "newData.hasChildren(['classId','groupId','displayName','submittedAt','codeBytes']) && newData.child('classId').isString() && newData.child('classId').val().matches(/^c([1-9]|1[01])$/) && newData.child('groupId').isString() && newData.child('groupId').val().matches(/^g([1-9]|[12][0-9]|30)$/) && newData.child('displayName').isString() && newData.child('displayName').val().length <= 60 && newData.child('codeBytes').isNumber() && newData.child('codeBytes').val() >= 1 && newData.child('codeBytes').val() <= 1250000 && newData.child('submittedAt').isNumber()",
               "$other": {
                 ".validate": false
               }
