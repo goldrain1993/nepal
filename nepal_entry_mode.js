@@ -817,8 +817,27 @@
     }
   });
 
-  // Mission 06 sensor setup reuses the LIVE original simulator DOM and renderer.
-  // Reparenting prevents a second simulator instance and preserves installed sensors.
+  // Original simulator and Entry developer mode use one map renderer,
+  // but their sensor layouts are independent and must never overwrite each other.
+  let entrySensorLayout={version:1,sensors:[]};
+  let simulatorBeforeEntry=null,simulatorDesignBeforeEntry=null;
+  let entrySensorOwner=null,entrySensorLoaded=false,entrySensorSave=Promise.resolve(true);
+  const copySensorList=list=>list.map((s,i)=>({
+    id:i+1,type:String(s.type),x:Number(s.x),z:Number(s.z),
+    rule:{enabled:!!s.rule?.enabled,op:s.rule?.op==='le'?'le':'ge',th:s.rule?.th??''}
+  }));
+  const entryLayoutFrom=list=>({version:1,sensors:copySensorList(list)});
+  function entrySensorWorkspace(){
+    const t=classroom?.getTeam?.();
+    return classroom?.isTeacher?.()?'teacher':t?'c'+t.c+'g'+t.g:'guest';
+  }
+  function validatedEntryLayout(layout){
+    if(layout?.version!==1||!Array.isArray(layout.sensors)||layout.sensors.length>4||
+       layout.sensors.some(x=>!['수위 센서','유속 센서','진동 센서','강수 센서'].includes(x.type)||
+         !Number.isFinite(Number(x.x))||!Number.isFinite(Number(x.z))))
+      throw Error('저장된 개발자 센서 위치 데이터 형식 오류');
+    return entryLayoutFrom(layout.sensors);
+  }
   const portal=document.getElementById('ne-sim-stage');
   const modeSwitch=document.getElementById('ne-mode-switch');
   const nativeApp=document.getElementById('app');
@@ -829,7 +848,21 @@
   const mission6Cards=mission6Practice?[...mission6Practice.querySelectorAll(':scope > section.card')]:[];
   const mission6Tip=document.createElement('div');
   mission6Tip.id='ne-mission6-sensor-tip';
-  mission6Tip.textContent='📡 ① 관측 지점 → ② 센서 설치. 기존 설치 위치는 유지됩니다.';
+  mission6Tip.textContent='📡 개발자 센서를 설치하세요. 시뮬레이션 센서 위치는 자동으로 적용되지 않습니다.';
+  const importSensorButton=document.createElement('button');
+  importSensorButton.id='ne-import-sim-sensors';importSensorButton.type='button';
+  importSensorButton.textContent='📥 시뮬레이션에서 설치했던 센서 위치 불러오기';
+  importSensorButton.style.cssText='display:block;margin-top:9px;padding:10px 12px;background:#254b31;color:#eaffd8;border:1px solid #92cd79;border-radius:9px;font-weight:900;cursor:pointer';
+  mission6Tip.appendChild(importSensorButton);
+  importSensorButton.onclick=()=>{
+    const previous=simulatorBeforeEntry||[];
+    const selected=previous.filter(s=>['수위 센서','유속 센서','진동 센서','강수 센서'].includes(s.type));
+    if(!selected.length){status.textContent='시뮬레이션에 불러올 센서가 없습니다.';return;}
+    if(!confirm('시뮬레이션에 설치했던 센서의 종류·위치를 가져올까요? 현재 개발자 센서 배치를 교체합니다.'))return;
+    sensors.splice(0,sensors.length,...copySensorList(selected));
+    renderSensors();
+    status.textContent='✓ 센서 '+selected.length+'개의 종류와 위치를 가져왔습니다. 앞으로 두 화면은 독립적으로 작동합니다.';
+  };
   function prepareMission6SensorPanel(){
     if(!mission6Practice||mission6Cards.length<3)return;
     const [observations,installation]=mission6Cards;
