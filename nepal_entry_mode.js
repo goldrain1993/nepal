@@ -880,29 +880,50 @@
     mission6Cards.slice(2).forEach(card=>card.classList.remove('ne-mission6-hidden'));
     if(mission6Practice)originalPracticeChildren.forEach(node=>mission6Practice.appendChild(node));
   }
-  function enterMission5Setup(){
-    if((mission!==4&&mission!==6)||!nativeApp||!portal)return;
-    if(typeof simRunning!=='undefined'&&simRunning){status.textContent='현재 시뮬레이션 실행이 끝난 뒤 센서를 배치해 주세요.';return;}
+  async function enterMission5Setup(){
+    if((mission!==4&&mission!==6)||!nativeApp||!portal||layer.classList.contains('ne-sim-visible'))return;
+    if(typeof simRunning!=='undefined'&&simRunning){status.textContent='시뮬레이션 종료 후 센서를 설치하세요.';return;}
+    const owner=entrySensorWorkspace();
+    try{
+      const finished=await entrySensorSave;
+      if(finished===false)throw Error('이전 개발자 센서 위치를 아직 저장하지 못했습니다.');
+      if(entrySensorOwner!==owner){entrySensorOwner=owner;entrySensorLoaded=false;entrySensorLayout={version:1,sensors:[]};}
+      if(!entrySensorLoaded){
+        const cloud=await classroom?.loadEntrySensorDesign?.();
+        if(cloud)entrySensorLayout=validatedEntryLayout(cloud);
+        entrySensorLoaded=true;
+      }
+    }catch(error){status.textContent='⚠ 이전 개발자 센서 위치를 보호하기 위해 화면을 열지 않았습니다: '+String(error.message||error);return;}
+    simulatorBeforeEntry=copySensorList(sensors);
+    simulatorDesignBeforeEntry=captureSimulatorDesign();
+    sensors.splice(0,sensors.length,...copySensorList(entrySensorLayout.sensors));
     iframe.contentWindow?.postMessage({type:'NEPAL_DEV_PAUSE'},location.origin);
     portal.appendChild(nativeApp);
-    layer.classList.add('ne-sim-visible');
-    document.body.classList.add('nepal-mission6-sim');
+    layer.classList.add('ne-sim-visible');document.body.classList.add('nepal-mission6-sim');
     try{
       document.getElementById('design')?.click();
       setSidebarTab('practice');
       prepareMission6SensorPanel();
-      const panel=nativeApp.querySelector('.panel');
-      if(panel)panel.scrollTop=0;
-    }catch(e){console.warn('미션 6 센서 설치 화면',e)}
+      renderSensors();
+      const panel=nativeApp.querySelector('.panel');if(panel)panel.scrollTop=0;
+    }catch(e){console.warn('개발자 센서 설치 화면',e);}
     document.getElementById('ne-workspace-heading').textContent='🗺 센서 설치 화면';
     modeSwitch.textContent='🧩 엔트리 코딩으로 돌아가기';
   }
   function exitMission5Setup(){
     if(!layer.classList.contains('ne-sim-visible'))return;
-    layer.classList.remove('ne-sim-visible');
-    document.body.classList.remove('nepal-mission6-sim');
+    const layout=entryLayoutFrom(sensors);
+    entrySensorLayout=layout;
+    if(simulatorBeforeEntry)sensors.splice(0,sensors.length,...copySensorList(simulatorBeforeEntry));
+    layer.classList.remove('ne-sim-visible');document.body.classList.remove('nepal-mission6-sim');
     restoreMission6SensorPanel();
-    if(nativeApp&&originalAppParent){originalAppParent.insertBefore(nativeApp,originalAppSibling);}
+    if(nativeApp&&originalAppParent)originalAppParent.insertBefore(nativeApp,originalAppSibling);
+    renderSensors();
+    simulatorBeforeEntry=null;simulatorDesignBeforeEntry=null;
+    entrySensorSave=Promise.resolve(classroom?.saveEntrySensorDesign?.(layout)).then(ok=>{
+      if(ok===false)status.textContent='⚠ 개발자 센서 위치가 서버에 저장되지 않았습니다. 연결 상태를 확인하세요.';
+      return ok!==false;
+    }).catch(e=>{status.textContent='⚠ 개발자 센서 위치 저장 오류: '+String(e.message||e);return false});
     document.getElementById('ne-workspace-heading').textContent='🧩 엔트리 코딩 편집기';
     modeSwitch.textContent='🗺 센서 설치 화면';
     if(ready&&layer.classList.contains('open'))iframe.contentWindow?.postMessage({type:'NEPAL_DEV_RESUME'},location.origin);
