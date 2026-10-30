@@ -24,6 +24,9 @@ css.textContent=`
 .np-msg{white-space:pre-wrap;min-height:22px;color:#def4cd;font-size:12px;margin-top:11px}.np-head{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}.np-head select{min-width:125px;width:auto}
 .np-boardgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}.np-team{background:#0e2017;border:1px solid #2a5636;border-radius:12px;padding:14px;min-height:123px}.np-team.mine{outline:2px solid #a9ed70}
 .np-score{font-size:12px;color:#d5f59a;margin-top:5px}
+.np-legend{font-size:15px;font-weight:1000;color:#ffd44a;text-shadow:0 0 9px #e8a90f88;letter-spacing:.025em}
+.np-world-trophy{font-size:30px;display:inline-flex;align-items:center;filter:drop-shadow(0 0 8px #ffd348a8);margin-right:2px;line-height:1}
+.np-add-class{display:inline-flex;align-items:center;gap:6px;margin-left:9px;padding:9px 14px;background:#2e4c39;color:#edffcd;border:1px solid #88cf88;border-radius:8px;font-weight:850;cursor:pointer}
 .np-gold-medal{position:relative;display:inline-grid;place-items:center;width:32px;height:32px;margin-right:4px;border-radius:50%;border:3px ridge #ffe185;background:radial-gradient(circle at 35% 27%,#fff2a9 0%,#ffc640 35%,#d78a09 85%);box-shadow:0 1px 8px #ffc94b88,inset 0 0 0 2px #bb8013;color:#4a2700;font-size:19px;font-weight:1000;text-shadow:0 1px #ffe89b;vertical-align:middle;flex:none}
 .np-gold-medal::before,.np-gold-medal::after{content:'';position:absolute;top:-13px;width:8px;height:15px;background:#db4536;z-index:-1;border:1px solid #ffc851}
 .np-gold-medal::before{left:5px;transform:rotate(-23deg)}.np-gold-medal::after{right:5px;transform:rotate(23deg)}
@@ -841,6 +844,43 @@ function displayRank97(score,rank){
  if(String(rank||'').toUpperCase()==='LEGEND')return Number(score)>=90?'S':Number(score)>=80?'A':Number(score)>=65?'B':Number(score)>=50?'C':'F';
  return String(rank||'미평가');
 }
+function goldLegend(score,rank){
+ const label=displayRank97(score,rank);
+ return label==='LEGEND'?'<strong class="np-legend">LEGEND</strong>':esc(label);
+}
+function earlierBest(a,b){
+ const x=Number(a?.updatedAt)||Infinity,y=Number(b?.updatedAt)||Infinity;
+ return x===y?0:x-y;
+}
+function rankingCompare(a,b,has6,started){
+ const final=(b.finalScore??0)-(a.finalScore??0);
+ if(final)return final;
+ if((a.finalScore??0)>0&&(b.finalScore??0)>0){
+  const first=earlierBest(a.final,b.final);if(first)return first;
+ }
+ if(!has6){
+  const semi=(b.mission5Score??0)-(a.mission5Score??0);
+  if(semi)return semi;
+  if((a.mission5Score??0)>0&&(b.mission5Score??0)>0){
+   const first=earlierBest(a.mission5,b.mission5);if(first)return first;
+  }
+ }
+ if(a.value!==b.value)return b.value-a.value;
+ if(!started){
+  const flood=(b.floodScore??0)-(a.floodScore??0);
+  if(flood)return flood;
+  if((a.floodScore??0)>0&&(b.floodScore??0)>0){
+   const first=earlierBest(a.flood,b.flood);if(first)return first;
+  }
+ }
+ if(a.value>0&&a.value===b.value){
+  if(a.reachedAt!==null&&b.reachedAt!==null&&a.reachedAt!==b.reachedAt)return a.reachedAt-b.reachedAt;
+  if(a.reachedAt===null&&b.reachedAt!==null)return 1;
+  if(b.reachedAt===null&&a.reachedAt!==null)return -1;
+ }
+ return (a.c??0)-(b.c??0)||a.g-b.g;
+}
+let schoolGold=null;
 function boardCards(data,c){
  const entries=[];
  const scoreOf=x=>x&&Number.isFinite(Number(x.score))?Number(x.score):null;
@@ -865,7 +905,7 @@ function boardCards(data,c){
   // Legacy key "mission5Best" held the old FINAL/100-run result.
   const final=d.finalBest||d.mission5Best||null,finalScore=scoreOf(final);
   const members=Object.values(mem).filter(x=>x?.uid);
-  entries.push({g,mem,value,reachedAt,flood,floodScore,mission5,mission5Score,final,finalScore,
+  entries.push({c,g,mem,value,reachedAt,flood,floodScore,mission5,mission5Score,final,finalScore,
     hasTeam:members.length>0,mine:team?.c===c&&team?.g===g});
  }
  // An unattempted score is 0 for ranking, but still displays as '미응시' in the board.
@@ -878,28 +918,7 @@ function boardCards(data,c){
   e.mission5Score!==null||e.floodScore!==null);
  const hasMission6Plus=participants.some(e=>e.value>=6);
  const anyMissionCompleted=participants.some(e=>e.value>0);
- const ranked=participants.sort((a,b)=>{
-  const finalDiff=(b.finalScore??0)-(a.finalScore??0);
-  if(finalDiff!==0)return finalDiff;
-  if(!hasMission6Plus){
-   const semiDiff=(b.mission5Score??0)-(a.mission5Score??0);
-   if(semiDiff!==0)return semiDiff;
-  }
-  if(a.value!==b.value)return b.value-a.value;
-  if(!anyMissionCompleted){
-   const floodDiff=(b.floodScore??0)-(a.floodScore??0);
-   if(floodDiff!==0)return floodDiff;
-  }
-  if(a.value>0&&a.value===b.value){
-   // Reached the same mission? The earlier timestamp wins.
-   if(a.reachedAt!==null&&b.reachedAt!==null&&a.reachedAt!==b.reachedAt)
-    return a.reachedAt-b.reachedAt;
-   // Missing timestamps cannot be claimed to be faster than known ones.
-   if(a.reachedAt===null&&b.reachedAt!==null)return 1;
-   if(b.reachedAt===null&&a.reachedAt!==null)return -1;
-  }
-  return a.g-b.g;
- });
+ const ranked=participants.sort((a,b)=>rankingCompare(a,b,hasMission6Plus,anyMissionCompleted));
  // A group with only mission progress must still get the first-place medal.
  // No medal is awarded to a class with no recorded activity at all.
  const first=ranked[0];
@@ -908,6 +927,7 @@ function boardCards(data,c){
  for(const e of entries){
   const {g,mem,value,flood,floodScore,mission5,mission5Score,final,finalScore,mine}=e;
   const medal=g===gold?'<span class="np-gold-medal" role="img" aria-label="이 반의 1위 금메달">1</span>':'';
+  const trophy=g===gold&&schoolGold?.c===c&&schoolGold?.g===g?'<span class="np-world-trophy" role="img" aria-label="전체 반 1위">🏆</span>':'';
   const membersHtml=requireTeacher(user)?
     memberKeys.slice(0,groupCapacity(c,g)).map((slot,i)=>{
       const student=mem[slot],label=student?.displayName||String(i+1)+'번 조원 미등록';
@@ -916,7 +936,7 @@ function boardCards(data,c){
           aria-label="${c}반 ${g}조 ${esc(label)} 등록 삭제">등록 삭제</button>`:'';
       return `<div class="np-member-entry"><span>${esc(label)}</span>${button}</div>`;
     }).join(''):esc(memberNames(mem,c,g));
-  html+=`<article class="np-team ${mine?'mine':''}"><div class="np-teamhead"><span style="display:flex;align-items:center;gap:6px">${medal}${g}조 ${mine?'(우리 조)':''}</span><span>${value}/${missionTotal}</span></div><div class="np-members">${membersHtml}</div><div class="np-score">🌊 형성평가: ${floodScore===null?'미응시':`${esc(displayRank97(floodScore,flood.rank))} · ${floodScore}점`}</div><div class="np-score">🥈 SEMI FINAL: ${mission5Score===null?'미응시':`${esc(displayRank97(mission5Score,mission5.rank))} · ${mission5Score}점`}</div><div class="np-score">🏆 FINAL 미션: ${finalScore===null?'미응시':`${esc(displayRank97(finalScore,final.rank))} · ${finalScore}점`}</div><div class="np-track"><div style="width:${Math.round(100*value/missionTotal)}%"></div></div><div class="np-caption">${value===0?'진행 전': value===missionTotal?'FINAL 미션 완료':value===5?'SEMI FINAL 완료':`미션 ${value}까지 통과`}</div>${requireTeacher(user)?`<button type="button" class="np-reset-missions" data-class="${c}" data-group="${g}">↺ 이 조 미션 초기화</button>`:''}</article>`;
+  html+=`<article class="np-team ${mine?'mine':''}"><div class="np-teamhead"><span style="display:flex;align-items:center;gap:6px">${trophy}${medal}${g}조 ${mine?'(우리 조)':''}</span><span>${value}/${missionTotal}</span></div><div class="np-members">${membersHtml}</div><div class="np-score">🌊 형성평가: ${floodScore===null?'미응시':`${goldLegend(floodScore,flood.rank)} · ${floodScore}점`}</div><div class="np-score">🥈 SEMI FINAL: ${mission5Score===null?'미응시':`${goldLegend(mission5Score,mission5.rank)} · ${mission5Score}점`}</div><div class="np-score">🏆 FINAL 미션: ${finalScore===null?'미응시':`${goldLegend(finalScore,final.rank)} · ${finalScore}점`}</div><div class="np-track"><div style="width:${Math.round(100*value/missionTotal)}%"></div></div><div class="np-caption">${value===0?'진행 전': value===missionTotal?'FINAL 미션 완료':value===5?'SEMI FINAL 완료':`미션 ${value}까지 통과`}</div>${requireTeacher(user)?`<button type="button" class="np-reset-missions" data-class="${c}" data-group="${g}">↺ 이 조 미션 초기화</button>`:''}</article>`;
  }
  $('np-grid').innerHTML=html;
 }
