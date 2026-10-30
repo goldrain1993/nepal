@@ -16,6 +16,16 @@
   .ne-header{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0c1c13;border-bottom:1px solid #335339;padding:12px 18px}
   .ne-header strong{color:#b1ed65;font-size:19px;letter-spacing:.035em}
   .ne-header button,.ne-side button{border:1px solid #4c7150;border-radius:9px;padding:9px 13px;background:#17331d;color:#ecffe2;cursor:pointer;font-weight:800}
+  /* Only collapse the top navigation; EntryJS frame grows into the freed space. */
+  #ne-topbar-toggle{flex:none;white-space:nowrap;border-color:#8bbf70;background:#21442a;color:#e7ffd1;font-size:13px}
+  #ne-topbar-toggle:hover,#ne-topbar-toggle:focus-visible{background:#376442;outline-offset:2px}
+  #nepal-entry-layer.ne-header-collapsed .ne-header{
+    height:34px;min-height:34px;flex:0 0 34px;padding:3px 12px;gap:0;justify-content:flex-end;overflow:hidden
+  }
+  #nepal-entry-layer.ne-header-collapsed .ne-header > :not(#ne-topbar-toggle){display:none!important}
+  #nepal-entry-layer.ne-header-collapsed #ne-topbar-toggle{
+    height:28px;min-height:28px;padding:3px 13px;border-radius:7px;font-size:12px
+  }
   .ne-main{display:grid;grid-template-columns:minmax(285px,27%) minmax(0,1fr);flex:1;min-height:0}
   .ne-side{border-right:1px solid #2a5132;background:#101e16;overflow:auto;padding:18px}
   .ne-mission-list{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:5px;margin:12px 0}
@@ -1282,6 +1292,27 @@
         exitMission5Setup();passed.fill(false);verifiedWaterByMission.fill(null);progressSaveTicket++;resetSyncStatus('☁️ 로그인 후 미션을 통과하면 진행도가 저장됩니다.');applyMission(0);projectRestoring=false;
         if(layer.classList.contains('open'))showEditorLoading();
       }
+    });
+    // Append after the classroom buttons have been registered, so existing
+    // save/login/board handlers and their DOM order remain unchanged.
+    const headerToggle=document.createElement('button');
+    headerToggle.id='ne-topbar-toggle';
+    headerToggle.type='button';
+    headerToggle.textContent='▲ 접기';
+    headerToggle.setAttribute('aria-label','상단 메뉴 접기');
+    headerToggle.setAttribute('aria-expanded','true');
+    layer.querySelector('.ne-header')?.appendChild(headerToggle);
+    headerToggle.addEventListener('click',()=>{
+      const collapsed=layer.classList.toggle('ne-header-collapsed');
+      headerToggle.textContent=collapsed?'▼ 펼치기':'▲ 접기';
+      headerToggle.setAttribute('aria-expanded',collapsed?'false':'true');
+      headerToggle.setAttribute('aria-label',collapsed?'상단 메뉴 펼치기':'상단 메뉴 접기');
+      // The iframe viewport changes naturally; notify the Blockly workspace.
+      requestAnimationFrame(()=>{
+        window.dispatchEvent(new Event('resize'));
+        try{iframe.contentWindow?.dispatchEvent(new Event('resize'))}
+        catch(error){console.warn('엔트리 편집기 크기 조정:',error)}
+      });
     });
     // Ensure teacher mode immediately displays all unlocked mission buttons.
     updateMissionButtons();
