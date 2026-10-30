@@ -233,6 +233,25 @@
                   "$other": {
                     ".validate": false
                   }
+                },
+                "entrySensorDesign": {
+                  ".write": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.token.email.endsWith('@psinjung.ms.kr') && (root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student1/uid').val() === auth.uid || root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student2/uid').val() === auth.uid || root.child('nepal-v27/public/classes/'+$class+'/teams/'+$group+'/members/student3/uid').val() === auth.uid) && newData.exists()",
+                  ".validate": "newData.hasChildren(['version','payload','updatedBy','updatedAt']) && newData.child('version').val() === 1 && newData.child('updatedBy').val() === auth.uid",
+                  "version": {
+                    ".validate": "newData.isNumber() && newData.val() === 1"
+                  },
+                  "payload": {
+                    ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 12000"
+                  },
+                  "updatedBy": {
+                    ".validate": "newData.isString() && newData.val() === auth.uid"
+                  },
+                  "updatedAt": {
+                    ".validate": "newData.isNumber()"
+                  },
+                  "$other": {
+                    ".validate": false
+                  }
                 }
               }
             }
@@ -262,6 +281,9 @@
             },
             "$other": {
               ".validate": false
+            },
+            "entrySensorDesign": {
+              ".validate": "newData.hasChildren(['version','payload','updatedAt','updatedBy']) && newData.child('version').val() === 1 && newData.child('payload').isString() && newData.child('payload').val().length > 0 && newData.child('payload').val().length <= 12000 && newData.child('updatedBy').val() === auth.uid"
             }
           }
         },
