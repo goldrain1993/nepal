@@ -16,16 +16,20 @@
   .ne-header{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0c1c13;border-bottom:1px solid #335339;padding:12px 18px}
   .ne-header strong{color:#b1ed65;font-size:19px;letter-spacing:.035em}
   .ne-header button,.ne-side button{border:1px solid #4c7150;border-radius:9px;padding:9px 13px;background:#17331d;color:#ecffe2;cursor:pointer;font-weight:800}
-  /* Only collapse the top navigation; EntryJS frame grows into the freed space. */
-  #ne-topbar-toggle{flex:none;white-space:nowrap;border-color:#8bbf70;background:#21442a;color:#e7ffd1;font-size:13px}
-  #ne-topbar-toggle:hover,#ne-topbar-toggle:focus-visible{background:#376442;outline-offset:2px}
-  #nepal-entry-layer.ne-header-collapsed .ne-header{
-    height:34px;min-height:34px;flex:0 0 34px;padding:3px 12px;gap:0;justify-content:flex-end;overflow:hidden
-  }
-  #nepal-entry-layer.ne-header-collapsed .ne-header > :not(#ne-topbar-toggle){display:none!important}
-  #nepal-entry-layer.ne-header-collapsed #ne-topbar-toggle{
-    height:28px;min-height:28px;padding:3px 13px;border-radius:7px;font-size:12px
-  }
+  /* Fold BOTH the dark navigation strip and the pale workspace heading.
+     The overlay button stays on the actual editor, near Entry's block count. */
+  #ne-topbar-toggle{position:absolute;z-index:35;right:165px;bottom:12px;
+    white-space:nowrap;cursor:pointer;border:1px solid #76ac6b;border-radius:8px;
+    padding:6px 12px;background:#183d24;color:#f0ffe2;
+    font:850 12px/1.4 system-ui,'Malgun Gothic',sans-serif;
+    box-shadow:0 2px 8px #0003}
+  #ne-topbar-toggle:hover,#ne-topbar-toggle:focus-visible{background:#2f673d;outline-offset:2px}
+  #ne-topbar-toggle[hidden],#nepal-entry-layer.ne-sim-visible #ne-topbar-toggle{display:none!important}
+  #nepal-entry-layer.ne-header-collapsed .ne-header,
+  #nepal-entry-layer.ne-header-collapsed #ne-workspace-toolbar{display:none!important}
+  #nepal-entry-layer.ne-header-collapsed #ne-iframe{margin-top:0!important;height:100%!important}
+  #nepal-entry-layer.ne-header-collapsed #ne-entry-loading{top:0!important}
+  #nepal-entry-layer.ne-header-collapsed .ne-editor-stage #ne-sim-stage{inset:0!important}
   .ne-main{display:grid;grid-template-columns:minmax(285px,27%) minmax(0,1fr);flex:1;min-height:0}
   .ne-side{border-right:1px solid #2a5132;background:#101e16;overflow:auto;padding:18px}
   .ne-mission-list{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:5px;margin:12px 0}
@@ -1293,27 +1297,71 @@
         if(layer.classList.contains('open'))showEditorLoading();
       }
     });
-    // Append after the classroom buttons have been registered, so existing
-    // save/login/board handlers and their DOM order remain unchanged.
+    // The toggle must be in the Entry stage, not in the disappearing header.
+    // Parent overlays it without modifying EntryJS or touching student code.
     const headerToggle=document.createElement('button');
     headerToggle.id='ne-topbar-toggle';
     headerToggle.type='button';
     headerToggle.textContent='▲ 접기';
+    headerToggle.hidden=true;
     headerToggle.setAttribute('aria-label','상단 메뉴 접기');
     headerToggle.setAttribute('aria-expanded','true');
-    layer.querySelector('.ne-header')?.appendChild(headerToggle);
-    headerToggle.addEventListener('click',()=>{
+    const editorStage=layer.querySelector('.ne-editor-stage');
+    editorStage.appendChild(headerToggle);
+
+    function positionHeaderToggle(){
+      if(!layer.classList.contains('open')||layer.classList.contains('ne-sim-visible')||
+         !ready||iframe.style.visibility==='hidden'){
+        headerToggle.hidden=true;
+        return;
+      }
+      headerToggle.hidden=false;
+      // Default: to the left of Entry's lower-right block counter.
+      headerToggle.style.removeProperty('left');
+      headerToggle.style.removeProperty('top');
+      headerToggle.style.right='165px';
+      headerToggle.style.bottom='12px';
+      try{
+        const doc=iframe.contentDocument;
+        if(!doc)return;
+        const candidates=doc.querySelectorAll('span,small,label,[class*="count"],[class*="Count"],[id*="count"],[id*="Count"]');
+        const expression=/(?:블록\\s*(?:총\\s*)?(?:개수|갯수|수)|블록\\s*\\d+\\s*개|blocks?\\s*(?:count|:)\\s*\\d*)/i;
+        const stageRect=editorStage.getBoundingClientRect();
+        const frameRect=iframe.getBoundingClientRect();
+        for(const el of candidates){
+          const label=el.textContent?.trim()||'';
+          if(!label||label.length>85||!expression.test(label))continue;
+          const rect=el.getBoundingClientRect();
+          if(rect.width<15||rect.height<10||rect.height>65)continue;
+          const x=frameRect.left+rect.left-stageRect.left-headerToggle.offsetWidth-10;
+          const y=frameRect.top+rect.top-stageRect.top+(rect.height-headerToggle.offsetHeight)/2;
+          if(x<4||x>stageRect.width-headerToggle.offsetWidth-4||
+             y<4||y>stageRect.height-headerToggle.offsetHeight-4)continue;
+          headerToggle.style.right='auto';
+          headerToggle.style.bottom='auto';
+          headerToggle.style.left=Math.round(x)+'px';
+          headerToggle.style.top=Math.round(y)+'px';
+          break;
+        }
+      }catch(error){/* Entry may still be initializing; use safe fallback. */}
+    }
+    function toggleEditorHeader(){
       const collapsed=layer.classList.toggle('ne-header-collapsed');
       headerToggle.textContent=collapsed?'▼ 펼치기':'▲ 접기';
       headerToggle.setAttribute('aria-expanded',collapsed?'false':'true');
       headerToggle.setAttribute('aria-label',collapsed?'상단 메뉴 펼치기':'상단 메뉴 접기');
-      // The iframe viewport changes naturally; notify the Blockly workspace.
       requestAnimationFrame(()=>{
         window.dispatchEvent(new Event('resize'));
-        try{iframe.contentWindow?.dispatchEvent(new Event('resize'))}
+        try{iframe.contentWindow?.dispatchEvent(new iframe.contentWindow.Event('resize'))}
         catch(error){console.warn('엔트리 편집기 크기 조정:',error)}
+        positionHeaderToggle();
       });
-    });
+    }
+    headerToggle.addEventListener('click',toggleEditorHeader);
+    iframe.addEventListener('load',()=>requestAnimationFrame(positionHeaderToggle));
+    window.addEventListener('resize',()=>requestAnimationFrame(positionHeaderToggle));
+    setInterval(positionHeaderToggle,2000);
+    requestAnimationFrame(positionHeaderToggle);
     // Ensure teacher mode immediately displays all unlocked mission buttons.
     updateMissionButtons();
     // The original 100-run assessment calls showRank({score,rank,...}).
