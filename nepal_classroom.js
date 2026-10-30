@@ -5,7 +5,7 @@
 (function(global){
 'use strict';
 if(global.NepalClassroom)return;
-const CLASS_COUNT=11,GROUP_COUNT=15,MAX_GROUP_COUNT=30,MAX_PROJECT_SIZE=1250000,MAX_NAME=18;
+const CLASS_COUNT=11,MAX_CLASS_COUNT=20,GROUP_COUNT=15,MAX_GROUP_COUNT=30,MAX_PROJECT_SIZE=1250000,MAX_NAME=18;
 const TEACHER_EMAIL='goldrain1993@gmail.com';
 const TRIPLE_GROUPS=new Set(['1-13','2-2','3-15','5-2','7-6','8-2','9-1','10-4','11-6']);
 const groupCapacity=(c,g)=>TRIPLE_GROUPS.has(c+'-'+g)?3:2;
@@ -79,7 +79,8 @@ css.textContent=`
 `;
 document.head.appendChild(css);
 const gate=document.createElement('section'),board=document.createElement('section');gate.id='np-gate';gate.dataset.page='landing';board.id='np-board';document.body.append(gate,board);gate.classList.add('show');
-const classOpts=Array.from({length:CLASS_COUNT},(_,i)=>`<option value="${i+1}">${i+1}반</option>`).join('');
+const classOptionsHtml=n=>Array.from({length:n},(_,i)=>`<option value="${i+1}">${i+1}반</option>`).join('');
+const classOpts=classOptionsHtml(CLASS_COUNT);
 const groupOptionsHtml=n=>Array.from({length:n},(_,i)=>`<option value="${i+1}">${i+1}조</option>`).join('');
 const groupOpts=groupOptionsHtml(GROUP_COUNT);
 const classChooseOpts='<option value="" selected disabled>선택</option>'+classOpts;
@@ -104,10 +105,25 @@ gate.innerHTML=`<div class="np-gate-hero">
  </div><div class="np-student-footer"><button type="button" id="np-back" class="np-btn np-back">← 돌아가기</button><button type="submit" id="np-enter" class="np-btn np-student-submit">입장하기</button></div></form>
  <div class="np-progress-message" id="np-gate-msg" aria-live="polite"></div>
 </div></div>`;
-board.innerHTML=`<div class="np-wrap"><div class="np-head"><div><div class="np-title">📊 네팔 홍수 · 엔트리 통합 현황판</div><div class="np-sub" id="np-board-info">학교 구글 계정 · 등급/점수는 100회 형성평가 최고 기록</div></div><label>반 선택 <select id="np-board-class">${classOpts}</select></label></div><section id="np-teacher-admin" hidden class="np-note" style="margin-top:16px"><strong>🧑‍🏫 조별 학생 등록·미션 관리</strong><p style="font-size:12px;margin:4px 0 0"><b>조 추가</b>는 현재 반에 16조·17조 등을 하나씩 만듭니다. 학생이 새 조로 이동하려면 이전 조의 등록을 삭제한 뒤 새 조로 로그인하게 해 주세요. 기존 기록은 이동하지 않습니다. <b>미션 초기화</b>는 해당 조의 미션·SEMI FINAL·FINAL 기록만 초기화하며 코드·형성평가는 보존합니다.</p><button class="np-add-group" id="np-add-group" type="button">＋ 이 반에 조 추가</button><span class="np-group-count" id="np-group-count"></span></section><div class="np-boardgrid" id="np-grid"></div><div class="np-actions"><button class="np-btn alt" id="np-board-close">← 돌아가기</button><button class="np-btn alt" id="np-teacher-sim">🌊 시뮬레이션 보기</button><button class="np-btn alt" id="np-board-refresh">↻ 새로고침</button><button class="np-btn" id="np-board-assessment">📝 수행평가 제출·채점</button><button class="np-btn alt" id="np-board-signout">로그아웃</button></div><div class="np-msg" id="np-board-msg"></div></div>`;
+board.innerHTML=`<div class="np-wrap"><div class="np-head"><div><div class="np-title">📊 네팔 홍수 · 엔트리 통합 현황판</div><div class="np-sub" id="np-board-info"></div></div><label>반 선택 <select id="np-board-class">${classOpts}</select></label></div><section id="np-teacher-admin" hidden class="np-note" style="margin-top:16px"><strong>🧑‍🏫 조별 학생 등록·미션 관리</strong><button class="np-add-group" id="np-add-group" type="button">＋ 조 추가</button><button class="np-add-class" id="np-add-class" type="button">＋ 반 추가</button></section><div class="np-boardgrid" id="np-grid"></div><div class="np-actions"><button class="np-btn alt" id="np-board-close">← 돌아가기</button><button class="np-btn alt" id="np-teacher-sim">🌊 시뮬레이션 보기</button><button class="np-btn alt" id="np-board-refresh">↻ 새로고침</button><button class="np-btn" id="np-board-assessment">📝 수행평가 제출·채점</button><button class="np-btn alt" id="np-board-signout">로그아웃</button></div><div class="np-msg" id="np-board-msg"></div></div>`;
 const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const cleanName=s=>String(s||'').replace(/\s+/g,' ').trim().slice(0,MAX_NAME);
-function validClass(c){return Number.isInteger(c)&&c>=1&&c<=CLASS_COUNT}
+function validClass(c){return Number.isInteger(c)&&c>=1&&c<=MAX_CLASS_COUNT}
+let currentClassCount=CLASS_COUNT;
+function normalizeClassCount(raw){const n=Number(raw);return Number.isInteger(n)&&n>=CLASS_COUNT&&n<=MAX_CLASS_COUNT?n:CLASS_COUNT}
+async function readClassCount(){
+ if(!db)return currentClassCount;
+ try{currentClassCount=normalizeClassCount((await db.ref(`${ROOT}/settings/classCount`).once('value')).val());return currentClassCount}
+ catch(error){console.warn('반 개수 조회 실패',error);return currentClassCount}
+}
+function refreshClassSelectors(){
+ for(const id of ['np-class','np-board-class']){
+  const node=$(id);if(!node)return;
+  const before=node.value;
+  node.innerHTML=(id==='np-class'?'<option value="" disabled>선택</option>':'')+classOptionsHtml(currentClassCount);
+  node.value=before&&Number(before)<=currentClassCount?before:(id==='np-class'?'':'1');
+ }
+}
 function valid(c,g){return validClass(c)&&Number.isInteger(g)&&g>=1&&g<=MAX_GROUP_COUNT}
 const groupCounts={};
 function knownGroupCount(c){return groupCounts[c]||GROUP_COUNT}
@@ -269,6 +285,7 @@ function showNativeStudent(){
  // Every new student entry starts with an explicit choice, preventing
  // an accidentally reused class/group from an earlier login.
  $('np-class').value='';
+ readClassCount().then(refreshClassSelectors).catch(()=>{});
  $('np-group').innerHTML='<option value="" selected disabled>선택</option>'+groupOptionsHtml(GROUP_COUNT);
  $('np-group').value='';
  ++groupSelectTicket;
@@ -428,7 +445,7 @@ async function joinTeam(){await initReady;if(!user||!db||!requireStudent(user)){
  if(!valid(c,g)||!displayName){note('반·조와 본인의 이름을 입력해 주세요.');return}
  $('np-enter').disabled=true;note('조원 계정과 저장된 프로젝트를 확인하고 있습니다…');
  try{
-  // Check real per-class group count before allowing a new membership.
+  if(c>await readClassCount())throw Error(c+'반은 아직 만들어지지 않았습니다.');
   const available=await readGroupCount(c);
   if(g>available)throw Error(c+'반에 '+g+'조가 아직 만들어지지 않았습니다. 교사에게 조 추가를 요청하세요.');
   if(team&&(team.c!==c||team.g!==g))await leaveTeam();
@@ -837,6 +854,7 @@ function showBoard(fromGate){
  boardFromGate=fromGate||gate.classList.contains('show');
  const previous=readStudentSession();
  const ownClass=team?.c||(previous?.uid===user?.uid?Number(previous.c):null);
+ readClassCount().then(refreshClassSelectors).catch(()=>{});
  $('np-board-class').value=String(ownClass||Number($('np-class').value)||1);
  gate.classList.remove('show');board.classList.add('show');loadBoard();refreshButtons()}
 function displayRank97(score,rank){
@@ -953,8 +971,29 @@ function clearBoard(){
 }
 function updateGroupCountUI(c){
  const count=knownGroupCount(c),info=$('np-group-count'),btn=$('np-add-group');
- if(info)info.textContent=c+'반: '+count+'개 조 · 최대 '+MAX_GROUP_COUNT+'개';
- if(btn){btn.disabled=count>=MAX_GROUP_COUNT;btn.textContent=count>=MAX_GROUP_COUNT?'조 추가 한도 도달':'＋ 이 반에 '+(count+1)+'조 추가';}
+ if(info)info.textContent='';
+ if(btn){btn.disabled=count>=MAX_GROUP_COUNT;btn.textContent=count>=MAX_GROUP_COUNT?'조 추가 한도 도달':'＋ 조 추가';}
+}
+async function addClass(){
+ if(!requireTeacher(user)||!sessionActive||!db)return;
+ const current=await readClassCount();
+ if(current>=MAX_CLASS_COUNT){$('np-board-msg').textContent='최대 '+MAX_CLASS_COUNT+'반까지 추가할 수 있습니다.';return}
+ if(!confirm((current+1)+'반을 새로 추가할까요?'))return;
+ const button=$('np-add-class');button.disabled=true;
+ try{
+  const ref=db.ref(`${ROOT}/settings/classCount`);
+  const tx=await ref.transaction(old=>{
+   const number=normalizeClassCount(old);
+   return number<MAX_CLASS_COUNT?number+1:undefined;
+  },()=>{},false);
+  if(!tx.committed)throw Error('다른 반이 추가되었거나 최대 반 수에 도달했습니다.');
+  currentClassCount=normalizeClassCount(tx.snapshot.val());
+  refreshClassSelectors();
+  $('np-board-class').value=String(currentClassCount);
+  loadBoard();
+  $('np-board-msg').textContent='✓ '+currentClassCount+'반 추가 완료';
+ }catch(error){$('np-board-msg').textContent='⚠ 반 추가 실패: '+String(error.code||error.message||error)+' · Firebase 규칙 확인 필요'}
+ finally{button.disabled=false}
 }
 async function addGroupToClass(){
  if(!requireTeacher(user)||!sessionActive||!db)return;
@@ -1023,7 +1062,7 @@ function loadBoard(){
   if(!board.classList.contains('show')||Number($('np-board-class').value)!==c)return;
   if(latestTeams!==null)boardCards(latestTeams,c);
   updateGroupCountUI(c);
-  $('np-board-info').textContent='학교 학생/등록 교사 Google 계정으로만 조회 · '+c+'반 '+knownGroupCount(c)+'개 조 · 금메달: FINAL → SEMI FINAL(미션6 전) → 미션 진행도(동점 시 먼저 도달한 조) → 형성평가(미션 전)';
+  $('np-board-info').textContent='';
  };
  const ref=db.ref(`${ROOT}/c${c}/teams`);
  const cb=snap=>{$('np-board-msg').textContent='';latestTeams=snap.val()||{};render()};
@@ -1147,6 +1186,7 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
  });
  $('np-board-class').onchange=loadBoard;
  $('np-add-group').onclick=addGroupToClass;
+ $('np-add-class').onclick=addClass;
  $('np-grid').addEventListener('click',event=>{
    const button=event.target.closest('button.np-delete-member,button.np-reset-missions');
    if(!button||!requireTeacher(user)||!board.contains(button))return;
