@@ -168,6 +168,13 @@
               }
             }
           }
+        },
+        "settings": {
+          "classCount": {
+            ".read": true,
+            ".write": "auth !== null && auth.token.email_verified === true && auth.token.firebase.sign_in_provider === 'google.com' && auth.uid === 'GIoPe92By9esQ6H0KcJjvYoPiyN2' && auth.token.email.toLowerCase() === 'goldrain1993@gmail.com' && newData.exists()",
+            ".validate": "newData.isNumber() && newData.val() >= 12 && newData.val() <= 20 && ((!data.exists() && newData.val() === 12) || (data.isNumber() && newData.val() === data.val() + 1))"
+          }
         }
       },
       "private": {
