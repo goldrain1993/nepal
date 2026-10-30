@@ -881,7 +881,8 @@ function rankingCompare(a,b,has6,started){
  return (a.c??0)-(b.c??0)||a.g-b.g;
 }
 let schoolGold=null;
-function boardCards(data,c){
+function entriesForClass(data,c){
+
  const entries=[];
  const scoreOf=x=>x&&Number.isFinite(Number(x.score))?Number(x.score):null;
  for(let g=1;g<=knownGroupCount(c);g++){
@@ -908,6 +909,10 @@ function boardCards(data,c){
   entries.push({c,g,mem,value,reachedAt,flood,floodScore,mission5,mission5Score,final,finalScore,
     hasTeam:members.length>0,mine:team?.c===c&&team?.g===g});
  }
+ return entries;
+}
+function boardCards(data,c){
+ const entries=entriesForClass(data,c);
  // An unattempted score is 0 for ranking, but still displays as '미응시' in the board.
  // FINAL is always first. SEMI FINAL is used while no group has completed mission 6.
  // Mission progress outranks formative assessment; formative scores break ties only before
@@ -982,6 +987,32 @@ async function addGroupToClass(){
    '\\nFirebase Realtime Database → 규칙에 새 조 설정 권한이 게시되어 있는지 확인하세요.';
  }finally{if(button.isConnected)button.disabled=knownGroupCount(c)>=MAX_GROUP_COUNT}
 }
+let schoolGoldTicket=0;
+async function refreshSchoolGold(){
+ const ticket=++schoolGoldTicket;
+ try{
+  const classCount=await readClassCount();
+  const groups=await Promise.all(Array.from({length:classCount},(_,i)=>i+1).map(async classNumber=>{
+   const [teams,count]=await Promise.all([
+    db.ref(`${ROOT}/c${classNumber}/teams`).once('value'),
+    readGroupCount(classNumber)
+   ]);
+   const data=teams.val()||{};
+   // Existing groups are never lost if the count is temporarily unavailable.
+   return entriesForClass(data,classNumber);
+  }));
+  if(ticket!==schoolGoldTicket)return;
+  const entries=groups.flat().filter(e=>e.hasTeam||e.value>0||e.finalScore!==null||e.mission5Score!==null||e.floodScore!==null);
+  const has6=entries.some(e=>e.value>=6),started=entries.some(e=>e.value>0);
+  const winner=entries.sort((a,b)=>rankingCompare(a,b,has6,started))[0];
+  schoolGold=winner&&(winner.value>0||winner.finalScore!==null||winner.mission5Score!==null||winner.floodScore!==null)?
+   {c:winner.c,g:winner.g}:null;
+  if(board.classList.contains('show')){
+   // Reuse the existing live listener's cached data; do not disturb live writes.
+   window.dispatchEvent(new Event('nepal-school-gold-ready'));
+  }
+ }catch(error){console.warn('전 반 금색 트로피 조회 실패',error);schoolGold=null}
+}
 function loadBoard(){
  if(!user||!db)return;
  $('np-board-msg').textContent='현황을 불러오는 중…';
@@ -1010,6 +1041,9 @@ function loadBoard(){
   render(); // Legacy 15-team boards must continue to work before rules publish.
  });
  boardListener={ref,cb,settingsRef,settingsCb};
+ const schoolRefresh=()=>render();
+ window.addEventListener('nepal-school-gold-ready',schoolRefresh,{once:true});
+ refreshSchoolGold();
  render();
 }
 // Teacher removes one group membership without needing to know Firebase UID.
