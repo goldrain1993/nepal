@@ -61,6 +61,19 @@
   #ne-saved-live b{color:#b4eefd}
   #ne-important-hint{display:none;margin:10px 0;padding:12px 13px;border:2px solid #f2cb65;border-radius:10px;background:#352b14;color:#ffebac;font-size:13px;line-height:1.55;font-weight:800}
   #ne-mission3-tab-hint{display:none;margin:9px 0;padding:11px 12px;border:1px solid #8fbeef;border-radius:9px;background:#192d41;color:#d8ebff;font-size:13px;font-weight:800}
+  #ne-list-guide{display:none;margin:10px 0 14px;border:1px solid #79a6d0;border-radius:10px;background:#102538;color:#e0f3ff;font-size:12px;line-height:1.65;overflow:hidden}
+  #ne-list-guide summary{cursor:pointer;background:#1c3850;padding:11px 13px;color:#d9eeff;font-size:14px;font-weight:900}
+  #ne-list-guide .ne-list-body{padding:11px 13px}
+  #ne-list-guide .ne-list-step{font-weight:900;color:#b9e5ff;margin:10px 0 4px}
+  #ne-list-guide .ne-list-step:first-child{margin-top:0}
+  #ne-list-guide p{margin:4px 0 8px}
+  #ne-list-guide ol{margin:5px 0 9px;padding-left:19px}
+  #ne-list-guide li{margin:4px 0}
+  #ne-list-guide .ne-list-cells{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:9px 0}
+  #ne-list-guide .ne-list-cells span{text-align:center;padding:6px 2px;border-radius:7px;border:1px solid #547c91;background:#1b3749}
+  #ne-list-guide .ne-list-cells small{display:block;color:#bdd9e8;font-size:10px}
+  #ne-list-guide .ne-list-cells b{font-size:19px;color:#f5ffc8}
+  #ne-list-guide .ne-list-tip{margin-top:10px;padding:9px;background:#29432d;border-left:3px solid #b8e879;border-radius:6px;color:#f0ffd7}
   #ne-alarm-live{display:none;margin:8px 0;padding:9px 11px;border-radius:9px;background:#601e23;color:#ffe2e4;border:1px solid #f27c87;font-weight:900}
   .ne-warning{background:#361b19;border:1px solid #e5795f;border-left:5px solid #ff8a6b;border-radius:9px;padding:16px 14px;margin:12px 0}
   .ne-warning h2{margin:3px 0 8px;font-size:22px;color:#ffbe94;line-height:1.3}
@@ -161,7 +174,7 @@
     {title:'수위 위험 판단',fault:'수위 위험 여부를 판단하지 못합니다!',description:'변수와 반복문을 배웠으니 이번에는 조건문을 이용해 수위 위험 여부를 계산하세요.',task:'「수위위험」 변수를 만들고 수위값이 4m 이상이면 「수위위험」이 1(위험하다는 의미로 숫자 1 저장), 수위값이 4m 미만이면 「수위위험」이 0(안전하다는 의미로 숫자 0 저장)이 되도록 조건문을 작성하세요. 이 판단도 「계속 반복하기」 안에서 계속 바꿔 주세요.',example:'수위 3.50m → 수위위험 0 / 수위 4.80m → 수위위험 1',active:true},
     {title:'유속·진동·강수 확장',fault:'다른 센서들의 위험 신호도 만들어야 합니다!',description:'수위의 위험 판단을 유속·진동·강수 센서로 확장해 보세요.',task:'「유속값」·「진동값」·「강수값」 및 각 위험 변수를 만들고 실습용 기준 유속 3m/s 이상·진동 16 이상·강수 35mm/h 이상이면 1, 아니면 0이 되도록 반복해서 다시 저장하세요.',example:'유속 3.60 → 위험 1 / 진동 15.50 → 위험 0 / 강수 40 → 위험 1',active:true},
     {title:'SEMI FINAL · 센서 배치·경보 알고리즘',fault:'실제 센서 데이터를 이용해 경보를 완성하세요!',description:'센서를 네팔 지형에 배치하고 4개 센서의 위험 기준·비교 방향을 엔트리 코드로 직접 정하세요. 경보 알고리즘을 완성한 후 100회 평가를 받습니다.',task:'「🗺 센서 설치 화면」에서 ① 관측 지점을 살펴보고 ② 수위·유속·진동·강수 센서를 하나씩 설치하세요. 엔트리에서 실시간 센서값과 4개의 위험신호를 계속 다시 계산하고, 「위험개수」를 계산해 N개 이상(N=1~4) 위험하면 「시작」 탭의 빨간 「경보 울리기」 블록이 실행되도록 구현하세요. 학생 코드로 100회 재난 평가를 받습니다.',example:'4개 센서 설치 → 엔트리에서 위험 기준과 경보 N 직접 설정 → 100회 평가 및 점수 획득',active:true},
-    {title:'리스트로 위험신호 정리',fault:'4개의 위험신호를 리스트로 정리해 보세요!',description:'SEMI FINAL의 경보 알고리즘은 유지하면서 이번에는 리스트 자료구조와 반복문만 집중 연습합니다. 100회 평가는 다음 FINAL 미션에서 다시 진행합니다.',task:'「위험목록」 리스트를 만들고 수위위험·유속위험·진동위험·강수위험을 차례대로 4칸에 저장하세요. 매번 최신 위험신호로 리스트 항목을 바꾸고, 「반복번호」와 「반복하기」를 이용해 리스트의 1~4번째 값을 확인해 「위험개수」를 계산하세요. 기존의 경보 알고리즘이 유지되도록 검사해 보세요.',example:'위험목록 [1, 0, 1, 0] → 반복해서 1의 개수 세기 → 위험개수 2',active:true},
+    {title:'리스트로 위험신호 정리',fault:'4개의 위험신호를 리스트로 정리해 보세요!',description:'리스트는 여러 값을 순서대로 저장하는 자료구조입니다. SEMI FINAL에서 만든 4개 위험신호를 하나의 리스트로 묶고, 반복문으로 위험한 센서가 몇 개인지 세어 보세요. 100회 평가는 다음 FINAL 미션에서 다시 진행합니다.',task:'「위험목록」 리스트를 만들고 수위위험·유속위험·진동위험·강수위험을 차례대로 4칸에 저장하세요. 매번 최신 위험신호로 리스트 항목을 바꾸고, 「반복번호」와 「반복하기」를 이용해 리스트의 1~4번째 값을 확인해 「위험개수」를 계산하세요. 기존의 경보 알고리즘이 유지되도록 검사해 보세요.',example:'위험목록 [1, 0, 1, 0] → 반복해서 1의 개수 세기 → 위험개수 2',active:true},
     {title:'FINAL 미션',fault:'지금까지 만든 재난 경보 시스템을 최종 검증하세요!',description:'센서 위치 설계·위험 조건·리스트·반복문·경보 판단을 모두 결합해 최종 재난 경보 시스템을 완성하세요.',task:'필요하면 센서 설치 화면에서 ① 관측 지점과 ② 센서 설치를 다시 확인하세요. 엔트리에서 4개의 위험신호를 「위험목록」 리스트에 저장하고 반복문으로 「위험개수」를 세어 N개 이상 위험하면 빨간 「경보 울리기」 블록이 실행되게 하세요. 전체 코드를 검사한 뒤 100회 재난 평가에 도전하세요.',example:'센서 위치 + 4개 위험 판단 + 리스트·반복문 + 경보 알고리즘 → FINAL 100회 평가',active:true}
 
   ];
@@ -192,6 +205,39 @@
   const trigger = document.createElement('button'); trigger.id='nepal-entry-trigger'; trigger.textContent='🧩 엔트리 개발자 모드';trigger.style.display='none';
   const layer = document.createElement('section'); layer.id='nepal-entry-layer';
   layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">7단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 반복해서 수위값 바꾸기</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 경보 알고리즘</b> → <b>⑥ 리스트 학습</b> → <b>🏆 FINAL</b></div><div id="ne-missions" class="ne-mission-list"></div><div id="ne-progress-sync" aria-live="polite"><span id="ne-progress-sync-message">☁️ 미션 통과 후 현황판에 진행도가 저장됩니다.</span><button type="button" id="ne-progress-retry" hidden>↻ 진행도 다시 저장</button></div><div id="ne-teacher-records" hidden></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 미션</b><div id="ne-task"></div></div><div id="ne-important-hint">⭐ 중요 힌트 · <b>「N」</b>과 <b>「위험개수」</b> 변수는 SEMI FINAL 경보 알고리즘을 만드는 데 꼭 필요합니다.</div><div id="ne-mission3-tab-hint">💡 미션 3 힌트 · 살펴볼 탭: <b>「흐름」 · 「판단」 · 「자료」</b><div style="margin-top:6px">💡 「수위값」 말고 또 무슨 변수가 필요할까요?</div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 <span id="ne-grade-title">경보 성능평가</span></div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">📊 엔트리 변수 상태: <b>실행 전</b></div><div id="ne-alarm-live" aria-live="polite">🚨 경보 울리기 블록 실행!</div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button></aside><div class="ne-editor-stage"><div id="ne-workspace-toolbar"><span id="ne-workspace-heading">🧩 엔트리 코딩 편집기</span><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button></div><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=60"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
+  // Teaching-only panel: shown on Mission 6 (index 5); no grading or save changes.
+  const listGuide=document.createElement('details');
+  listGuide.id='ne-list-guide';listGuide.open=true;
+  listGuide.innerHTML=`<summary>📚 리스트의 개념 + 엔트리에서 리스트 사용하기</summary>
+  <div class="ne-list-body">
+   <div class="ne-list-step">① 리스트가 무엇일까요?</div>
+   <p><b>변수</b>는 값 하나를 저장하지만, <b>리스트</b>는 여러 값을 <b>순서대로</b> 저장해요. 번호를 이용해 원하는 값을 찾아볼 수 있어요.</p>
+   <p>예: <b>「수위위험」 변수 = 1</b> / <b>「위험목록」 리스트 = [1, 0, 1, 0]</b></p>
+   <div class="ne-list-cells">
+    <span><small>1번째 · 수위</small><b>1</b></span>
+    <span><small>2번째 · 유속</small><b>0</b></span>
+    <span><small>3번째 · 진동</small><b>1</b></span>
+    <span><small>4번째 · 강수</small><b>0</b></span>
+   </div>
+   <p><b>1은 위험, 0은 안전!</b> 따라서 위험한 센서는 <b>2개</b>예요.</p>
+   <div class="ne-list-step">② 엔트리에서 리스트 만드는 방법</div>
+   <ol>
+    <li>엔트리 블록 메뉴에서 <b>「자료」</b> 탭을 선택해요.</li>
+    <li><b>리스트 만들기</b>를 눌러 이름을 <b>「위험목록」</b>으로 정해요.</li>
+    <li><b>항목 추가·바꾸기</b> 블록을 이용해 수위위험 → 유속위험 → 진동위험 → 강수위험을 <b>1~4번째</b>에 저장해요.</li>
+    <li>센서값이 변하면 <b>리스트의 값도 다시 바뀌도록</b> 만들어요.</li>
+   </ol>
+   <div class="ne-list-step">③ 리스트를 반복문으로 확인하기</div>
+   <ol>
+    <li><b>「위험개수」 = 0</b>, <b>「반복번호」 = 1</b>로 시작해요.</li>
+    <li><b>「4번 반복하기」</b> 안에서 <b>「위험목록」의 「반복번호」번째 값</b>을 읽어요.</li>
+    <li>읽은 값이 <b>1이면 「위험개수」를 1 증가</b>시켜요.</li>
+    <li><b>「반복번호」를 1 증가</b>시키고 다음 항목을 확인해요.</li>
+   </ol>
+   <div class="ne-list-tip">⭐ <b>주의!</b> 새로운 센서값을 받을 때 계속 추가만 하면 리스트가 8칸, 12칸으로 늘 수 있어요. <b>기존 4칸의 값을 바꾸거나, 목록을 비우고 다시 4개를 넣으세요.</b></div>
+   <p style="margin-top:9px">✅ 확인 목표: <b>위험목록 [1, 0, 1, 0] → 위험개수 2</b></p>
+  </div>`;
+  document.getElementById('ne-task').closest('.ne-task').insertAdjacentElement('afterend',listGuide);
   // Pause the original simulator's background animation loops without altering index.html.
   // The two named rAF loops are global function declarations in the original page.
   // Their drawing work is skipped while EntryJS covers the simulator; their ordinary
@@ -720,6 +766,7 @@
     document.getElementById('ne-saved-live').innerHTML='📊 엔트리 변수 상태: <b>실행 결과 대기 중</b>';
     document.getElementById('ne-important-hint').style.display=i===4?'block':'none';
     document.getElementById('ne-mission3-tab-hint').style.display=i===2?'block':'none';
+    listGuide.style.display=i===5?'block':'none';
     document.getElementById('ne-alarm-live').style.display='none';
     document.getElementById('ne-fault').textContent=m.fault;
     document.getElementById('ne-why').textContent=m.description;
