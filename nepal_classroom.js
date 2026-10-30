@@ -812,6 +812,32 @@ async function saveSimulatorDesign(design,reason='auto'){
   return false;
  }
 }
+// Entry developer sensor placements are intentionally separate from the
+// simulator's original sensor design and the Entry code payload.
+async function loadEntrySensorDesign(){
+ const teacherSave=requireTeacher(user)&&sessionActive;
+ if(guestActive)return null;
+ if(!user||!db||(!teacherSave&&!team))throw Error('로그인 후 센서 배치를 불러올 수 있습니다.');
+ const path=(teacherSave?teacherPath():workPath(team.c,team.g))+'/entrySensorDesign';
+ const record=(await db.ref(path).once('value')).val();
+ if(!record?.payload)return null;
+ const data=JSON.parse(record.payload);
+ if(data?.version!==1||!Array.isArray(data.sensors)||data.sensors.length>4)throw Error('저장된 개발자 센서 배치 데이터가 올바르지 않습니다.');
+ return data;
+}
+async function saveEntrySensorDesign(data){
+ const teacherSave=requireTeacher(user)&&sessionActive;
+ if(guestActive)return true;
+ if(!user||!db||(!teacherSave&&!team))return false;
+ if(data?.version!==1||!Array.isArray(data.sensors)||data.sensors.length>4)return false;
+ const text=JSON.stringify(data);
+ if(text.length>12000)return false;
+ const path=(teacherSave?teacherPath():workPath(team.c,team.g))+'/entrySensorDesign';
+ try{
+  await db.ref(path).set({version:1,payload:text,updatedBy:user.uid,updatedAt:fb.database.ServerValue.TIMESTAMP});
+  return true;
+ }catch(error){note('⚠ 개발자 모드 센서 위치 저장 실패: '+String(error.code||error.message||error));return false}
+}
 async function recordStageBest(key,label,result){
  const teacherSave=requireTeacher(user)&&sessionActive;
  if(guestActive||!user||!db||(!teacherSave&&(!team||!requireStudent(user))))return false;
@@ -1232,7 +1258,7 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
    if(reopen)await openEditor();
   }catch(e){note('⚠ 교사 작업 자동 복원 실패: '+String(e.message||e))}
  }).catch(e=>console.warn('교사 세션 복원 준비 실패',e));
- return{rememberEditorState:open=>{rememberTeacherSession(open);rememberStudentSession(open)},refreshUI:refreshButtons,showGate,showBoard,onEntryReady,saveNow,saveProgress,getProgressSaveError:()=>lastProgressSaveError,saveSimulatorDesign,recordFloodResult,recordMission5Result,recordFinalResult,openEditor,closeEditing,enterTeacherSimulator,showLogin,signout,receiveFrameMessage,getTeam:()=>team,getTeacherScores:()=>teacherScores,isDesignReady:()=>designReady&&!guestActive&&(!!team&&requireStudent(user)||sessionActive&&requireTeacher(user)),isGuest:()=>guestActive,isTeacher:()=>sessionActive&&!guestActive&&requireTeacher(user)};
+ return{rememberEditorState:open=>{rememberTeacherSession(open);rememberStudentSession(open)},refreshUI:refreshButtons,showGate,showBoard,onEntryReady,saveNow,saveProgress,getProgressSaveError:()=>lastProgressSaveError,saveSimulatorDesign,loadEntrySensorDesign,saveEntrySensorDesign,recordFloodResult,recordMission5Result,recordFinalResult,openEditor,closeEditing,enterTeacherSimulator,showLogin,signout,receiveFrameMessage,getTeam:()=>team,getTeacherScores:()=>teacherScores,isDesignReady:()=>designReady&&!guestActive&&(!!team&&requireStudent(user)||sessionActive&&requireTeacher(user)),isGuest:()=>guestActive,isTeacher:()=>sessionActive&&!guestActive&&requireTeacher(user)};
 }
 global.NepalClassroom={setup};
 })(window);
