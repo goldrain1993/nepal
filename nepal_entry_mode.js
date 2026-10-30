@@ -9,7 +9,7 @@
   if (document.getElementById('nepal-entry-trigger')) return;
   const css = document.createElement('style');
   css.textContent = `
-  #nepal-entry-trigger{position:fixed;z-index:12000;right:22px;bottom:20px;padding:15px 22px;border:2px solid #b8f480;border-radius:12px;background:#142916;color:#daffb6;font:800 15px/1.4 system-ui,'Malgun Gothic',sans-serif;box-shadow:0 8px 34px #0009;cursor:pointer}
+  #nepal-entry-trigger{position:fixed;z-index:12000;left:22px;right:auto;bottom:20px;padding:15px 22px;border:2px solid #b8f480;border-radius:12px;background:#142916;color:#daffb6;font:800 15px/1.4 system-ui,'Malgun Gothic',sans-serif;box-shadow:0 8px 34px #0009;cursor:pointer}
   #nepal-entry-layer{position:fixed;inset:0;z-index:12500;background:#050b08;color:#e7f5dd;display:none;font-family:system-ui,'Malgun Gothic',sans-serif}
   #nepal-entry-layer.open{display:flex;flex-direction:column}
   #nepal-entry-layer *{box-sizing:border-box}
@@ -125,7 +125,7 @@
   body.nepal-mission6-sim #nepal-entry-trigger,
   body.nepal-mission6-sim #nepal-class-board,
   body.nepal-mission6-sim #nepal-class-switch{
-    left:auto!important;right:22px!important;
+    left:22px!important;right:auto!important;
     z-index:12900!important;max-width:220px!important;
   }
   body.nepal-mission6-sim #nepal-entry-trigger{display:block!important;bottom:16px!important}
@@ -134,7 +134,7 @@
   @media(max-width:800px){
     body.nepal-mission6-sim #nepal-entry-trigger,
     body.nepal-mission6-sim #nepal-class-board,
-    body.nepal-mission6-sim #nepal-class-switch{left:auto!important;right:14px!important}
+    body.nepal-mission6-sim #nepal-class-switch{left:14px!important;right:auto!important}
   }
   #ne-sim-stage #sensorType optgroup:last-child option:first-child{display:none!important}
   #ne-sim-stage #dataMode,#ne-sim-stage #replayControls{display:none!important}
@@ -439,13 +439,13 @@
   document.body.append(trigger,layer);
   const floatBoard=document.createElement('button');floatBoard.id='nepal-class-board';
   floatBoard.textContent='📊 조별 현황판';
-  floatBoard.style.cssText='position:fixed;z-index:12000;right:22px;bottom:83px;padding:12px 18px;background:#102b22;color:#ecffd8;border:1px solid #7ebc65;border-radius:10px;font:800 13px system-ui;cursor:pointer';
+  floatBoard.style.cssText='position:fixed;z-index:12000;left:22px;right:auto;bottom:83px;padding:12px 18px;background:#102b22;color:#ecffd8;border:1px solid #7ebc65;border-radius:10px;font:800 13px system-ui;cursor:pointer';
   floatBoard.style.display='none';
   floatBoard.onclick=()=>classroom?.showBoard(false);
   document.body.appendChild(floatBoard);
   const floatSignout=document.createElement('button');floatSignout.id='nepal-class-switch';
   floatSignout.textContent='🚪 로그아웃';
-  floatSignout.style.cssText='position:fixed;z-index:12000;right:22px;bottom:137px;padding:9px 16px;background:#152619;color:#dbf0d5;border:1px solid #507859;border-radius:10px;font:700 12px system-ui;cursor:pointer';
+  floatSignout.style.cssText='position:fixed;z-index:12000;left:22px;right:auto;bottom:137px;padding:9px 16px;background:#152619;color:#dbf0d5;border:1px solid #507859;border-radius:10px;font:700 12px system-ui;cursor:pointer';
   floatSignout.style.display='none';
   floatSignout.onclick=()=>classroom?.isGuest?.()?classroom?.showLogin?.():classroom?.signout?.();
   document.body.appendChild(floatSignout);
@@ -1071,7 +1071,7 @@
     designButton.addEventListener('click',()=>flushSimulatorDesign(true));
     updateDesignControls();
   }
-  installSimulatorDesignControls();
+  // The large sensor-save panel is removed. The existing background design autosave remains enabled.
   // Sensor placement/removal and all rule controls are implemented in index.html;
   // scan actual state rather than relying on brittle DOM event order.
   setInterval(scanSimulatorDesign,1400);
