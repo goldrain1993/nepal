@@ -1330,20 +1330,26 @@
         const expression=/(?:블록\s*(?:총\s*)?(?:개수|갯수|수)|블록\s*\d+\s*개|blocks?\s*(?:count|:)\s*\d*)/i;
         const stageRect=editorStage.getBoundingClientRect();
         const frameRect=iframe.getBoundingClientRect();
+        let best=null,smallest=Infinity;
         for(const el of candidates){
+          // Avoid walking huge script/workspace containers every two seconds.
+          if(el.childElementCount>4)continue;
           const label=el.textContent?.trim()||'';
           if(!label||label.length>85||!expression.test(label))continue;
           const rect=el.getBoundingClientRect();
-          if(rect.width<15||rect.height<10||rect.height>65)continue;
+          if(rect.width<15||rect.width>300||rect.height<10||rect.height>65)continue;
           const x=frameRect.left+rect.left-stageRect.left-headerToggle.offsetWidth-10;
           const y=frameRect.top+rect.top-stageRect.top+(rect.height-headerToggle.offsetHeight)/2;
           if(x<4||x>stageRect.width-headerToggle.offsetWidth-4||
              y<4||y>stageRect.height-headerToggle.offsetHeight-4)continue;
+          const area=rect.width*rect.height;
+          if(area<smallest){smallest=area;best={x,y}}
+        }
+        if(best){
           headerToggle.style.right='auto';
           headerToggle.style.bottom='auto';
-          headerToggle.style.left=Math.round(x)+'px';
-          headerToggle.style.top=Math.round(y)+'px';
-          break;
+          headerToggle.style.left=Math.round(best.x)+'px';
+          headerToggle.style.top=Math.round(best.y)+'px';
         }
       }catch(error){/* Entry may still be initializing; use safe fallback. */}
     }
