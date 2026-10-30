@@ -471,7 +471,7 @@
       if(typeof scenario!=='undefined' && scenario &&
          typeof sensors!=='undefined' && Array.isArray(sensors) &&
          typeof sensorValue==='function' && typeof stepIndex==='number'){
-        const water=sensors.find(s=>s.type==='수위 센서');
+        const water=(mission===4||mission===6?entrySensorLayout.sensors:sensors).find(s=>s.type==='수위 센서');
         if(water){
           const val=Number(sensorValue(water,stepIndex));
           if(Number.isFinite(val))return {value:Math.round(val*100)/100,source:'원본 홍수 시뮬레이션 수위 센서'};
@@ -487,7 +487,7 @@
       if(typeof scenario!=='undefined' && scenario &&
          typeof sensors!=='undefined' && Array.isArray(sensors) &&
          typeof sensorValue==='function' && typeof stepIndex==='number'){
-        const match=sensors.find(s=>s.type===label);
+        const match=(mission===4||mission===6?entrySensorLayout.sensors:sensors).find(s=>s.type===label);
         if(match){
           const v=Number(sensorValue(match,stepIndex));
           if(Number.isFinite(v))return {value:Math.round(v*100)/100,source:'원본 홍수 시뮬레이션 '+label};
@@ -894,6 +894,7 @@
         entrySensorLoaded=true;
       }
     }catch(error){status.textContent='⚠ 이전 개발자 센서 위치를 보호하기 위해 화면을 열지 않았습니다: '+String(error.message||error);return;}
+    if(mission!==4&&mission!==6)return;
     simulatorBeforeEntry=copySensorList(sensors);
     simulatorDesignBeforeEntry=captureSimulatorDesign();
     sensors.splice(0,sensors.length,...copySensorList(entrySensorLayout.sensors));
