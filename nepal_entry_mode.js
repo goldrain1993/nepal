@@ -833,7 +833,7 @@
   }
   function validatedEntryLayout(layout){
     if(layout?.version!==1||!Array.isArray(layout.sensors)||layout.sensors.length>4||
-       layout.sensors.some(x=>!['수위 센서','유속 센서','진동 센서','강수 센서'].includes(x.type)||
+       layout.sensors.some(x=>!['수위 센서','유속 센서','진동 센서','강수 센서','기온 센서'].includes(x.type)||
          !Number.isFinite(Number(x.x))||!Number.isFinite(Number(x.z))))
       throw Error('저장된 개발자 센서 위치 데이터 형식 오류');
     return entryLayoutFrom(layout.sensors);
@@ -856,7 +856,7 @@
   mission6Tip.appendChild(importSensorButton);
   importSensorButton.onclick=()=>{
     const previous=simulatorBeforeEntry||[];
-    const selected=previous.filter(s=>['수위 센서','유속 센서','진동 센서','강수 센서'].includes(s.type));
+    const selected=previous.filter(s=>['수위 센서','유속 센서','진동 센서','강수 센서','기온 센서'].includes(s.type));
     if(!selected.length){status.textContent='시뮬레이션에 불러올 센서가 없습니다.';return;}
     if(!confirm('시뮬레이션에 설치했던 센서의 종류·위치를 가져올까요? 현재 개발자 센서 배치를 교체합니다.'))return;
     sensors.splice(0,sensors.length,...copySensorList(selected.map(s=>({type:s.type,x:s.x,z:s.z,rule:{enabled:true,op:'ge',th:''}}))));
@@ -886,7 +886,13 @@
     const owner=entrySensorWorkspace();
     try{
       const finished=await entrySensorSave;
-      if(finished===false)throw Error('이전 개발자 센서 위치를 아직 저장하지 못했습니다.');
+      if(finished===false){
+        // Preserve the in-memory layout and attempt a safe retry. Never fall
+        // back to an empty layout after an upload failure.
+        if(!await classroom?.saveEntrySensorDesign?.(entrySensorLayout))
+          throw Error('이전 개발자 센서 위치를 아직 저장하지 못했습니다.');
+        entrySensorSave=Promise.resolve(true);
+      }
       if(entrySensorOwner!==owner){entrySensorOwner=owner;entrySensorLoaded=false;entrySensorLayout={version:1,sensors:[]};}
       if(!entrySensorLoaded){
         const cloud=await classroom?.loadEntrySensorDesign?.();
@@ -941,6 +947,7 @@
   // Only sensor positions/types are managed by the simulator. The EntryJS
   // evaluator determines each threshold and compare operator from student code.
   function getMission5ConfiguredRules(){
+    if(layer.classList.contains('ne-sim-visible'))entrySensorLayout=entryLayoutFrom(sensors);
     const installed=entrySensorLayout.sensors;
     const missing=lessonSensorTypes.filter(type=>installed.filter(s=>s.type===type).length!==1);
     if(installed.length!==4||missing.length){
