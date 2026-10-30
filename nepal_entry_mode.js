@@ -449,6 +449,57 @@
   floatSignout.style.display='none';
   floatSignout.onclick=()=>classroom?.isGuest?.()?classroom?.showLogin?.():classroom?.signout?.();
   document.body.appendChild(floatSignout);
+  // Keep the original simulator's bottom help text readable beside the
+  // floating navigation buttons. On narrow map canvases, lift the buttons
+  // instead of overlapping the help label.
+  function layoutMapHelp(){
+    const help=document.getElementById('mapHelp');
+    const map=document.getElementById('viewWrap');
+    if(!help||!map)return;
+    const controls=[trigger,floatBoard,floatSignout];
+    const bases=[20,83,137];
+    const developerMap=document.body.classList.contains('nepal-mission6-sim');
+    const bottoms=developerMap?[16,79,133]:bases;
+    const visible=controls.filter(button=>button.getClientRects().length>0);
+    // Restore the simulator's normal help placement before measuring.
+    help.style.removeProperty('left');
+    help.style.removeProperty('right');
+    help.style.removeProperty('max-width');
+    help.style.removeProperty('text-align');
+    help.style.removeProperty('width');
+    help.style.removeProperty('white-space');
+    controls.forEach((button,i)=>{
+      const value=bottoms[i]+'px';
+      if(button.style.getPropertyValue('bottom')!==value||button.style.getPropertyPriority('bottom')!=='important')
+        button.style.setProperty('bottom',value,'important');
+    });
+    if(!visible.length)return;
+    const mapBox=map.getBoundingClientRect();
+    const farthestRight=Math.max(...visible.map(button=>button.getBoundingClientRect().right));
+    const leftLimit=Math.max(12,Math.ceil(farthestRight-mapBox.left+12));
+    const remaining=mapBox.width-leftLimit-12;
+    if(remaining>=185){
+      // Horizontal separation: text stays in the right portion of the map.
+      help.style.left=leftLimit+'px';
+      help.style.right='12px';
+      help.style.whiteSpace='normal';
+      help.style.textAlign='right';
+    }else{
+      // Narrow maps: keep help at the bottom and stack buttons above it.
+      help.style.left='12px';
+      help.style.right='12px';
+      help.style.maxWidth='none';
+      help.style.whiteSpace='normal';
+      const clear=Math.ceil(help.getBoundingClientRect().height+23);
+      controls.forEach((button,i)=>button.style.setProperty('bottom',(bottoms[i]+clear)+'px','important'));
+    }
+  }
+  window.NepalMapHelpLayout=layoutMapHelp;
+  window.addEventListener('resize',()=>requestAnimationFrame(layoutMapHelp));
+  if(typeof ResizeObserver==='function'){
+    const wrap=document.getElementById('viewWrap');
+    if(wrap)new ResizeObserver(()=>requestAnimationFrame(layoutMapHelp)).observe(wrap);
+  }
   document.getElementById('ne-close').addEventListener('click',()=>{if(classroom)classroom.closeEditing();else close();});
   const iframe=document.getElementById('ne-iframe'), status=document.getElementById('ne-status');
   iframe.addEventListener('load',()=>{if(iframe.dataset.loaded==='yes')polishEntryFrame()});
