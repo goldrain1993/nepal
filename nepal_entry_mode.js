@@ -940,7 +940,7 @@
   // Only sensor positions/types are managed by the simulator. The EntryJS
   // evaluator determines each threshold and compare operator from student code.
   function getMission5ConfiguredRules(){
-    const installed=Array.isArray(sensors)?sensors:[];
+    const installed=entrySensorLayout.sensors;
     const missing=lessonSensorTypes.filter(type=>installed.filter(s=>s.type===type).length!==1);
     if(installed.length!==4||missing.length){
       throw Error('센서 설치 화면에서 수위·유속·진동·강수 센서를 각각 하나씩, 총 4개 설치하세요.'+(missing.length?' 확인: '+missing.join(' · '):''));
@@ -966,7 +966,7 @@
     if(typeof simRunning!=='undefined'&&simRunning)throw Error('진행 중인 시뮬레이션을 종료한 후 평가하세요.');
     exitMission5Setup();
     mission5Evaluating=true;
-    const actual=sensors;
+    const actual=copySensorList(entrySensorLayout.sensors);
     // Never read simulator sensor.rule for Mission 6 scoring.
     // Record whether each student-code risk predicate has EVER been true this scenario.
     const oldScenario=scenario,oldStep=stepIndex,oldAlarm=alarmIssuedIndex;
@@ -975,7 +975,7 @@
     const progressEl=document.getElementById('ne-mission5-progress');
     const gradeEl=document.getElementById('ne-mission5-grade');
     const scoreEl=document.getElementById('ne-mission5-score');
-    gradeEl.textContent='평가 중…';scoreEl.textContent='시뮬레이터의 센서 위치 + 학생 엔트리 코드에서 판별한 위험 기준·경보 조건을 사용합니다.';
+    gradeEl.textContent='평가 중…';scoreEl.textContent='개발자 센서 설치 화면의 위치 + 엔트리 코드의 위험 기준·경보 조건을 사용합니다.';
     try{
       for(let k=0;k<100;k++){
         const sc=createScenario();
@@ -1002,7 +1002,7 @@
       const rank=base.score>=97?'LEGEND':base.rank==='LEGEND'?'S':base.rank;
       gradeEl.textContent=rank+' · '+base.score.toFixed(1)+'점';
       scoreEl.textContent=`홍수 ${floodN}회 / 안전 ${safeN}회 · 평균 대피실패 ${avg.toFixed(1)}명 · 홍수 놓침 ${missRate.toFixed(1)}% · 불필요 경보 ${falseRate.toFixed(1)}%`;
-      progressEl.textContent=`100회 완료 · ${gradedMission===6?'FINAL':'SEMI FINAL'} · 센서 위치: 시뮬레이터 / 위험 기준·N: 학생 코드 · N=${n}`;
+      progressEl.textContent=`100회 완료 · ${gradedMission===6?'FINAL':'SEMI FINAL'} · 센서 위치: 개발자 센서 설치 화면 / 위험 기준·N: 학생 코드 · N=${n}`;
       status.textContent=`✅ 엔트리 경보 코드 기반 평가 완료! ${base.score.toFixed(1)}점 / ${rank} 등급`;
       passed[gradedMission]=true;
       const contiguous=passed.findIndex(v=>!v);
@@ -1049,6 +1049,7 @@
   function captureSimulatorDesign(){
     try{
       if(typeof sensors==='undefined'||typeof alarmMode==='undefined')return null;
+       if(layer.classList.contains('ne-sim-visible')&&simulatorDesignBeforeEntry)return simulatorDesignBeforeEntry;
       return normalizedDesign({version:1,
         sensors:sensors.map(s=>({type:s.type,x:s.x,z:s.z,rule:{enabled:!!s.rule?.enabled,op:s.rule?.op||'ge',th:s.rule?.th??''}})),
         alarmMode,minCount:Number(document.getElementById('minRules')?.value)||2});
@@ -1103,7 +1104,7 @@
     }
   }
   function queueSimulatorDesignSave(){
-    if(mission5Evaluating||!classroom?.isDesignReady?.()||!designSyncReady||designRestoreBusy)return;
+    if(mission5Evaluating||layer.classList.contains('ne-sim-visible')||!classroom?.isDesignReady?.()||!designSyncReady||designRestoreBusy)return;
     clearTimeout(designSaveTimer);
     designSaveTimer=setTimeout(()=>{designSaveTimer=null;flushSimulatorDesign(false)},1100);
   }
