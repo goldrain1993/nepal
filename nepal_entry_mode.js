@@ -859,7 +859,7 @@
     const selected=previous.filter(s=>['수위 센서','유속 센서','진동 센서','강수 센서'].includes(s.type));
     if(!selected.length){status.textContent='시뮬레이션에 불러올 센서가 없습니다.';return;}
     if(!confirm('시뮬레이션에 설치했던 센서의 종류·위치를 가져올까요? 현재 개발자 센서 배치를 교체합니다.'))return;
-    sensors.splice(0,sensors.length,...copySensorList(selected));
+    sensors.splice(0,sensors.length,...copySensorList(selected.map(s=>({type:s.type,x:s.x,z:s.z,rule:{enabled:true,op:'ge',th:''}}))));
     renderSensors();
     status.textContent='✓ 센서 '+selected.length+'개의 종류와 위치를 가져왔습니다. 앞으로 두 화면은 독립적으로 작동합니다.';
   };
