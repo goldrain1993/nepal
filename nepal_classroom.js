@@ -880,9 +880,16 @@ function showBoard(fromGate){
  boardFromGate=fromGate||gate.classList.contains('show');
  const previous=readStudentSession();
  const ownClass=team?.c||(previous?.uid===user?.uid?Number(previous.c):null);
- readClassCount().then(refreshClassSelectors).catch(()=>{});
- $('np-board-class').value=String(ownClass||Number($('np-class').value)||1);
- gate.classList.remove('show');board.classList.add('show');loadBoard();refreshButtons()}
+ const target=Number(ownClass||$('np-class').value)||1;
+ refreshClassSelectors();
+ $('np-board-class').value=String(target);
+ gate.classList.remove('show');board.classList.add('show');loadBoard();refreshButtons();
+ readClassCount().then(()=>{
+  if(!board.classList.contains('show'))return;
+  refreshClassSelectors();
+  $('np-board-class').value=String(target);
+  loadBoard();
+ }).catch(error=>console.warn('새 반 현황판 불러오기:',error))}
 function displayRank97(score,rank){
  if(score!==null&&Number(score)>=97)return 'LEGEND';
  if(String(rank||'').toUpperCase()==='LEGEND')return Number(score)>=90?'S':Number(score)>=80?'A':Number(score)>=65?'B':Number(score)>=50?'C':'F';
