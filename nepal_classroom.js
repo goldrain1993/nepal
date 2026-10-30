@@ -374,6 +374,8 @@ function refreshButtons(){
  if(floatingBoard)floatingBoard.style.display=signedIn?'':'none';
  if(floatingLogout){floatingLogout.style.display=(signedIn||guestActive&&sessionVisible)?'':'none';floatingLogout.textContent=guestActive?'🌐 게스트 모드 종료':'🚪 로그아웃'}
  if(trigger)trigger.style.display=(editorActive&&!board.classList.contains('show'))?'':'none';
+ // Reflow map instructions after the floating controls become visible/hidden.
+ requestAnimationFrame(()=>window.NepalMapHelpLayout?.());
  const boardLogout=$('np-board-signout');if(boardLogout)boardLogout.style.display=user?'':'none';
  const status=$('np-save-label');if(status&&!editorActive)status.textContent='';
 }
