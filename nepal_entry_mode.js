@@ -237,7 +237,7 @@
    <div class="ne-list-tip">⭐ <b>주의!</b> 새로운 센서값을 받을 때 계속 추가만 하면 리스트가 8칸, 12칸으로 늘 수 있어요. <b>기존 4칸의 값을 바꾸거나, 목록을 비우고 다시 4개를 넣으세요.</b></div>
    <p style="margin-top:9px">✅ 확인 목표: <b>위험목록 [1, 0, 1, 0] → 위험개수 2</b></p>
   </div>`;
-  document.getElementById('ne-task').closest('.ne-task').insertAdjacentElement('afterend',listGuide);
+  layer.querySelector('#ne-task').closest('.ne-task').insertAdjacentElement('afterend',listGuide);
   // Pause the original simulator's background animation loops without altering index.html.
   // The two named rAF loops are global function declarations in the original page.
   // Their drawing work is skipped while EntryJS covers the simulator; their ordinary
