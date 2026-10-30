@@ -1324,8 +1324,10 @@
       try{
         const doc=iframe.contentDocument;
         if(!doc)return;
-        const candidates=doc.querySelectorAll('span,small,label,[class*="count"],[class*="Count"],[id*="count"],[id*="Count"]');
-        const expression=/(?:블록\\s*(?:총\\s*)?(?:개수|갯수|수)|블록\\s*\\d+\\s*개|blocks?\\s*(?:count|:)\\s*\\d*)/i;
+        // EntryJS builds this counter dynamically; prefer its visible text
+        // over brittle vendor classes. Include simple div/p React wrappers.
+        const candidates=doc.querySelectorAll('span,small,label,p,div,[class*="count"],[class*="Count"],[id*="count"],[id*="Count"]');
+        const expression=/(?:블록\s*(?:총\s*)?(?:개수|갯수|수)|블록\s*\d+\s*개|blocks?\s*(?:count|:)\s*\d*)/i;
         const stageRect=editorStage.getBoundingClientRect();
         const frameRect=iframe.getBoundingClientRect();
         for(const el of candidates){
