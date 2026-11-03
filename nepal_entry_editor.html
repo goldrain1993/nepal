@@ -802,7 +802,8 @@ async function checkChosenAlarmN(requireList=false){
  try{
    await stopCode();
    Object.assign(nepalTestValues,lows);
-   if(requireList){const lst=getList('위험목록');if(lst)lst.getArray().splice(0);}
+   // Student-defined list items must survive the Mission 6 / FINAL checker start.
+   // The 16 sensor scenarios below still require all four entries to update live.
    for(const name of required)if(getVar(name))setVar(name,'');
    await startCode();
    if(!await waitForValues(()=>Number.isInteger(Number(readVar('N')))&&Number(readVar('N'))>=1&&Number(readVar('N'))<=4,2400))
