@@ -188,7 +188,7 @@
     {title:'수위 위험 판단',fault:'수위 위험 여부를 판단하지 못합니다!',description:'변수와 반복문을 배웠으니 이번에는 조건문을 이용해 수위 위험 여부를 계산하세요.',task:'「수위위험」 변수를 만들고 수위값이 4m 이상이면 「수위위험」이 1(위험하다는 의미로 숫자 1 저장), 수위값이 4m 미만이면 「수위위험」이 0(안전하다는 의미로 숫자 0 저장)이 되도록 조건문을 작성하세요. 이 판단도 「계속 반복하기」 안에서 계속 바꿔 주세요.',example:'수위 3.50m → 수위위험 0 / 수위 4.80m → 수위위험 1',active:true},
     {title:'유속·진동·강수 확장',fault:'다른 센서들의 위험 신호도 만들어야 합니다!',description:'수위의 위험 판단을 유속·진동·강수 센서로 확장해 보세요.',task:'「유속값」·「진동값」·「강수값」 및 각 위험 변수를 만들고 실습용 기준 유속 3m/s 이상·진동 16 이상·강수 35mm/h 이상이면 1, 아니면 0이 되도록 반복해서 다시 저장하세요.',example:'유속 3.60 → 위험 1 / 진동 15.50 → 위험 0 / 강수 40 → 위험 1',active:true},
     {title:'SEMI FINAL · 센서 배치·경보 알고리즘',fault:'실제 센서 데이터를 이용해 경보를 완성하세요!',description:'센서를 네팔 지형에 배치하고 4개 센서의 위험 기준·비교 방향을 엔트리 코드로 직접 정하세요. 경보 알고리즘을 완성한 후 100회 평가를 받습니다.',task:'「🗺 센서 설치 화면」에서 ① 관측 지점을 살펴보고 ② 수위·유속·진동·강수 센서를 하나씩 설치하세요. 엔트리에서 실시간 센서값과 4개의 위험신호를 계속 다시 계산하고, 「위험개수」를 계산해 N개 이상(N=1~4) 위험하면 「시작」 탭의 빨간 「경보 울리기」 블록이 실행되도록 구현하세요. 학생 코드로 100회 재난 평가를 받습니다.',example:'4개 센서 설치 → 엔트리에서 위험 기준과 경보 N 직접 설정 → 100회 평가 및 점수 획득',active:true},
-    {title:'리스트로 위험신호 정리',fault:'4개의 위험신호를 리스트로 정리해 보세요!',description:'리스트는 여러 값을 순서대로 저장하는 자료구조입니다. SEMI FINAL에서 만든 4개 위험신호를 하나의 리스트로 묶고, 반복문으로 위험한 센서가 몇 개인지 세어 보세요. 100회 평가는 다음 FINAL 미션에서 다시 진행합니다.',task:'「위험목록」 리스트를 만들고 수위위험·유속위험·진동위험·강수위험을 차례대로 4칸에 저장하세요. 매번 최신 위험신호로 리스트 항목을 바꾸고, 「반복번호」와 「반복하기」를 이용해 리스트의 1~4번째 값을 확인해 「위험개수」를 계산하세요. 기존의 경보 알고리즘이 유지되도록 검사해 보세요.',example:'위험목록 [1, 0, 1, 0] → 반복해서 1의 개수 세기 → 위험개수 2',active:true},
+    {title:'리스트로 위험신호 정리',fault:'4개의 위험신호를 리스트로 정리해 보세요!',description:'리스트는 여러 값을 순서대로 저장하는 자료구조입니다. 미션 4까지 완료하면 SEMI FINAL 통과 여부와 관계없이 도전할 수 있습니다. 앞에서 만든 4개 위험신호를 리스트로 묶고, 반복문으로 위험한 센서가 몇 개인지 세어 보세요. 경보 기준 N과 경보 울리기 블록도 필요합니다. 100회 평가는 FINAL에서 진행합니다.',task:'「위험목록」 리스트를 만들고 수위위험·유속위험·진동위험·강수위험을 차례대로 4칸에 저장하세요. 매번 최신 위험신호로 리스트 항목을 바꾸고, 「반복번호」와 「반복하기」를 이용해 리스트의 1~4번째 값을 확인해 「위험개수」를 계산하세요. 기존의 경보 알고리즘이 유지되도록 검사해 보세요.',example:'위험목록 [1, 0, 1, 0] → 반복해서 1의 개수 세기 → 위험개수 2',active:true},
     {title:'FINAL 미션',fault:'지금까지 만든 재난 경보 시스템을 최종 검증하세요!',description:'센서 위치 설계·위험 조건·리스트·반복문·경보 판단을 모두 결합해 최종 재난 경보 시스템을 완성하세요.',task:'필요하면 센서 설치 화면에서 ① 관측 지점과 ② 센서 설치를 다시 확인하세요. 엔트리에서 4개의 위험신호를 「위험목록」 리스트에 저장하고 반복문으로 「위험개수」를 세어 N개 이상 위험하면 빨간 「경보 울리기」 블록이 실행되게 하세요. 전체 코드를 검사한 뒤 100회 재난 평가에 도전하세요.',example:'센서 위치 + 4개 위험 판단 + 리스트·반복문 + 경보 알고리즘 → FINAL 100회 평가',active:true}
 
   ];
@@ -218,7 +218,7 @@
   }
   const trigger = document.createElement('button'); trigger.id='nepal-entry-trigger'; trigger.textContent='🧩 엔트리 개발자 모드';trigger.style.display='none';
   const layer = document.createElement('section'); layer.id='nepal-entry-layer';
-  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">7단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 반복해서 수위값 바꾸기</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ 경보 알고리즘</b> → <b>⑥ 리스트 학습</b> → <b>🏆 FINAL</b></div><div id="ne-missions" class="ne-mission-list"></div><div id="ne-progress-sync" aria-live="polite"><span id="ne-progress-sync-message">☁️ 미션 통과 후 현황판에 진행도가 저장됩니다.</span><button type="button" id="ne-progress-retry" hidden>↻ 진행도 다시 저장</button></div><div id="ne-teacher-records" hidden></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 미션</b><div id="ne-task"></div></div><div id="ne-important-hint">⭐ 중요 힌트 · <b>「N」</b>과 <b>「위험개수」</b> 변수는 SEMI FINAL 경보 알고리즘을 만드는 데 꼭 필요합니다.</div><div id="ne-mission3-tab-hint">💡 미션 3 힌트 · 살펴볼 탭: <b>「흐름」 · 「판단」 · 「자료」</b><div style="margin-top:6px">💡 「수위값」 말고 또 무슨 변수가 필요할까요?</div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 <span id="ne-grade-title">경보 성능평가</span></div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">📊 엔트리 변수 상태: <b>실행 전</b></div><div id="ne-alarm-live" aria-live="polite">🚨 경보 울리기 블록 실행!</div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button></aside><div class="ne-editor-stage"><div id="ne-workspace-toolbar"><span id="ne-workspace-heading">🧩 엔트리 코딩 편집기</span><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button></div><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=72"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
+  layer.innerHTML=`<header class="ne-header"><div><strong>NEPAL FLOOD × ENTRY</strong><div style="font-size:11px;color:#b4caa9">7단계 재난 경보 코딩 미션</div></div><button id="ne-close">✕ 시뮬레이션으로 돌아가기</button></header><main class="ne-main"><aside class="ne-side"><div style="font-size:11px;color:#b2e879;font-weight:900">SYSTEM REPAIR / DEVELOPMENT CONSOLE</div><div id="ne-learning-note"><b>① 수위값 1회 저장</b> → <b>② 반복해서 수위값 바꾸기</b> → <b>③ 수위 위험 판단</b> → <b>④ 다른 센서 확장</b> → <b>⑤ SEMI FINAL(선택)</b> → <b>⑥ 리스트 학습</b> → <b>🏆 FINAL</b></div><div id="ne-missions" class="ne-mission-list"></div><div id="ne-progress-sync" aria-live="polite"><span id="ne-progress-sync-message">☁️ 미션 통과 후 현황판에 진행도가 저장됩니다.</span><button type="button" id="ne-progress-retry" hidden>↻ 진행도 다시 저장</button></div><div id="ne-teacher-records" hidden></div><div class="ne-warning"><h2 id="ne-fault"></h2><p id="ne-why"></p></div><div class="ne-task"><b>🛠 복구 미션</b><div id="ne-task"></div></div><div id="ne-important-hint">⭐ 중요 힌트 · <b>「N」</b>과 <b>「위험개수」</b> 변수는 SEMI FINAL 경보 알고리즘을 만드는 데 꼭 필요합니다.</div><div id="ne-mission3-tab-hint">💡 미션 3 힌트 · 살펴볼 탭: <b>「흐름」 · 「판단」 · 「자료」</b><div style="margin-top:6px">💡 「수위값」 말고 또 무슨 변수가 필요할까요?</div></div><div class="ne-sample"><span>예상 입력·출력</span><br><div id="ne-example"></div></div><div id="ne-mission5-report"><div>🌊 <span id="ne-grade-title">경보 성능평가</span></div><strong id="ne-mission5-grade">미평가</strong><div id="ne-mission5-score">엔트리 코드를 검사하면 100회 재난 평가를 실행합니다.</div><div id="ne-mission5-progress" style="font-size:12px;margin-top:6px;color:#b7cfa9"></div></div><div id="ne-sensor-live">📡 수위 센서 측정값 수신 중…</div><div id="ne-saved-live">📊 엔트리 변수 상태: <b>실행 전</b></div><div id="ne-alarm-live" aria-live="polite">🚨 경보 울리기 블록 실행!</div><button id="ne-check" style="background:#adeb6f;color:#142009;width:100%;font-size:15px;padding:14px">▶ 엔트리 실행 결과 검사</button><div id="ne-status" aria-live="polite">미션을 읽고 블록을 연결해 보세요.</div><button type="button" id="ne-next">▶ 다음 라운드로 이동</button></aside><div class="ne-editor-stage"><div id="ne-workspace-toolbar"><span id="ne-workspace-heading">🧩 엔트리 코딩 편집기</span><button id="ne-mode-switch" type="button">🗺 센서 설치 화면</button></div><div id="ne-sim-stage"></div><iframe id="ne-iframe" title="실제 엔트리 코딩 편집기" src="about:blank" data-src="./nepal_entry_editor.html?v=72"></iframe><div id="ne-entry-loading" class="ne-entry-loading" role="status" aria-live="polite"><div class="ne-loading-center"><div class="ne-loader-mascot" aria-hidden="true"><div class="ne-mascot-antenna"></div><div class="ne-mascot-arm left"></div><div class="ne-mascot-arm right"></div><div class="ne-mascot-face"><div class="ne-mascot-screen"><i class="ne-mascot-eye"></i><i class="ne-mascot-eye"></i></div><div class="ne-mascot-mouth"></div></div></div><div class="ne-loading-title" id="ne-loading-title">로딩중입니다</div><div class="ne-loading-sub" id="ne-loading-sub">잠깐만요, 블록을 가져올게요 ✨</div><div class="ne-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div></main>`;
   // Teaching-only panel: shown on Mission 6 (index 5); no grading or save changes.
   const listGuide=document.createElement('details');
   listGuide.id='ne-list-guide';listGuide.open=true;
@@ -732,7 +732,18 @@
     el.textContent='🧑‍🏫 교사 모드 · 저장된 최고 점수: 형성평가 '+str('floodBest')+
       ' / SEMI FINAL '+str('mission5NoListBest')+' / FINAL '+str('finalBest');
   }
-  function unlocked(index){return teacherPreview() || index===0 || passed[index-1]===true;}
+  // SEMI FINAL (index 4) is optional before the list lesson (index 5).
+  // FINAL (index 6) still requires the list lesson itself to be passed.
+  function unlocked(index){
+    if(teacherPreview()||index===0)return true;
+    if(index===5)return passed[3]===true; // Mission 4 -> Mission 6
+    if(index===6)return passed[5]===true; // Mission 6 -> FINAL
+    return passed[index-1]===true;
+  }
+  function highestCompletedMilestone(){
+    for(let i=passed.length-1;i>=0;i--)if(passed[i])return i+1;
+    return 0;
+  }
   function updateMissionButtons(){
     [...missionBtns.children].forEach((b,i)=>{
       const locked=!unlocked(i);
@@ -744,11 +755,14 @@
       b.classList.toggle('mission5-button',i===4);
       b.classList.toggle('final-button',i===6);
       b.setAttribute('aria-label',`${i===6?'FINAL':i===4?'SEMI FINAL':'미션 '+(i+1)} ${locked?'잠김':passed[i]?'통과':'진행 가능'}`);
-      b.title=locked?`미션 ${i}을(를) 통과하면 열립니다.`:passed[i]?'통과한 미션입니다. 다시 열 수 있습니다.':`${i===6?'FINAL':i===4?'SEMI FINAL':'미션 '+(i+1)} 열기`;
+      b.title=locked?`미션 ${i===5?4:i===6?6:i}을(를) 통과하면 열립니다.`:passed[i]?'통과한 미션입니다. 다시 열 수 있습니다.':`${i===6?'FINAL':i===4?'SEMI FINAL':'미션 '+(i+1)} 열기`;
     });
     const usable=missions[mission]?.active===true;
     checkBtn.disabled=checking || navigating || !ready || !usable;
-    nextBtn.style.display=(teacherPreview()||passed[mission]) && mission+1<missions.length?'block':'none';
+    const canMoveNext=mission+1<missions.length&&unlocked(mission+1)&&
+      (teacherPreview()||passed[mission]||mission===4);
+    nextBtn.style.display=canMoveNext?'block':'none';
+    nextBtn.textContent=mission===4?'▶ 미션 06으로 이동 (SEMI FINAL 통과 불필요)':'▶ 다음 라운드로 이동';
     nextBtn.disabled=checking || navigating || !ready;
   }
   function renderMissionButtons(){
@@ -805,10 +819,9 @@
     missionStopPending={token,target:i,timeout};
     iframe.contentWindow.postMessage({type:'NEPAL_STOP_FOR_MISSION',token},location.origin);
   }
-  nextBtn.addEventListener('click',()=>{if((teacherPreview()||passed[mission]) && unlocked(mission+1) && mission+1<missions.length)changeMission(mission+1)});
+  nextBtn.addEventListener('click',()=>{if((teacherPreview()||passed[mission]||mission===4) && unlocked(mission+1) && mission+1<missions.length)changeMission(mission+1)});
   retryButton()?.addEventListener('click',()=>{
-    const contiguous=passed.findIndex(done=>!done);
-    const completed=contiguous<0?missions.length:contiguous;
+    const completed=highestCompletedMilestone();
     if(completed>0)persistMissionProgress(completed);
     else resetSyncStatus('☁️ 아직 통과한 미션이 없습니다.');
   });
@@ -878,14 +891,13 @@
       }
       if(d.ok){
         passed[tested]=true;
-        const contiguous=passed.findIndex(flag=>!flag);
-        persistMissionProgress(contiguous<0?missions.length:contiguous);
+        persistMissionProgress(highestCompletedMilestone());
         classroom?.saveNow('mission-pass');
         showMissionSuccess();
       }
       if((tested===4||tested===6)&&!d.ok)uiSoundEnabled=false;
       updateMissionButtons();
-      const next=d.ok && tested+1<missions.length?'\n🔓 '+(tested===5?'FINAL 미션':'다음 미션 '+String(tested+2).padStart(2,'0'))+' 잠금이 해제되었습니다.':'';
+      const next=d.ok && tested===3?'\n🔓 SEMI FINAL과 미션 06을 모두 선택할 수 있습니다.':d.ok && tested+1<missions.length?'\n🔓 '+(tested===5?'FINAL 미션':'다음 미션 '+String(tested+2).padStart(2,'0'))+' 잠금이 해제되었습니다.':'';
       if(d.ok){
         status.textContent='✅ 복구 미션 성공!\n'+(Array.isArray(d.details)?d.details.join('\n'):String(d.message||''))+next;
       }else{
@@ -1125,8 +1137,7 @@
       progressEl.textContent=`100회 완료 · ${gradedMission===6?'FINAL':'SEMI FINAL'} · 센서 위치: 개발자 센서 설치 화면 / 위험 기준·N: 학생 코드 · N=${n}`;
       status.textContent=`✅ 엔트리 경보 코드 기반 평가 완료! ${base.score.toFixed(1)}점 / ${rank} 등급`;
       passed[gradedMission]=true;
-      const contiguous=passed.findIndex(v=>!v);
-      persistMissionProgress(contiguous<0?missions.length:contiguous);
+      persistMissionProgress(highestCompletedMilestone());
       classroom?.saveNow('mission-pass');
       if(gradedMission===4)classroom?.recordMission5Result?.({score:base.score,rank,n});
       if(gradedMission===6)classroom?.recordFinalResult?.({score:base.score,rank,n});
@@ -1266,7 +1277,7 @@
     classroom=window.NepalClassroom.setup({
       header:layer.querySelector('.ne-header'),iframe,totalMissions:missions.length,
       restoreDesign:restoreSimulatorDesign,flushDesign:force=>flushSimulatorDesign(!!force),
-      getMissionProgress:()=>{const i=passed.findIndex(ok=>!ok);return i<0?missions.length:i;},
+      getMissionProgress:()=>highestCompletedMilestone(),
       launchEditor:launch,closeEditor:close,enterSimulator:()=>{
         // ALL three entry routes (student / teacher / guest) show the original
         // NEPAL FLOOD DATA LAB start menu, including Start / Assessment / Help.
@@ -1280,12 +1291,18 @@
       isReady:()=>ready,isLayerOpen:()=>layer.classList.contains('open'),
       isBusy:()=>checking||navigating,
       onProgressSaved(completed){reportProgressSave(completed,true,progressSaveTicket)},
-      restoreProgress(completed){
+      restoreProgress(completed,semiFinalCompleted=false){
         const n=Math.max(0,Math.min(missions.length,Number(completed)||0));
         passed.fill(false);
-        for(let i=0;i<n;i++)passed[i]=true;
+        for(let i=0;i<Math.min(4,n);i++)passed[i]=true;
+        // A persisted milestone of 6 or 7 does not imply SEMI FINAL was passed.
+        // Its existing 100-run score provides the independent completion flag.
+        passed[4]=n===5||(n>=6&&semiFinalCompleted===true);
+        passed[5]=n>=6;
+        passed[6]=n>=7;
         progressSaveTicket++;
-        resetSyncStatus(n?'☁️ 저장된 진행도 '+n+'/7단계 복원 완료':'☁️ 미션 통과 후 현황판에 진행도가 저장됩니다.');
+        const count=passed.filter(Boolean).length;
+        resetSyncStatus(n?'☁️ 저장된 진행도 '+count+'/7단계 복원 완료':'☁️ 미션 통과 후 현황판에 진행도가 저장됩니다.');
         applyMission(Math.min(n,missions.length-1));
       },
       resetEditor(){
