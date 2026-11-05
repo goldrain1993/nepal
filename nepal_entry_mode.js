@@ -1271,7 +1271,7 @@
 
   // Load classroom UI asynchronously. The original simulator is not modified.
   const classroomScript=document.createElement('script');
-  classroomScript.src='./nepal_classroom.js?v=67';
+  classroomScript.src='./nepal_classroom.js?v=68';
   classroomScript.onload=()=>{
     if(!window.NepalClassroom){console.error('학급 모듈을 찾지 못했습니다.');return;}
     classroom=window.NepalClassroom.setup({
@@ -1297,7 +1297,7 @@
         for(let i=0;i<Math.min(4,n);i++)passed[i]=true;
         // A persisted milestone of 6 or 7 does not imply SEMI FINAL was passed.
         // Its existing 100-run score provides the independent completion flag.
-        passed[4]=n===5||(n>=6&&semiFinalCompleted===true);
+        passed[4]=n===5||semiFinalCompleted===true;
         passed[5]=n>=6;
         passed[6]=n>=7;
         progressSaveTicket++;
