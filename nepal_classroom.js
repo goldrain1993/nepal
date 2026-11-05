@@ -195,7 +195,7 @@ const simulatorCaptions=['시작하기','형성평가 바로가기','이용 방�
 let team=null,role=null,editorLockHeld=false,codeListener=null,boardListener=null,projectToRestore=null;
 let teacherScores={floodBest:null,mission5NoListBest:null,finalBest:null};
 let designReady=false,designSavedAt=0;
-let progress=0,missionTotal=4,progressSaved=0,progressRetry=null,lastProgressSaveError='',retryingProgress=false,lastProgressRetryAt=0,callbacks={},saveBusy=false,queued=false,readyToSave=false,restoring=false,importPending=null,exportPending=null,rpcId=0,headerStatus=null,lastSaved='',autosave=null,lockRefresh=null,lockedTeamPath='';
+let progress=0,missionTotal=4,semiFinalPassed=false,progressSaved=0,progressRetry=null,lastProgressSaveError='',retryingProgress=false,lastProgressRetryAt=0,callbacks={},saveBusy=false,queued=false,readyToSave=false,restoring=false,importPending=null,exportPending=null,rpcId=0,headerStatus=null,lastSaved='',autosave=null,lockRefresh=null,lockedTeamPath='';
 function teamPath(c,g){return `${ROOT}/c${c}/teams/g${g}`}
 function workPath(c,g){return `${PRIVATE}/c${c}/teams/g${g}`}
 function teacherPath(){return user&&requireTeacher(user)?'nepal-v27/private/teacherWork/'+user.uid:null}
@@ -436,7 +436,7 @@ async function signout(){
  if(auth)await auth.signOut();
  callbacks.restoreDesign?.({version:1,sensors:[],alarmMode:'OR',minCount:2});
  user=null;authRole=null;role=null;team=null;projectToRestore=null;readyToSave=false;
- callbacks.resetEditor?.();callbacks.closeEditor?.();callbacks.restoreProgress?.(0);
+ semiFinalPassed=false;callbacks.resetEditor?.();callbacks.closeEditor?.();callbacks.restoreProgress?.(0);
  landing();refreshButtons();
  return true;
 }
@@ -465,10 +465,10 @@ async function joinTeam(){await initReady;if(!user||!db||!requireStudent(user)){
   }
   members=(await memRef.once('value')).val()||{};
   if(identify(members)!==slot)throw Error('계정 등록 확인에 실패했습니다.');
-  team={c,g};role=slot;readyToSave=false;designReady=false;editorLockHeld=false;progress=0;progressSaved=0;progressRetry=null;lastSaved='';
-  const [progressSnap,progressV3Snap,codeSnap,designSnap]=await Promise.all([
+  team={c,g};role=slot;readyToSave=false;designReady=false;editorLockHeld=false;progress=0;semiFinalPassed=false;progressSaved=0;progressRetry=null;lastSaved='';
+  const [progressSnap,progressV3Snap,codeSnap,designSnap,semiSnap]=await Promise.all([
    db.ref(root+'/progress').once('value'),db.ref(root+'/progressV3').once('value'),
-   db.ref(workPath(c,g)+'/code').once('value'),db.ref(workPath(c,g)+'/design').once('value')
+   db.ref(workPath(c,g)+'/code').once('value'),db.ref(workPath(c,g)+'/design').once('value'),db.ref(root+'/mission5NoListBest').once('value')
   ]);
   // Preserve old six-stage progress without skipping the newly redesigned
   // stages 5/6/FINAL. Use a new key so legacy progress is never overwritten.
@@ -478,10 +478,10 @@ async function joinTeam(){await initReady;if(!user||!db||!requireStudent(user)){
   const oldAligned=Number(previousProgress.updatedAt)>=PROGRESS_FALLBACK_SINCE?oldCompleted:previousProgress.schemaVersion===2?oldCompleted:(oldCompleted>=2?oldCompleted+1:oldCompleted);
   progress=Math.max(0,Math.min(missionTotal,currentProgress?
     Math.max(Number(currentProgress.completed)||0,Math.min(4,oldAligned)):Math.min(4,oldAligned)));
-  progressSaved=progress;progressRetry=null;
+  progressSaved=progress;progressRetry=null;semiFinalPassed=semiSnap.val()!=null;
   const cloudCode=codeSnap.val();const local=localRestore();
   try{projectToRestore=latestProject(cloudCode,local)}catch(e){throw Error('온라인 엔트리 코드 형식 오류: '+e.message)}
-  callbacks.resetEditor?.();callbacks.restoreProgress?.(progress);
+  callbacks.resetEditor?.();callbacks.restoreProgress?.(progress,semiFinalPassed);
   // Restore the complete sensor layout BEFORE enabling design autosave.
   // Without this gate an empty default canvas could overwrite a group's cloud data.
   const cloudDesign=designSnap.val();
@@ -512,7 +512,7 @@ async function openEditor(){
      const cloud=(await db.ref(teacherPath()+'/code').once('value')).val();
      projectToRestore=latestProject(cloud,localRestore());
      readyToSave=false;editorLockHeld=false;
-     callbacks.resetEditor?.();callbacks.restoreProgress?.(progress);
+     callbacks.resetEditor?.();callbacks.restoreProgress?.(progress,semiFinalPassed);
      callbacks.launchEditor?.();
      note('🧑‍🏫 교사 모드');
    }catch(e){note('교사 코드 복원 오류: '+String(e.message||e))}
@@ -528,10 +528,11 @@ async function openEditor(){
   },()=>{},false);
   if(!lock.committed)throw Error('같은 조의 다른 조원이 엔트리를 편집 중입니다. 2분 이상 사용하지 않거나 조원이 편집기를 닫으면 다시 시도할 수 있습니다.');
   editorLockHeld=true;lockedTeamPath=workPath(c,g);
-  const [codeSnap,progressSnap,oldProgressSnap]=await Promise.all([
+  const [codeSnap,progressSnap,oldProgressSnap,semiSnap]=await Promise.all([
     db.ref(workPath(c,g)+'/code').once('value'),
     db.ref(teamPath(c,g)+'/progressV3').once('value'),
-    db.ref(teamPath(c,g)+'/progress').once('value')
+    db.ref(teamPath(c,g)+'/progress').once('value'),
+    db.ref(teamPath(c,g)+'/mission5NoListBest').once('value')
   ]);
   const code=codeSnap.val();
   // Returning from the simulator must not destroy the live workspace that
@@ -546,11 +547,12 @@ async function openEditor(){
     earlier?.schemaVersion===2?oldCompleted:(oldCompleted>=2?oldCompleted+1:oldCompleted);
   progress=Math.max(progress,Math.min(missionTotal,Math.max(current,Math.min(4,aligned))));
   progressSaved=Math.max(progressSaved,current,Math.min(4,aligned));
+  semiFinalPassed=semiFinalPassed||semiSnap.val()!=null;
   if(reuseEditor){
-   readyToSave=true;callbacks.restoreProgress?.(progress);callbacks.launchEditor?.();startLockRefresh();
+   readyToSave=true;callbacks.restoreProgress?.(progress,semiFinalPassed);callbacks.launchEditor?.();startLockRefresh();
    note('✓ 이전 엔트리 블록을 그대로 이어서 편집합니다.');
   }else{
-   readyToSave=false;callbacks.resetEditor?.();callbacks.restoreProgress?.(progress);callbacks.launchEditor?.();startLockRefresh();
+   readyToSave=false;callbacks.resetEditor?.();callbacks.restoreProgress?.(progress,semiFinalPassed);callbacks.launchEditor?.();startLockRefresh();
   }
  }catch(e){note('엔트리 입장 실패: '+String(e.message||e));if(editorLockHeld)await releaseLock().catch(()=>{});}
 }
@@ -607,7 +609,7 @@ function endGuest(){
  if(!guestActive)return;
  designReady=false;
  guestActive=false;readyToSave=false;projectToRestore=null;progress=0;lastSaved='';
- callbacks.resetEditor?.();callbacks.closeEditor?.();callbacks.restoreProgress?.(0);
+ semiFinalPassed=false;callbacks.resetEditor?.();callbacks.closeEditor?.();callbacks.restoreProgress?.(0);
  // Guest work is in-memory only: do not leak previous guest sensors into a new login.
  callbacks.restoreDesign?.({version:1,sensors:[],alarmMode:'OR',minCount:2});
  if(typeof global.resetRank==='function')global.resetRank();
@@ -625,6 +627,7 @@ async function enterTeacher(){
    db.ref(path+'/mission5NoListBest').once('value'),db.ref(path+'/finalBest').once('value')
   ]);
   teacherScores={floodBest:floodSnap.val(),mission5NoListBest:m5Snap.val(),finalBest:finalSnap.val()};
+  semiFinalPassed=m5Snap.val()!=null;
   const raw=designSnap.val();
   let previousDesign={version:1,sensors:[],alarmMode:'OR',minCount:2};
   if(raw?.payload)previousDesign=JSON.parse(raw.payload);
@@ -633,7 +636,7 @@ async function enterTeacher(){
   if(restored===false)throw Error('교사 센서 설계 복원 실패');
   progress=Math.max(0,Math.min(missionTotal,Number(progressSnap.val()?.completed)||0));
   progressSaved=progress;progressRetry=null;
-  callbacks.resetEditor?.();callbacks.restoreProgress?.(progress);
+  callbacks.resetEditor?.();callbacks.restoreProgress?.(progress,semiFinalPassed);
   designReady=true;enterTeacherSimulator();
   setTimeout(retryPendingProgress,1500);
   const old=readTeacherSession();
@@ -857,6 +860,7 @@ async function recordStageBest(key,label,result){
  }catch(e){note('⚠ '+label+' 점수 저장 오류: '+e.message);return false}
 }
 async function recordMission5Result(result){
+ semiFinalPassed=true;
  return recordStageBest('mission5NoListBest','SEMI FINAL',result);
 }
 async function recordFinalResult(result){
@@ -958,8 +962,10 @@ function entriesForClass(data,c){
   const mission5=d.mission5NoListBest||null,mission5Score=scoreOf(mission5);
   // Legacy key "mission5Best" held the old FINAL/100-run result.
   const final=d.finalBest||d.mission5Best||null,finalScore=scoreOf(final);
+  const semiPassed=mission5!==null||value===5;
+  const completedCount=Math.min(value,4)+(value===5?1:0)+(value>=6?1:0)+(value>=7?1:0)+(value>=6&&mission5!==null?1:0);
   const members=Object.values(mem).filter(x=>x?.uid);
-  entries.push({c,g,mem,value,reachedAt,flood,floodScore,mission5,mission5Score,final,finalScore,
+  entries.push({c,g,mem,value,completedCount,semiPassed,reachedAt,flood,floodScore,mission5,mission5Score,final,finalScore,
     hasTeam:members.length>0,mine:team?.c===c&&team?.g===g});
  }
  return entries;
@@ -983,7 +989,7 @@ function boardCards(data,c){
  const gold=first&&(first.value>0||first.finalScore!==null||first.mission5Score!==null||first.floodScore!==null)?first.g:null;
  let html='';
  for(const e of entries){
-  const {g,mem,value,flood,floodScore,mission5,mission5Score,final,finalScore,mine}=e;
+  const {g,mem,value,completedCount,semiPassed,flood,floodScore,mission5,mission5Score,final,finalScore,mine}=e;
   const medal=g===gold?'<span class="np-gold-medal" role="img" aria-label="이 반의 1위 금메달">1</span>':'';
   const trophy=g===gold&&schoolGold?.c===c&&schoolGold?.g===g?'<span class="np-world-trophy" role="img" aria-label="전체 반 1위">🏆</span>':'';
   const membersHtml=requireTeacher(user)?
@@ -994,7 +1000,7 @@ function boardCards(data,c){
           aria-label="${c}반 ${g}조 ${esc(label)} 등록 삭제">등록 삭제</button>`:'';
       return `<div class="np-member-entry"><span>${esc(label)}</span>${button}</div>`;
     }).join(''):esc(memberNames(mem,c,g));
-  html+=`<article class="np-team ${mine?'mine':''}"><div class="np-teamhead"><span style="display:flex;align-items:center;gap:6px">${trophy}${medal}${g}조 ${mine?'(우리 조)':''}</span><span>${value}/${missionTotal}</span></div><div class="np-members">${membersHtml}</div><div class="np-score">🌊 형성평가: ${floodScore===null?'미응시':`${goldLegend(floodScore,flood.rank)} · ${floodScore}점`}</div><div class="np-score">🥈 SEMI FINAL: ${mission5Score===null?'미응시':`${goldLegend(mission5Score,mission5.rank)} · ${mission5Score}점`}</div><div class="np-score">🏆 FINAL 미션: ${finalScore===null?'미응시':`${goldLegend(finalScore,final.rank)} · ${finalScore}점`}</div><div class="np-track"><div style="width:${Math.round(100*value/missionTotal)}%"></div></div><div class="np-caption">${value===0?'진행 전': value===missionTotal?'FINAL 미션 완료':value===5?'SEMI FINAL 완료':`미션 ${value}까지 통과`}</div>${requireTeacher(user)?`<button type="button" class="np-reset-missions" data-class="${c}" data-group="${g}">↺ 이 조 미션 초기화</button>`:''}</article>`;
+  html+=`<article class="np-team ${mine?'mine':''}"><div class="np-teamhead"><span style="display:flex;align-items:center;gap:6px">${trophy}${medal}${g}조 ${mine?'(우리 조)':''}</span><span>${completedCount}/${missionTotal}</span></div><div class="np-members">${membersHtml}</div><div class="np-score">🌊 형성평가: ${floodScore===null?'미응시':`${goldLegend(floodScore,flood.rank)} · ${floodScore}점`}</div><div class="np-score">🥈 SEMI FINAL: ${mission5Score===null?'미응시':`${goldLegend(mission5Score,mission5.rank)} · ${mission5Score}점`}</div><div class="np-score">🏆 FINAL 미션: ${finalScore===null?'미응시':`${goldLegend(finalScore,final.rank)} · ${finalScore}점`}</div><div class="np-track"><div style="width:${Math.round(100*completedCount/missionTotal)}%"></div></div><div class="np-caption">${value===0?'진행 전':value===missionTotal?'FINAL 미션 완료':value===6?(semiPassed?'미션 6 완료':'미션 6 완료 · SEMI FINAL 미완료'):value===5?'SEMI FINAL 완료':`미션 ${value}까지 통과`}</div>${requireTeacher(user)?`<button type="button" class="np-reset-missions" data-class="${c}" data-group="${g}">↺ 이 조 미션 초기화</button>`:''}</article>`;
  }
  $('np-grid').innerHTML=html;
 }
