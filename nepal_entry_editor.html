@@ -340,6 +340,12 @@ function installNepalSensorReporters(E){
       if(Array.isArray(menus)){
         const cat=menus.find(m=>m.category==='variable');
         if(cat && Array.isArray(cat.blocks)){
+          // Palette filtering does not alter existing students' blocks or variables.
+          const lessonDataBlocks=new Set(['variableAddButton','listAddButton',
+            'get_variable','set_variable','change_variable',
+            'value_of_index_from_list','add_value_to_list',
+            'remove_value_from_list','change_value_list_index']);
+          cat.blocks=cat.blocks.filter(id=>lessonDataBlocks.has(id)||nepalReporterDefs.some(([sensorId])=>sensorId===id));
           let insertAt=cat.blocks.indexOf('listAddButton')+1;
           for(const [id] of nepalReporterDefs){
             if(!cat.blocks.includes(id))cat.blocks.splice(insertAt++,0,id);
@@ -904,8 +910,52 @@ async function checkChosenAlarmN(requireList=false){
    requireList?'리스트 검사에 성공했습니다.':'이제 원본 재난 시뮬레이션의 100회 평가에 적용합니다.'
  ]};
 }
+// Sensor reporters supply new readings only to their matching stored-value variables.
+// Comparisons must use those variables rather than reading sensors directly.
+function validateSensorReporterPlacement(){
+ const reporterToVariable={
+   nepal_live_water_sensor:'수위값',nepal_live_flow_sensor:'유속값',
+   nepal_live_vibration_sensor:'진동값',nepal_live_rain_sensor:'강수값'
+ };
+ const invalid=new Set(),project=saveProject();
+ const normalise=node=>{
+   if(typeof node!=='string')return node;
+   const str=node.trim();
+   if(!str.startsWith('{')&&!str.startsWith('['))return node;
+   try{return JSON.parse(str)}catch(_){return node}
+ };
+ function visit(raw,parent=null,paramIndex=-1){
+   const node=normalise(raw);
+   if(!node||typeof node!=='object')return;
+   if(Array.isArray(node)){node.forEach(child=>visit(child));return;}
+   if(Object.prototype.hasOwnProperty.call(reporterToVariable,node.type)){
+     const name=reporterToVariable[node.type],target=getVar(name),choice=parent?.params?.[0];
+     const id=(typeof choice==='string'||typeof choice==='number')?String(choice):
+       choice&&typeof choice==='object'?(choice.id||choice.id_||choice.value||choice.params?.[0]):null;
+     const valid=parent?.type==='set_variable'&&paramIndex===1&&target&&
+       (String(id)===String(target.id_)||String(id)===name);
+     if(!valid)invalid.add(name);
+     return;
+   }
+   for(const [key,value] of Object.entries(node)){
+     if(key==='params'&&Array.isArray(value))value.forEach((child,i)=>visit(child,node,i));
+     else visit(value);
+   }
+ }
+ (project.objects||[]).forEach(object=>visit(object.script));
+ if(!invalid.size)return null;
+ return {ok:false,details:[
+   '센서값 블록의 사용 위치를 확인하세요: '+[...invalid].map(n=>'「'+n+'」').join('·'),
+   '「○○ 센서가 현재 측정하고 있는 실시간 값」 블록은 같은 센서의 「○○값」 변수에 직접 저장할 때만 사용할 수 있습니다.',
+   '조건문의 비교에는 실시간 센서 블록 대신 「자료」에서 만든 「○○값」 변수 블록을 넣으세요.'
+ ]};
+}
 async function check(mission){
  if(!window.__entryReady)throw Error('엔트리 편집기 준비가 아직 끝나지 않았습니다.');
+ if(mission>=2 && mission<=6){
+   const misuse=validateSensorReporterPlacement();
+   if(misuse)return misuse;
+ }
  switch(mission){
  case 0:return checkWaterVariable();
  case 1:return checkContinuousWaterVariable();
