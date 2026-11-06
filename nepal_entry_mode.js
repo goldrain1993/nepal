@@ -674,6 +674,8 @@
     console.info('[NEPAL 미션 검사 세부 내용]',stage+1,lines);
     if(typeof result.studentFeedback==='string'&&result.studentFeedback.trim())
       return '확인할 부분: '+result.studentFeedback.trim();
+    if(raw.includes('센서값 블록의 사용 위치를 확인하세요'))
+      return '확인할 부분: 실시간 센서값 블록은 대응하는 「수위값·유속값·진동값·강수값」 변수에 저장할 때만 사용할 수 있어요. 조건문의 비교에는 센서 블록 대신 저장한 변수 블록을 넣으세요.';
     if(raw.includes('「N」과 「위험개수」는')){
       const key=raw.includes('현재 「N」')?'N':'위험개수';
       return '중요 힌트: 「N」과 「위험개수」 두 변수가 필요해요. 특히 「'+key+'」를 찾지 못했어요.';
