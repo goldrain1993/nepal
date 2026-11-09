@@ -1181,6 +1181,7 @@ function closeBoard(){board.classList.remove('show');clearBoard();if(boardFromGa
 function showGate(){if(guestActive||team||requireTeacher(user)){openEditor();return}landing()}
 function showLogin(){if(guestActive){endGuest();landing();return}if(team||requireTeacher(user)){signout();return}landing()}
 let assessmentModuleLoading=null;
+let guidedAssessmentModuleLoading=null;
 async function openAssessment(){
  if(!user||guestActive||!sessionActive||!(team||requireTeacher(user))){
   note('학교 계정으로 로그인한 후 수행평가를 열어 주세요.');return;
@@ -1192,6 +1193,8 @@ async function openAssessment(){
   await initReady;
   if(!assessmentModuleLoading)assessmentModuleLoading=src('./nepal_assessment.js?v=4').catch(error=>{assessmentModuleLoading=null;throw error});
   await assessmentModuleLoading;
+  if(!guidedAssessmentModuleLoading)guidedAssessmentModuleLoading=src('./nepal_assessment_guided.js?v=1').catch(error=>{guidedAssessmentModuleLoading=null;throw error});
+  await guidedAssessmentModuleLoading;
   await global.NepalAssessment.open({
    fb,db,user,team,isTeacher:requireTeacher(user),workPath
   });
