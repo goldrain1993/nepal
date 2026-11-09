@@ -3,6 +3,7 @@
 'use strict';
 if(global.NepalAssessment)return;
 const ROOT='nepal-v27/private/assessments';
+const AI_RUBRIC_VERSION='mission-comprehension-2026-v1';
 const FIELDS=[
  ['purpose','미션 1 · 변수와 센서값의 역할',1600],
  ['io','미션 2 · 반복과 값 갱신',1700],
@@ -197,7 +198,7 @@ async function submitDirect(){
 }
 async function teacherOpen(t){
  shell('📊 수행평가 제출·채점 현황','최종 제출본을 확인하고 AI 채점 제안을 참고하여 교사가 점수를 확정합니다.');
- el('na-body').innerHTML='<div class="na-card"><h3>🛡 학생 제출 공개 설정</h3><p>처음에는 학생에게 수행평가 버튼이 보이지 않습니다. 시험 제출과 Firebase 권한 확인을 마친 뒤 학생 제출을 열어 주세요.</p><button class="na-btn" id="na-publish" type="button">설정 확인 중…</button><div id="na-publish-state" class="na-muted"></div></div><div class="na-card">이번 수행평가는 미션 이해 확인형으로 변경되었습니다. 기존 개발 보고서용 AI 채점은 새 기준으로 검증될 때까지 일시 중지하고 교사가 직접 채점합니다.</div><div class="na-card"><h3>학생 제출 목록</h3><div id="na-roster">조회 중…</div></div><div id="na-review"></div>';
+ el('na-body').innerHTML='<div class="na-card"><h3>🛡 학생 제출 공개 설정</h3><p>처음에는 학생에게 수행평가 버튼이 보이지 않습니다. 시험 제출과 Firebase 권한 확인을 마친 뒤 학생 제출을 열어 주세요.</p><button class="na-btn" id="na-publish" type="button">설정 확인 중…</button><div id="na-publish-state" class="na-muted"></div></div><div class="na-card">AI는 미션 1~7의 선택·개인 설명과 제출 코드 구조를 바탕으로 1차 점수 및 근거를 제안합니다. 교사는 반드시 원본을 확인해 점수를 수정하거나 확정하세요. AI 점수는 학생에게 공개되지 않습니다.</div><div class="na-card"><h3>학생 제출 목록</h3><div id="na-roster">조회 중…</div></div><div id="na-review"></div>';
  let enabled=false;
  const configRef=ctx.db.ref(ROOT+'/config/enabled');
  const publish=el('na-publish'),status=el('na-publish-state');
@@ -238,42 +239,92 @@ async function loadReview(uid){
   if(teacherUid!==uid)return;
   teacherDoc=snap.val();aiResult=ai.val();if(!teacherDoc)throw Error('제출본이 없습니다.');
   const answerOverview='<div class="na-compare"><div><b>학생 설명 요약 (자기 서술 근거)</b>'+['io','algorithm','functions','test1','test2','changes'].map(k=>'<div class="na-read"><b>'+esc(FIELDS.find(f=>f[0]===k)?.[1]||k)+'</b>\n'+esc(teacherDoc.fields?.[k]||'미작성')+'</div>').join('')+'</div><div><b>실제 제출 코드 구성</b>'+blockSummary(teacherDoc.codeSnapshot)+'<p class="na-muted">학생의 설명과 코드 구조를 비교한 후 실행 결과를 확인하세요. 제출 코드 JSON은 별도 다운로드가 가능합니다.</p></div></div>';
-  container.innerHTML='<div class="na-card"><h3>'+esc(teacherDoc.displayName)+' · '+esc(teacherDoc.classId.slice(1))+'반 '+esc(teacherDoc.groupId.slice(1))+'조</h3><p>'+esc(formatTime(teacherDoc.submittedAt))+' · 코드 '+Math.round((teacherDoc.codeBytes||0)/1024)+'KB</p><button id="na-code" class="na-btn">엔트리 제출 코드 JSON 내려받기</button></div>'+rubricHtml()+'<div class="na-card"><h3>🔍 학생 설명 ↔ 제출 코드 비교</h3>'+answerOverview+'</div>'+FIELDS.filter(([k])=>k!=='aiUse').map(([k,label])=>'<div class="na-card"><b>'+esc(label)+'</b><div class="na-read">'+esc(teacherDoc.fields?.[k]||'미작성')+'</div></div>').join('')+'<div class="na-card"><h3>AI 1차 채점 (교사에게만 표시)</h3><div id="na-ai"></div><button id="na-run-ai" class="na-btn">AI 채점 요청</button></div><div class="na-card"><h3>교사 최종 평가</h3><div class="na-score">'+[['design','설계',[30,25,20,15]],['implementation','구현',[30,25,20,15]],['report','보고서',[40,30,20,10]]].map(([k,name,scores])=>'<label>'+name+'<select id="na-score-'+k+'"><option value="">선택</option>'+scores.map(x=>'<option value="'+x+'">'+x+'점</option>').join('')+'</select></label>').join('')+'</div><label class="na-field"><strong>교사 채점 근거</strong><textarea id="na-teacher-note" maxlength="2400"></textarea></label><button class="na-btn primary" id="na-grade">교사 점수 저장</button></div>';
+  container.innerHTML='<div class="na-card"><h3>'+esc(teacherDoc.displayName)+' · '+esc(teacherDoc.classId.slice(1))+'반 '+esc(teacherDoc.groupId.slice(1))+'조</h3><p>'+esc(formatTime(teacherDoc.submittedAt))+' · 코드 '+Math.round((teacherDoc.codeBytes||0)/1024)+'KB</p><button id="na-code" class="na-btn">엔트리 제출 코드 JSON 내려받기</button></div>'+rubricHtml()+'<div class="na-card"><h3>🔍 학생 설명 ↔ 제출 코드 비교</h3>'+answerOverview+'</div>'+FIELDS.filter(([k])=>k!=='aiUse').map(([k,label])=>'<div class="na-card"><b>'+esc(label)+'</b><div class="na-read">'+esc(teacherDoc.fields?.[k]||'미작성')+'</div></div>').join('')+'<div class="na-card"><h3>🤖 AI 1차 채점 제안 · 교사 검증 필수</h3><p class="na-muted">AI는 자동으로 성적을 확정하지 않습니다. 원본과 비교한 뒤 교사가 최종 점수를 입력·저장합니다.</p><div id="na-ai"></div><div class="na-actions"><button id="na-run-ai" class="na-btn" type="button">AI 1차 채점 실행</button><button id="na-apply-ai" class="na-btn" type="button" disabled>AI 점수를 입력란에 불러오기</button></div></div><div class="na-card"><h3>교사 최종 평가</h3><div class="na-score">'+[['design','설계',[30,25,20,15]],['implementation','구현',[30,25,20,15]],['report','보고서',[40,30,20,10]]].map(([k,name,scores])=>'<label>'+name+'<select id="na-score-'+k+'"><option value="">선택</option>'+scores.map(x=>'<option value="'+x+'">'+x+'점</option>').join('')+'</select></label>').join('')+'</div><label class="na-field"><strong>교사 채점 근거</strong><textarea id="na-teacher-note" maxlength="2400"></textarea></label><button class="na-btn primary" id="na-grade">교사 점수 저장</button></div>';
   const old=review.val()||{};
   for(const key of ['design','implementation','report'])el('na-score-'+key).value=old[key]??'';
   el('na-teacher-note').value=old.note||'';
   el('na-grade').onclick=saveGrade;
   el('na-run-ai').onclick=runAI;
+   el('na-apply-ai').onclick=applyAI;
   el('na-code').onclick=()=>{
    const blob=new Blob([teacherDoc.codeSnapshot],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
    a.href=url;a.download='nepal_entry_'+teacherDoc.classId+'_'+teacherDoc.groupId+'_'+uid.slice(0,8)+'.json';a.click();
    setTimeout(()=>URL.revokeObjectURL(url),1500);
   };
-  showAI();message('AI 채점은 참고용입니다. 교사가 원본과 평가계획을 확인하고 확정하세요.');
+  showAI();message('AI의 영역별 근거와 9개 문항 판단을 확인하고, 교사가 점수를 수정·확정하세요.');
  }catch(e){message('제출본 읽기 실패: '+String(e.code||e.message||e))}
 }
+function currentAI(){
+ return aiResult&&aiResult.rubricVersion===AI_RUBRIC_VERSION&&
+  [30,25,20,15].includes(aiResult.design)&&[30,25,20,15].includes(aiResult.implementation)&&
+  [40,30,20,10].includes(aiResult.report);
+}
 function showAI(){
- const e=el('na-ai');if(!e)return;
- e.innerHTML=aiResult?'<div class="na-read">AI 제안: 설계 '+esc(aiResult.design)+'/30 · 구현 '+esc(aiResult.implementation)+'/30 · 보고서 '+esc(aiResult.report)+'/40\n'+esc(aiResult.reason||'')+'</div>':'아직 AI 채점을 실행하지 않았습니다.';
+ const display=el('na-ai'),apply=el('na-apply-ai');
+ if(!display)return;
+ if(apply)apply.disabled=!currentAI();
+ if(!aiResult){display.innerHTML='<div class="na-read">AI 1차 채점이 아직 없습니다. 교사 계정에서 버튼을 눌러 점수와 근거를 요청하세요.</div>';return}
+ if(!currentAI()){
+  display.innerHTML='<div class="na-read">⚠ 과거 평가기준으로 생성된 AI 결과가 있거나 응답이 유효하지 않습니다. 이번 미션 이해도 기준으로 다시 AI 채점을 실행해야 합니다. 이전 제안점수는 교사 채점에 적용하지 않습니다.</div>';
+  return;
+ }
+ const scores=[
+  ['개념 설계',aiResult.design,30,aiResult.details?.designEvidence],
+  ['알고리즘 적용',aiResult.implementation,30,aiResult.details?.implementationEvidence],
+  ['이해·설명',aiResult.report,40,aiResult.details?.reportEvidence]
+ ];
+ const total=aiResult.design+aiResult.implementation+aiResult.report;
+ const questions=(aiResult.details?.questions||[]);
+ display.innerHTML='<div class="na-read"><b>AI 제안 총점: '+total+'/100점</b> (최저 40점, 4단계 점수)<p class="na-muted">AI 초안입니다. 교사 점수 저장 전에는 확정되지 않습니다.</p></div>'+
+ scores.map(([name,got,max,evidence])=>'<div class="na-read"><b>'+esc(name)+' '+got+'/'+max+'점</b>\n'+esc(evidence||'세부 평가 근거를 확인해 주세요.')+'</div>').join('')+
+ '<div class="na-read"><b>종합 판단</b>\n'+esc(aiResult.reason||'')+'</div>'+
+ (aiResult.warnings?.length?'<div class="na-read"><b>⚠ 교사 검증 필요</b>\n'+aiResult.warnings.map(x=>'• '+esc(x)).join('\n')+'</div>':'')+
+ '<details class="na-card"><summary>9개 문항별 AI 판단 펼쳐 보기</summary><div>'+questions.map(x=>{
+  const label=FIELDS.find(f=>f[0]===x.key)?.[1]||x.key;
+  return '<div class="na-read"><b>'+esc(label)+' — '+esc(x.judgment)+'</b>\n'+esc(x.reason)+'</div>';
+ }).join('')+'</div></details>';
+}
+function applyAI(){
+ if(!currentAI()){message('현재 미션 평가기준으로 생성된 AI 제안이 없습니다. 먼저 AI 1차 채점을 실행하세요.');return}
+ const selected={design:aiResult.design,implementation:aiResult.implementation,report:aiResult.report};
+ for(const [k,val] of Object.entries(selected)){
+  const input=el('na-score-'+k);if(input)input.value=String(val);
+ }
+ message('✓ AI 제안점수를 교사 입력란으로 불러왔습니다. 원본 답안을 검증하고 필요한 점수를 수정한 뒤 [교사 점수 저장]을 눌러야 확정됩니다.');
 }
 async function runAI(){
- const btn=el('na-run-ai');btn.disabled=true;message('AI 서버에 채점 요청 중…');
+ const btn=el('na-run-ai');
+ if(!btn||!teacherUid)return;
+ const uid=teacherUid;
+ btn.disabled=true;message('AI 1차 채점 요청 중 · 제출 답안의 개인정보를 제외하고 미션 평가 기준으로 분석합니다…');
  try{
-  if(!ctx.fb.functions)await new Promise((ok,fail)=>{const x=document.createElement('script');x.src='https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js';x.onload=ok;x.onerror=fail;document.head.appendChild(x)});
-  const result=await ctx.fb.app().functions('asia-northeast3').httpsCallable('gradeNepalAssessment')({uid:teacherUid});
-  aiResult=result.data;showAI();
-  message('✓ AI 채점 제안을 받았습니다. 교사의 최종 확인이 필요합니다.');
- }catch(e){message('AI 채점 서버가 아직 배포되지 않았거나 호출 실패: '+String(e.code||e.message||e))}
- finally{if(btn.isConnected)btn.disabled=false}
+  if(!ctx.fb.functions)await new Promise((ok,fail)=>{
+   const x=document.createElement('script');
+   x.src='https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js';
+   x.onload=ok;x.onerror=fail;document.head.appendChild(x);
+  });
+  const result=await ctx.fb.app().functions('asia-northeast3').httpsCallable('gradeNepalAssessment')({uid});
+  if(uid!==teacherUid)return;
+  const suggested=result.data;
+  if(!suggested||suggested.rubricVersion!==AI_RUBRIC_VERSION)
+   throw Error('서버의 AI 채점 기준이 이전 버전입니다. Firebase Functions 서버를 새 버전으로 배포한 후 다시 실행하세요.');
+  aiResult=suggested;showAI();
+  message('✓ AI 1차 채점안이 도착했습니다. 9개 문항별 근거를 확인한 후 교사가 점수를 확정하세요.');
+ }catch(e){
+  message('⚠ AI 채점 호출 실패: '+String(e.code||e.message||e)+'\nCloud Functions 배포·OPENAI_API_KEY 설정·교사 계정 권한을 확인하세요. AI 없이 직접 채점도 가능합니다.');
+ }finally{if(btn.isConnected)btn.disabled=false}
 }
 async function saveGrade(){
  const scores=Object.fromEntries(['design','implementation','report'].map(k=>[k,Number(el('na-score-'+k).value)]));
  if(![30,25,20,15].includes(scores.design)||![30,25,20,15].includes(scores.implementation)||![40,30,20,10].includes(scores.report)){message('평가계획에 정해진 점수 단계만 선택할 수 있습니다.');return}
  const total=scores.design+scores.implementation+scores.report;
- if(!confirm(total+'점으로 교사 최종 채점을 저장할까요?'))return;
+ const note=el('na-teacher-note').value.trim();
+ if(note.length<5){message('교사가 확인한 채점 근거를 5자 이상 적어 주세요. AI 제안만으로 최종 점수를 확정하지 않습니다.');el('na-teacher-note').focus();return}
+ const aiComparison=currentAI()?'\nAI 제안: '+(aiResult.design+aiResult.implementation+aiResult.report)+'점 / 교사 확정: '+total+'점':'';
+ if(!confirm('학생 답안과 엔트리 코드를 교사가 검토하고 '+total+'점으로 최종 확정할까요?'+aiComparison))return;
  const btn=el('na-grade');btn.disabled=true;
  try{
-  await ctx.db.ref(ROOT+'/reviews/'+teacherUid).set({...scores,note:el('na-teacher-note').value.trim(),reviewedAt:ctx.fb.database.ServerValue.TIMESTAMP,reviewedBy:ctx.user.uid});
+  await ctx.db.ref(ROOT+'/reviews/'+teacherUid).set({...scores,note,reviewedAt:ctx.fb.database.ServerValue.TIMESTAMP,reviewedBy:ctx.user.uid});
   message('✓ '+total+'점 최종 채점 저장 완료. 학생에게 자동으로 점수를 공개하지 않습니다.');
  }catch(e){message('교사 점수 저장 실패: '+String(e.code||e.message||e))}
  finally{if(btn.isConnected)btn.disabled=false}
