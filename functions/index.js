@@ -204,3 +204,113 @@ exports.gradeNepalAssessment=onCall({
   throw new HttpsError('internal','AI 채점 처리에 실패했습니다. 서버 로그를 확인해 주세요.');
  }finally{await lock.remove().catch(()=>{})}
 });
+
+
+/* Read-only teacher gradebook. Prefix 26-10101 = 2026/grade1/class01/no01. */
+function parse2026SchoolAccount(email){
+ const value=String(email||'').toLowerCase().trim();
+ const match=/^26-(1)(\d{2})(\d{2})@psinjung\.ms\.kr$/.exec(value);
+ if(!match)return null;
+ const clazz=Number(match[2]),number=Number(match[3]);
+ if(clazz<1||clazz>20||number<1||number>50)return null;
+ return {accountId:value.split('@')[0],year:2026,grade:1,clazz,number};
+}
+function gradebookFinalScore(r){
+ if(!r||!rubric.design.includes(Number(r.design))||
+    !rubric.implementation.includes(Number(r.implementation))||
+    !rubric.report.includes(Number(r.report)))return null;
+ const design=Number(r.design),implementation=Number(r.implementation),report=Number(r.report);
+ return {design,implementation,report,total:design+implementation+report,reviewedAt:Number(r.reviewedAt)||0};
+}
+exports.getNepalAssessmentGradebook=onCall({
+ region:'asia-northeast3',
+ cors:['https://goldrain1993.github.io'],
+ timeoutSeconds:120,maxInstances:2,concurrency:2
+},async request=>{
+ const a=request.auth;
+ if(!a||a.uid!==TEACHER_UID||
+    String(a.token.email||'').toLowerCase()!==TEACHER_EMAIL||
+    a.token.email_verified!==true||
+    a.token.firebase?.sign_in_provider!=='google.com')
+  throw new HttpsError('permission-denied','등록 교사만 성적표를 확인할 수 있습니다.');
+ try{
+  const db=admin.database();
+  const [indexSnap,reviewSnap]=await Promise.all([
+   db.ref(ROOT+'/index').once('value'),db.ref(ROOT+'/reviews').once('value')
+  ]);
+  const indexes=indexSnap.val()||{},reviews=reviewSnap.val()||{};
+  const studentAuth=[];let pageToken;
+  for(let page=0;page<30;page++){
+   const result=await admin.auth().listUsers(1000,pageToken);
+   for(const u of result.users){
+    const info=parse2026SchoolAccount(u.email);
+    if(info)studentAuth.push({uid:u.uid,...info,authName:String(u.displayName||'').trim().slice(0,60)});
+   }
+   pageToken=result.pageToken;
+   if(!pageToken)break;
+   if(page===29)throw new Error('Authentication 조회 페이지 수 제한 초과');
+  }
+  const teamKeys=new Map();
+  for(const entry of Object.values(indexes)){
+   const c=Number(String(entry?.classId||'').replace(/^c/,'')),
+         g=Number(String(entry?.groupId||'').replace(/^g/,''));
+   if(Number.isInteger(c)&&c>=1&&c<=20&&Number.isInteger(g)&&g>=1&&g<=30)
+    teamKeys.set('c'+c+'/g'+g,{c,g});
+  }
+  const studentNames=new Map();
+  const teams=[...teamKeys.values()];
+  for(let start=0;start<teams.length;start+=25){
+   const subset=teams.slice(start,start+25);
+   const snapshots=await Promise.all(subset.map(x=>
+    db.ref('nepal-v27/public/classes/c'+x.c+'/teams/g'+x.g+'/members').once('value')));
+   snapshots.forEach(snap=>{
+    for(const member of Object.values(snap.val()||{})){
+     if(typeof member?.uid==='string'&&typeof member.displayName==='string')
+      studentNames.set(member.uid,member.displayName.trim().slice(0,60));
+    }
+   });
+  }
+  const safeName=(value,account)=>{
+   const n=String(value||'').trim().slice(0,60);
+   return n&&n!=='학생'&&n!==account&&!/^26-\d{5}$/.test(n)?n:'';
+  };
+  const rows=[],seen=new Set();
+  for(const u of studentAuth){
+   const index=indexes[u.uid]||null;
+   const name=safeName(studentNames.get(u.uid),u.accountId)||
+     safeName(index?.displayName,u.accountId)||
+     safeName(u.authName,u.accountId)||'이름 미확인';
+   const score=gradebookFinalScore(reviews[u.uid]),submitted=!!index;
+   const submittedClass=Number(String(index?.classId||'').replace(/^c/,''));
+   const mismatch=submitted&&submittedClass!==u.clazz;
+   rows.push({
+    uid:u.uid,accountId:u.accountId,year:u.year,grade:u.grade,clazz:u.clazz,number:u.number,
+    name,group:submitted?Number(String(index.groupId||'').replace(/^g/,''))||null:null,
+    submitted,score,status:score?'확정':submitted?'미채점':'미제출',
+    warning:mismatch?'계정 반과 제출 반 불일치':name==='이름 미확인'?'이름 확인 필요':'',
+    submittedAt:submitted?Number(index.submittedAt)||0:0
+   });
+   seen.add(u.uid);
+  }
+  // Keep old submissions whose Auth account was renamed or deleted visible.
+  for(const [uid,index] of Object.entries(indexes)){
+   if(seen.has(uid))continue;
+   const clazz=Number(String(index?.classId||'').replace(/^c/,''));
+   if(!Number.isInteger(clazz)||clazz<1||clazz>20)continue;
+   const score=gradebookFinalScore(reviews[uid]);
+   rows.push({
+    uid,accountId:'',year:2026,grade:1,clazz,number:null,
+    name:safeName(studentNames.get(uid),'')||safeName(index?.displayName,'')||'이름 미확인',
+    group:Number(String(index.groupId||'').replace(/^g/,''))||null,
+    submitted:true,score,status:score?'확정':'미채점',
+    warning:'학교 계정 학번 확인 필요',submittedAt:Number(index.submittedAt)||0
+   });
+  }
+  rows.sort((a,b)=>a.clazz-b.clazz||(a.number??999)-(b.number??999)||a.name.localeCompare(b.name,'ko'));
+  return {rows,year:2026,grade:1,createdAt:Date.now(),
+    note:'학교 계정으로 Firebase에 로그인한 학생과 제출 기록을 기준으로 표시합니다. 미로그인 학생은 목록에 없을 수 있습니다. 이름은 학생 등록명이며 점수는 교사 확정본만 표시됩니다.'};
+ }catch(error){
+  console.error('Gradebook read failed:',String(error.code||error.message||error));
+  throw new HttpsError('internal','반별 성적표 조회에 실패했습니다. 서버 로그를 확인하세요.');
+ }
+});
