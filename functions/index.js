@@ -243,6 +243,7 @@ exports.getNepalAssessmentGradebook=onCall({
   for(let page=0;page<30;page++){
    const result=await admin.auth().listUsers(1000,pageToken);
    for(const u of result.users){
+    if(u.emailVerified!==true||!u.providerData?.some(p=>p.providerId==='google.com'))continue;
     const info=parse2026SchoolAccount(u.email);
     if(info)studentAuth.push({uid:u.uid,...info,authName:String(u.displayName||'').trim().slice(0,60)});
    }
