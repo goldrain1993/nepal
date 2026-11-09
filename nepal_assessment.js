@@ -115,7 +115,7 @@ async function studentOpen(t){
   try{local=JSON.parse(localStorage.getItem(storageKey())||'null')}catch(_){}
   if(local&&(!data||Number(local.updatedAt)>Number(data.updatedAt)))data=local;
   for(const [k,,max] of FIELDS){
-   const field=el('na-'+k);field.value=data?.fields?.[k]||'';
+   const field=el('na-'+k);field.value=String(data?.fields?.[k]||'').trim();
    const update=()=>{el('na-count-'+k).textContent=field.value.length+'/'+max+'자'};
    update();
    field.oninput=()=>{update();updateProgress();saveState('작성 내용 변경됨 · 서버 임시 저장 대기');try{localStorage.setItem(storageKey(),JSON.stringify({fields:fields(),updatedAt:Date.now()}))}catch(_){}clearTimeout(timer);timer=setTimeout(()=>saveDraft(false),1800)};
@@ -133,7 +133,9 @@ async function saveDraft(manual){
  if(writing||finalDoc||!ctx?.team)return false;
  writing=true;
  try{
-  await ctx.db.ref(ROOT+'/drafts/'+ctx.user.uid).set({classId:'c'+ctx.team.c,groupId:'g'+ctx.team.g,fields:fields(),updatedAt:ctx.fb.database.ServerValue.TIMESTAMP});
+  const draftFields=Object.fromEntries(Object.entries(fields()).map(([key,value])=>[key,value||' ']));
+   // RTDB deletes empty-string values; keep blank draft fields as a single space so schema validation passes.
+   await ctx.db.ref(ROOT+'/drafts/'+ctx.user.uid).set({classId:'c'+ctx.team.c,groupId:'g'+ctx.team.g,fields:draftFields,updatedAt:ctx.fb.database.ServerValue.TIMESTAMP});
   saveState('✓ Firebase 임시 저장 완료 · '+new Date().toLocaleTimeString('ko-KR')+' (최종 제출 전)');
    if(manual)message('✓ 임시 저장 완료. 최종 제출 전 확인은 별도로 진행하세요.');
   return true;
