@@ -4,6 +4,7 @@
 if(global.NepalAssessment)return;
 const ROOT='nepal-v27/private/assessments';
 const AI_RUBRIC_VERSION='mission-comprehension-2026-v1';
+let aiPrivacyAcknowledged=false;
 const FIELDS=[
  ['purpose','미션 1 · 변수와 센서값의 역할',1600],
  ['io','미션 2 · 반복과 값 갱신',1700],
@@ -198,7 +199,7 @@ async function submitDirect(){
 }
 async function teacherOpen(t){
  shell('📊 수행평가 제출·채점 현황','최종 제출본을 확인하고 AI 채점 제안을 참고하여 교사가 점수를 확정합니다.');
- el('na-body').innerHTML='<div class="na-card"><h3>🛡 학생 제출 공개 설정</h3><p>처음에는 학생에게 수행평가 버튼이 보이지 않습니다. 시험 제출과 Firebase 권한 확인을 마친 뒤 학생 제출을 열어 주세요.</p><button class="na-btn" id="na-publish" type="button">설정 확인 중…</button><div id="na-publish-state" class="na-muted"></div></div><div class="na-card">AI는 미션 1~7의 선택·개인 설명과 제출 코드 구조를 바탕으로 1차 점수 및 근거를 제안합니다. 교사는 반드시 원본을 확인해 점수를 수정하거나 확정하세요. AI 점수는 학생에게 공개되지 않습니다.</div><div class="na-card"><h3>학생 제출 목록</h3><div id="na-roster">조회 중…</div></div><div id="na-review"></div>';
+ el('na-body').innerHTML='<div class="na-card"><h3>🛡 학생 제출 공개 설정</h3><p>처음에는 학생에게 수행평가 버튼이 보이지 않습니다. 시험 제출과 Firebase 권한 확인을 마친 뒤 학생 제출을 열어 주세요.</p><button class="na-btn" id="na-publish" type="button">설정 확인 중…</button><div id="na-publish-state" class="na-muted"></div></div><div class="na-card">AI는 미션별 선택·개인 설명과 엔트리 코드의 블록 종류만으로 1차 채점안을 제안합니다. 학생 이름과 연락처 등 일반적인 식별정보는 가려 전송하지만 자유서술에 개인정보가 포함되지 않았는지 교사가 확인하고 학교 지침에 따라 이용하세요. 교사가 최종 점수를 확정하며, AI 제안은 학생에게 공개되지 않습니다.</div><div class="na-card"><h3>학생 제출 목록</h3><div id="na-roster">조회 중…</div></div><div id="na-review"></div>';
  let enabled=false;
  const configRef=ctx.db.ref(ROOT+'/config/enabled');
  const publish=el('na-publish'),status=el('na-publish-state');
@@ -295,6 +296,10 @@ function applyAI(){
 async function runAI(){
  const btn=el('na-run-ai');
  if(!btn||!teacherUid)return;
+ if(!aiPrivacyAcknowledged){
+  if(!confirm('AI 1차 채점은 학생 답안(이름·일반 연락처 패턴 가림)과 엔트리 블록 종류 요약을 외부 AI 서비스로 전송합니다. 학생의 자유서술에 추가 개인정보가 포함되지 않았고 학교 개인정보 처리 지침상 이용 가능함을 확인했습니까?'))return;
+  aiPrivacyAcknowledged=true;
+ }
  const uid=teacherUid;
  btn.disabled=true;message('AI 1차 채점 요청 중 · 제출 답안의 개인정보를 제외하고 미션 평가 기준으로 분석합니다…');
  try{
