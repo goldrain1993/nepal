@@ -197,6 +197,65 @@ async function submitDirect(){
   checkCodeStatus();
  }finally{if(btn?.isConnected)btn.disabled=false}
 }
+
+let gradebookRows=[],gradebookLoaded=false,gradebookLoading=false;
+function selectedGradeRows(){
+ const v=el('na-gb-class')?.value||'all';
+ return v==='all'?gradebookRows:gradebookRows.filter(r=>r.clazz===Number(v));
+}
+function showGradebook(){
+ const box=el('na-gb-table'),status=el('na-gb-status'),csv=el('na-gb-csv');
+ if(!box||!status||!gradebookLoaded)return;
+ const list=selectedGradeRows(),submitted=list.filter(r=>r.submitted).length,confirmed=list.filter(r=>r.status==='확정').length;
+ status.textContent='계정·제출 기록 '+list.length+'명 / 제출 '+submitted+'명 / 점수 확정 '+confirmed+'명 / 미채점 '+(submitted-confirmed)+'명 / 미제출 '+(list.length-submitted)+'명 · 미로그인 학생은 명단에 없을 수 있습니다.';
+ csv.disabled=list.length===0;
+ const val=(v)=>esc(v==null?'—':v);
+ box.innerHTML=list.length?'<table class="na-table"><thead><tr><th>반</th><th>번호</th><th>이름(등록명)</th><th>구글 계정 ID</th><th>조</th><th>개념 설계<br>30점</th><th>알고리즘 적용<br>30점</th><th>이해·설명<br>40점</th><th>총점<br>100점</th><th>상태·주의</th><th>상세</th></tr></thead><tbody>'+
+ list.map(x=>{
+  const score=x.score;
+  const scores=score?'<td>'+val(score.design)+'</td><td>'+val(score.implementation)+'</td><td>'+val(score.report)+'</td><td><strong>'+val(score.total)+'</strong></td>':'<td>—</td><td>—</td><td>—</td><td>—</td>';
+  return '<tr><td>'+val(x.clazz)+'</td><td>'+val(x.number)+'</td><td>'+val(x.name)+'</td><td>'+val(x.accountId)+'</td><td>'+val(x.group)+'</td>'+scores+
+   '<td>'+val(x.status)+(x.warning?'<div class="na-muted" style="color:#ffe6a0">'+val(x.warning)+'</div>':'')+'</td><td>'+
+   (x.submitted?'<button type="button" class="na-btn" data-gb-uid="'+val(x.uid)+'">보기</button>':'—')+'</td></tr>';
+ }).join('')+'</tbody></table>':'<p class="na-muted">선택한 반에서 확인된 계정·제출 기록이 없습니다.</p>';
+}
+function exportGradebook(){
+ if(!gradebookLoaded)return;
+ const current=el('na-gb-class')?.value||'all',data=selectedGradeRows();
+ if(!data.length)return;
+ const rows=[['학년','반','번호','이름(등록명)','구글 계정 ID','조','개념 설계','알고리즘 적용','이해·설명','총점','상태','확인 필요']];
+ data.forEach(x=>rows.push([x.grade,x.clazz,x.number??'',x.name,x.accountId,x.group??'',x.score?.design??'',x.score?.implementation??'',x.score?.report??'',x.score?.total??'',x.status,x.warning||'']));
+ const clean=x=>{let s=String(x??'');if(/^[\s]*[=+\-@\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'};
+ const content='\ufeff'+rows.map(r=>r.map(clean).join(',')).join('\r\n');
+ const url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8'}));
+ const a=document.createElement('a');a.href=url;a.download='네팔_2026_1학년_'+(current==='all'?'전체':current+'반')+'_성적표.csv';
+ document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);
+}
+async function fetchGradebook(){
+ if(gradebookLoading||!ctx?.isTeacher)return;
+ const state=el('na-gb-status'),button=el('na-gb-refresh');
+ if(!state)return;
+ gradebookLoading=true;if(button)button.disabled=true;
+ const current=token;
+ state.textContent='Firebase 학교 계정과 확정 점수를 조회하는 중…';
+ try{
+  if(typeof ctx.fb.app().functions!=='function'){
+   await new Promise((resolve,reject)=>{
+    const node=document.createElement('script');
+    node.src='https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js';
+    node.onload=resolve;node.onerror=()=>reject(Error('Firebase Functions SDK 로드 실패'));
+    document.head.appendChild(node);
+   });
+  }
+  const result=await ctx.fb.app().functions('asia-northeast3').httpsCallable('getNepalAssessmentGradebook')({});
+  if(current!==token)return;
+  if(!Array.isArray(result.data?.rows))throw Error('서버가 유효한 성적표 목록을 반환하지 않았습니다.');
+  gradebookRows=result.data.rows;gradebookLoaded=true;showGradebook();
+ }catch(e){
+  if(current===token){gradebookLoaded=false;state.textContent='⚠ 반별 성적표 조회 실패: '+String(e.code||e.message||e)+' · 신규 Firebase 함수 배포를 확인하세요. 기존 학생 제출 목록·교사 채점은 그대로 사용할 수 있습니다.';}
+ }finally{gradebookLoading=false;if(button?.isConnected)button.disabled=false}
+}
+
 async function teacherOpen(t){
  shell('📊 수행평가 제출·채점 현황','최종 제출본을 확인하고 AI 채점 제안을 참고하여 교사가 점수를 확정합니다.');
  el('na-body').innerHTML='<div class="na-card"><h3>🛡 학생 제출 공개 설정</h3><p>처음에는 학생에게 수행평가 버튼이 보이지 않습니다. 시험 제출과 Firebase 권한 확인을 마친 뒤 학생 제출을 열어 주세요.</p><button class="na-btn" id="na-publish" type="button">설정 확인 중…</button><div id="na-publish-state" class="na-muted"></div></div><div class="na-card">AI는 미션별 선택·개인 설명과 엔트리 코드의 블록 종류만으로 1차 채점안을 제안합니다. 학생 이름과 연락처 등 일반적인 식별정보는 가려 전송하지만 자유서술에 개인정보가 포함되지 않았는지 교사가 확인하고 학교 지침에 따라 이용하세요. 교사가 최종 점수를 확정하며, AI 제안은 학생에게 공개되지 않습니다.</div><div class="na-card"><h3>학생 제출 목록</h3><div id="na-roster">조회 중…</div></div><div id="na-review"></div>';
