@@ -258,7 +258,13 @@ async function fetchGradebook(){
 
 async function teacherOpen(t){
  shell('📊 수행평가 제출·채점 현황','최종 제출본을 확인하고 AI 채점 제안을 참고하여 교사가 점수를 확정합니다.');
- el('na-body').innerHTML='<div class="na-card"><h3>🛡 학생 제출 공개 설정</h3><p>처음에는 학생에게 수행평가 버튼이 보이지 않습니다. 시험 제출과 Firebase 권한 확인을 마친 뒤 학생 제출을 열어 주세요.</p><button class="na-btn" id="na-publish" type="button">설정 확인 중…</button><div id="na-publish-state" class="na-muted"></div></div><div class="na-card">AI는 미션별 선택·개인 설명과 엔트리 코드의 블록 종류만으로 1차 채점안을 제안합니다. 학생 이름과 연락처 등 일반적인 식별정보는 가려 전송하지만 자유서술에 개인정보가 포함되지 않았는지 교사가 확인하고 학교 지침에 따라 이용하세요. 교사가 최종 점수를 확정하며, AI 제안은 학생에게 공개되지 않습니다.</div><div class="na-card"><h3>학생 제출 목록</h3><div id="na-roster">조회 중…</div></div><div id="na-review"></div>';
+ el('na-body').innerHTML='<div class="na-card"><h3>🛡 학생 제출 공개 설정</h3><p>처음에는 학생에게 수행평가 버튼이 보이지 않습니다. 시험 제출과 Firebase 권한 확인을 마친 뒤 학생 제출을 열어 주세요.</p><button class="na-btn" id="na-publish" type="button">설정 확인 중…</button><div id="na-publish-state" class="na-muted"></div></div><div class="na-card">AI는 미션별 선택·개인 설명과 엔트리 코드의 블록 종류만으로 1차 채점안을 제안합니다. 학생 이름과 연락처 등 일반적인 식별정보는 가려 전송하지만 자유서술에 개인정보가 포함되지 않았는지 교사가 확인하고 학교 지침에 따라 이용하세요. 교사가 최종 점수를 확정하며, AI 제안은 학생에게 공개되지 않습니다.</div><div class="na-card"><h3>📊 반별 수행평가 성적표</h3><p class="na-muted">2026학년도 1학년 · 구글 계정 26-10101은 1학년 1반 1번입니다. 이름은 학생 등록명과 연결하며 교사 확정점수만 표시합니다.</p><div class="na-actions"><label for="na-gb-class">학급 선택</label><select id="na-gb-class" style="padding:9px;color:#fff;background:#092015;border:1px solid #739775;border-radius:8px"><option value="all">전체 1학년</option>'+Array.from({length:11},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'반</option>').join('')+'</select><button id="na-gb-refresh" type="button" class="na-btn">↻ 조회</button><button id="na-gb-csv" type="button" class="na-btn" disabled>CSV 내려받기</button></div><div id="na-gb-status" class="na-muted">학교 계정과 성적표를 불러오는 중…</div><div id="na-gb-table" style="overflow:auto;max-height:62vh;margin-top:12px"></div></div><div class="na-card"><h3>학생 제출 목록</h3><div id="na-roster">조회 중…</div></div><div id="na-review"></div>';
+ gradebookRows=[];gradebookLoaded=false;gradebookLoading=false;
+ el('na-gb-class').onchange=showGradebook;
+ el('na-gb-refresh').onclick=fetchGradebook;
+ el('na-gb-csv').onclick=exportGradebook;
+ el('na-gb-table').onclick=e=>{const btn=e.target.closest('button[data-gb-uid]');if(btn)loadReview(btn.dataset.gbUid)};
+ fetchGradebook();
  let enabled=false;
  const configRef=ctx.db.ref(ROOT+'/config/enabled');
  const publish=el('na-publish'),status=el('na-publish-state');
@@ -395,6 +401,7 @@ async function saveGrade(){
  try{
   await ctx.db.ref(ROOT+'/reviews/'+teacherUid).set({...scores,note,reviewedAt:ctx.fb.database.ServerValue.TIMESTAMP,reviewedBy:ctx.user.uid});
   message('✓ '+total+'점 최종 채점 저장 완료. 학생에게 자동으로 점수를 공개하지 않습니다.');
+  fetchGradebook();
  }catch(e){message('교사 점수 저장 실패: '+String(e.code||e.message||e))}
  finally{if(btn.isConnected)btn.disabled=false}
 }
