@@ -85,6 +85,8 @@ function mountStudent(){
   }
  });
  // Keep the official evaluation weight and original database submission path.
+ const sectionHeaders=[...editor.querySelectorAll('.na-card > h3')];
+ ['① 미션 1~4 · 핵심 프로그래밍 개념 (30점)','② 저장된 엔트리 코드 확인 (참고 자료)','③ SEMI FINAL·미션 6·FINAL · 적용과 설명 (70점)'].forEach((title,i)=>{if(sectionHeaders[i])sectionHeaders[i].textContent=title});
  const summary=document.querySelector('#na-body > .na-card:not(.na-rubric)');if(summary)summary.innerHTML='<h3>🧩 2차 수행평가 · 미션 이해 확인</h3><p>개념 설계 30점 · 알고리즘 적용 30점 · 이해·설명 40점. 미션 1~7의 변수·반복·조건·센서·N개 경보·리스트·디버깅을 이해했는지 확인합니다.</p>';
  const submit=document.getElementById('na-submit'),prior=submit?.onclick;
  if(submit&&typeof prior==='function'){
