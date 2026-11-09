@@ -85,7 +85,7 @@ function mountStudent(){
   }
  });
  // Keep the official evaluation weight and original database submission path.
- const summary=editor.querySelector('.na-card');if(summary)summary.innerHTML='<h3>🧩 2차 수행평가 · 미션 이해 확인</h3><p>개념 설계 30점 · 알고리즘 적용 30점 · 이해·설명 40점. 미션 1~7의 변수·반복·조건·센서·N개 경보·리스트·디버깅을 이해했는지 확인합니다.</p>';
+ const summary=document.querySelector('#na-body > .na-card:not(.na-rubric)');if(summary)summary.innerHTML='<h3>🧩 2차 수행평가 · 미션 이해 확인</h3><p>개념 설계 30점 · 알고리즘 적용 30점 · 이해·설명 40점. 미션 1~7의 변수·반복·조건·센서·N개 경보·리스트·디버깅을 이해했는지 확인합니다.</p>';
  const submit=document.getElementById('na-submit'),prior=submit?.onclick;
  if(submit&&typeof prior==='function'){
   submit.onclick=function(e){
@@ -122,8 +122,8 @@ function teacherUpdate(){
  if(!area)return;
  const adjust=()=>{
   patchRubric(area);
-  const ai=area.querySelector('#na-run-ai');if(ai){ai.disabled=true;ai.textContent='AI 채점 재검증 후 사용'}
-  const display=area.querySelector('#na-ai');if(display)display.textContent='기존 AI 채점은 개발보고서 기준이므로 개념평가에는 사용하지 않습니다.';
+  const ai=area.querySelector('#na-run-ai');if(ai){ai.disabled=true;if(ai.textContent!=='AI 채점 재검증 후 사용')ai.textContent='AI 채점 재검증 후 사용'}
+  const display=area.querySelector('#na-ai');if(display&&display.textContent!=='기존 AI 채점은 개발보고서 기준이므로 개념평가에는 사용하지 않습니다.')display.textContent='기존 AI 채점은 개발보고서 기준이므로 개념평가에는 사용하지 않습니다.';
   const heading=[...area.querySelectorAll('h3')].find(x=>x.textContent.includes('AI 1차 채점'));
   if(heading)heading.textContent='AI 채점 임시 중단';
   const labels=area.querySelectorAll('.na-score label');['개념 설계','알고리즘 적용','이해·설명'].forEach((n,i)=>{if(labels[i]&&labels[i].dataset.guided!=='yes'){const sel=labels[i].querySelector('select');if(sel){labels[i].textContent=n;labels[i].appendChild(sel);labels[i].dataset.guided='yes'}}});
