@@ -133,10 +133,8 @@ function teacherUpdate(){
  if(!area)return;
  const adjust=()=>{
   patchRubric(area);
-  const ai=area.querySelector('#na-run-ai');if(ai){ai.disabled=true;if(ai.textContent!=='AI 채점 재검증 후 사용')ai.textContent='AI 채점 재검증 후 사용'}
-  const display=area.querySelector('#na-ai');if(display&&display.textContent!=='기존 AI 채점은 개발보고서 기준이므로 개념평가에는 사용하지 않습니다.')display.textContent='기존 AI 채점은 개발보고서 기준이므로 개념평가에는 사용하지 않습니다.';
-  const heading=[...area.querySelectorAll('h3')].find(x=>x.textContent.includes('AI 1차 채점'));
-  if(heading)heading.textContent='AI 채점 임시 중단';
+  // AI grading is now enabled in the main assessment module.
+  // Keep only the visual rubric/score labels in this guide overlay.
   const labels=area.querySelectorAll('.na-score label');['개념 설계','알고리즘 적용','이해·설명'].forEach((n,i)=>{if(labels[i]&&labels[i].dataset.guided!=='yes'){const sel=labels[i].querySelector('select');if(sel){labels[i].textContent=n;labels[i].appendChild(sel);labels[i].dataset.guided='yes'}}});
  };
  adjust();
