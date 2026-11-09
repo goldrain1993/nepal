@@ -85,7 +85,7 @@ function shell(title,desc){
 }
 function fieldHtml([k,title,max]){
  const guide=GUIDES[k]||{};
- return '<div class="na-field"><label for="na-'+k+'">'+esc(title)+'</label><p class="na-help">'+esc(guide.hint||'본인의 실제 활동을 바탕으로 작성하세요.')+'</p><textarea id="na-'+k+'" maxlength="'+max+'" aria-describedby="na-count-'+k+'" placeholder="'+esc(guide.outline||'내용을 작성하세요.')+'"></textarea><small id="na-count-'+k+'" class="na-muted"></small></div>';
+ return '<div class="na-field"><label for="na-'+k+'">문항 '+(FIELDS.findIndex(f=>f[0]===k)+1)+'. '+esc(title)+'</label><p class="na-help">'+esc(guide.hint||'본인의 실제 활동을 바탕으로 작성하세요.')+'</p><textarea id="na-'+k+'" maxlength="'+max+'" aria-describedby="na-count-'+k+'" placeholder="'+esc(guide.outline||'내용을 작성하세요.')+'"></textarea><small id="na-count-'+k+'" class="na-muted"></small></div>';
 }
 function storageKey(){return 'nepal-assessment-draft-v1:'+ctx.user.uid}
 let prepared=null;
