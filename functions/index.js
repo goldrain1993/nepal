@@ -139,6 +139,7 @@ exports.gradeNepalAssessment=onCall({
    '코드 증거는 개인정보를 제거한 블록 타입 개수뿐이다. 실행 성공, 개별 기여, 실기 성적은 추정하지 말 것. 조별 코드 근거는 참고로만 활용.',
    '현재 조별 FINAL 등급이나 이전 형성평가 기록은 평가 자료로 사용하지 않는다.',
    '반드시 총 9문항의 question 판단을 각 key별 한 개씩 제공하고, 영역별 근거와 교사 확인 필요점을 명시한다.',
+   '각 문항의 판단 이유는 50자 이내로, 영역별 근거는 1~2문장, 종합 이유는 200자 이내로 간결하게 작성해 JSON 전체를 반드시 완성한다.',
    '학생 이름과 식별정보는 언급하지 않고 한국어로 간결하게 답한다.'
   ].join('\n');
   const payload={answers:safeFields,codeStructure:evidence,rubricVersion:RUBRIC_VERSION};
@@ -147,17 +148,36 @@ exports.gradeNepalAssessment=onCall({
    headers:{'Authorization':'Bearer '+SECRET.value(),'Content-Type':'application/json'},
    body:JSON.stringify({
     model:'gpt-5-mini',
+    reasoning:{effort:'low'},
     input:[{role:'system',content:prompt},{role:'user',content:JSON.stringify(payload)}],
-    text:{format:{type:'json_schema',name:'nepal_assessment_rubric',strict:true,schema}},
-    max_output_tokens:3200
+    text:{verbosity:'low',format:{type:'json_schema',name:'nepal_assessment_rubric',strict:true,schema}},
+    max_output_tokens:10000
    }),
    signal:AbortSignal.timeout(105000)
   });
   if(!response.ok)throw new Error('AI API 오류 HTTP '+response.status);
   const result=await response.json();
+  // Reasoning tokens share max_output_tokens with visible JSON; do not parse
+  // incomplete results. Log metadata only, never student answers or response text.
+  if(result.status==='incomplete'){
+   console.warn('AI response incomplete',{
+    reason:result.incomplete_details?.reason||'unknown',
+    outputTokens:result.usage?.output_tokens??null,
+    reasoningTokens:result.usage?.output_tokens_details?.reasoning_tokens??null
+   });
+   throw new Error('AI 응답 길이 제한으로 JSON 완성 실패');
+  }
   const output=result.output?.flatMap(x=>x.content||[]).filter(x=>x.type==='output_text').map(x=>x.text).join('')||result.output_text;
   if(!output)throw new Error('AI 채점 응답이 비어 있습니다.');
-  const grade=JSON.parse(output);
+  let grade;
+  try{grade=JSON.parse(output)}catch(_){
+   console.warn('AI output parse failure',{
+    status:result.status||'unknown',
+    outputCharacters:output.length,
+    outputTokens:result.usage?.output_tokens??null
+   });
+   throw new Error('AI JSON 응답 형식 검사 실패');
+  }
   for(const [k,allowed] of Object.entries(rubric))if(!allowed.includes(grade[k]))throw new Error('점수 단계 검증 실패: '+k);
   const cleanedQuestions=Array.isArray(grade.details?.questions)?grade.details.questions:[];
   const stored={
