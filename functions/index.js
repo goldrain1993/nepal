@@ -280,7 +280,7 @@ exports.getNepalAssessmentGradebook=onCall({
    const name=safeName(studentNames.get(u.uid),u.accountId)||
      safeName(index?.displayName,u.accountId)||
      safeName(u.authName,u.accountId)||'이름 미확인';
-   const score=gradebookFinalScore(reviews[u.uid]),submitted=!!index;
+   const submitted=!!index,score=submitted?gradebookFinalScore(reviews[u.uid]):null;
    const submittedClass=Number(String(index?.classId||'').replace(/^c/,''));
    const mismatch=submitted&&submittedClass!==u.clazz;
    rows.push({
