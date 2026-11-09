@@ -4,16 +4,16 @@
 if(global.NepalAssessment)return;
 const ROOT='nepal-v27/private/assessments';
 const FIELDS=[
- ['purpose','해결할 문제와 프로그램의 목적',1600],
- ['io','입력 → 처리 → 출력 설계',1700],
- ['scenes','장면·오브젝트와 주요 기능 설계',1700],
- ['algorithm','핵심 알고리즘 설계 (변수·조건·반복·리스트)',2300],
- ['functions','프로그램 주요 기능의 작동 원리',2400],
- ['test1','시험 사례 1 (입력·예상·실제 결과)',1500],
- ['test2','시험 사례 2 (입력·예상·실제 결과)',1500],
- ['changes','오류 수정 또는 개선 과정',1800],
- ['contribution','나의 역할과 기여',1300],
- ['aiUse','AI 활용 과정과 출처 (미사용 시 미사용)',1300]
+ ['purpose','미션 1 · 변수와 센서값의 역할',1600],
+ ['io','미션 2 · 반복과 값 갱신',1700],
+ ['scenes','미션 3 · 조건문과 위험 판단',1700],
+ ['algorithm','미션 4 · 여러 센서의 위험 판정',2300],
+ ['functions','SEMI FINAL · N개 이상 경보',2400],
+ ['test1','미션 6 · 리스트와 반복',1500],
+ ['test2','FINAL · 종합 경보 판단',1500],
+ ['changes','FINAL · 오류 수정과 검증',1800],
+ ['contribution','개인별 핵심 코드 설명',1300],
+ ['aiUse','디지털 윤리와 AI 활용',1300]
 ];
 /* Clear, task-specific writing guidance; these prompts do not provide an answer. */
 const GUIDES={
@@ -206,7 +206,7 @@ async function submitPrepared(){
 }
 async function teacherOpen(t){
  shell('📊 수행평가 제출·채점 현황','최종 제출본을 확인하고 AI 채점 제안을 참고하여 교사가 점수를 확정합니다.');
- el('na-body').innerHTML='<div class="na-card"><h3>🛡 학생 제출 공개 설정</h3><p>처음에는 학생에게 수행평가 버튼이 보이지 않습니다. 시험 제출과 Firebase 권한 확인을 마친 뒤 학생 제출을 열어 주세요.</p><button class="na-btn" id="na-publish" type="button">설정 확인 중…</button><div id="na-publish-state" class="na-muted"></div></div><div class="na-card">AI 점수는 학생에게 공개되지 않습니다. 교사가 [AI 1차 채점]을 누른 경우에만 서버를 호출합니다. 서버 미배포 시에는 교사 직접 채점이 가능합니다.</div><div class="na-card"><h3>학생 제출 목록</h3><div id="na-roster">조회 중…</div></div><div id="na-review"></div>';
+ el('na-body').innerHTML='<div class="na-card"><h3>🛡 학생 제출 공개 설정</h3><p>처음에는 학생에게 수행평가 버튼이 보이지 않습니다. 시험 제출과 Firebase 권한 확인을 마친 뒤 학생 제출을 열어 주세요.</p><button class="na-btn" id="na-publish" type="button">설정 확인 중…</button><div id="na-publish-state" class="na-muted"></div></div><div class="na-card">이번 수행평가는 미션 이해 확인형으로 변경되었습니다. 기존 개발 보고서용 AI 채점은 새 기준으로 검증될 때까지 일시 중지하고 교사가 직접 채점합니다.</div><div class="na-card"><h3>학생 제출 목록</h3><div id="na-roster">조회 중…</div></div><div id="na-review"></div>';
  let enabled=false;
  const configRef=ctx.db.ref(ROOT+'/config/enabled');
  const publish=el('na-publish'),status=el('na-publish-state');
