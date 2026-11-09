@@ -952,7 +952,10 @@ function validateSensorReporterPlacement(){
 }
 async function check(mission){
  if(!window.__entryReady)throw Error('엔트리 편집기 준비가 아직 끝나지 않았습니다.');
- if(mission>=2 && mission<=6){
+ // Mission 4 (index 3): allow any valid use of live sensor reporters.
+ // Its dynamic multi-scenario evaluation remains the source of truth.
+ // Keep the existing placement guard unchanged for Missions 3, 5, 6, FINAL.
+ if(mission>=2 && mission<=6 && mission!==3){
    const misuse=validateSensorReporterPlacement();
    if(misuse)return misuse;
  }
