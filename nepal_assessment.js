@@ -11,9 +11,9 @@ const FIELDS=[
  ['functions','SEMI FINAL · N개 이상 경보',2400],
  ['test1','미션 6 · 리스트와 반복',1500],
  ['test2','FINAL · 종합 경보 판단',1500],
- ['changes','FINAL · 오류 수정과 검증',1800],
+ ['changes','FINAL · 경보 조건 비교와 검증',1800],
  ['contribution','개인별 핵심 코드 설명',1300],
- ['aiUse','디지털 윤리와 AI 활용',1300]
+ ['aiUse','평가 범위 외 데이터 호환 필드',1300]
 ];
 /* Clear, task-specific writing guidance; these prompts do not provide an answer. */
 const GUIDES={
@@ -29,9 +29,9 @@ const GUIDES={
  aiUse:{hint:'AI를 사용했다면 도구명, 질문·활용 내용, 직접 검증한 내용을 적으세요. 사용하지 않았다면 ‘미사용’이라고 적으세요.',outline:'사용 도구: / 활용 목적: / 검토·수정한 내용: (사용하지 않은 경우: 미사용)'}
 };
 const RUBRICS=[
- ['프로그램 설계','30점','목적·입력·처리·출력·장면·오브젝트·기능을 구체적으로 설계','25점','목적과 주요 구조를 적절하고 체계적으로 설계','20점','기본 기능과 구조 위주로 설계','15점','설계 내용이 거의 없거나 미흡'],
- ['프로그램 구현','30점','주요 기능 모두 작동하고 필요한 블록·제어 구조를 적절히 구현','25점','주요 기능이 작동하며 구현이 대체로 적절','20점','기본 기능만 부분적으로 작동','15점','거의 구현하지 못함'],
- ['개발 보고서','40점','목적·작동 원리·시험 2개 이상·수정·개인 기여를 구체적으로 작성','30점','주요 내용을 적절히 작성','20점','일부 내용만 작성','10점','보고서를 작성하지 않았거나 매우 미흡']
+ ['개념 설계','30점','변수·반복·조건·여러 센서의 원리를 정확하게 설명','25점','핵심 개념을 대체로 바르게 설명','20점','일부 개념의 이해와 적용이 부족','15점','기본 개념의 이해가 매우 부족'],
+ ['알고리즘 적용','30점','N개 경보·리스트·FINAL 상황을 정확하게 계산하고 적용','25점','주요 사례를 대체로 정확히 판단','20점','일부 사례만 정확하게 판단','15점','기본 사례 적용이 매우 부족'],
+ ['이해·설명','40점','경보 경계값·개별 코드 원리·경보 안전성에 대해 근거를 들어 구체적으로 설명','30점','핵심 근거와 설명을 대체로 제시','20점','일부 근거나 설명만 적절','10점','설명과 근거가 매우 부족']
 ];
 function rubricHtml(){
  return '<div class="na-card na-rubric"><h3>📋 수행평가 채점 기준 (총 100점)</h3><p class="na-muted">각 영역별 4단계 평가 · 교사가 제출한 설계서·실제 코드·보고서를 확인하여 최종 확정합니다.</p><div class="na-table-scroll"><table class="na-table"><thead><tr><th scope="col">영역</th><th scope="col">최상</th><th scope="col">상</th><th scope="col">중</th><th scope="col">하</th></tr></thead><tbody>'+RUBRICS.map(r=>'<tr><th scope="row">'+r[0]+'</th>'+[1,3,5,7].map(i=>'<td><b>'+r[i]+'</b><span class="na-rubric-desc">'+r[i+1]+'</span></td>').join('')+'</tr>').join('')+'</tbody></table></div></div>';
@@ -75,6 +75,7 @@ function mount(){
  if(panel)return;
  const css=document.createElement('style');
  css.textContent='#na-root{position:fixed;inset:0;z-index:18000;display:none;overflow:auto;background:#06110b;color:#e6f8dc;font:14px/1.65 system-ui,"Malgun Gothic",sans-serif}#na-root.show{display:block}#na-root *{box-sizing:border-box}.na-box{max-width:950px;margin:24px auto;padding:24px;background:#10261a;border:1px solid #47694a;border-radius:17px}.na-top{display:flex;align-items:center;justify-content:space-between;gap:12px}.na-box h2{margin:0;color:#c6fba7}.na-card{background:#163020;border:1px solid #3a6544;border-radius:12px;padding:15px;margin:15px 0}.na-card h3{margin:0 0 9px;color:#d5ffb6}.na-muted{font-size:12px;color:#bcd0b4}.na-field{display:block;margin:13px 0}.na-field strong{display:block;margin:0 0 5px}.na-field textarea{display:block;width:100%;min-height:93px;padding:12px;resize:vertical;color:#fff;background:#08190f;border:1px solid #62816a;border-radius:8px;font:13px/1.6 system-ui}.na-btn{border:1px solid #8cbd7e;color:#e9ffe3;background:#264e34;border-radius:9px;padding:9px 13px;font-weight:800;cursor:pointer}.na-btn.primary{background:#c0f58b;color:#0b2b16}.na-btn:disabled{opacity:.55}.na-actions{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}.na-read{white-space:pre-wrap;overflow-wrap:anywhere;background:#0a1b11;padding:12px;border:1px solid #3c6746;border-radius:8px;margin-top:8px}.na-table{border-collapse:collapse;width:100%}.na-table td,.na-table th{padding:8px;border-bottom:1px solid #456949;text-align:left}.na-score{display:flex;gap:12px;flex-wrap:wrap}.na-score label{display:grid;gap:4px}.na-score select{padding:9px;background:#07190e;color:#fff;border:1px solid #779a80;border-radius:8px}.na-field>label{display:block;font-weight:800;margin-bottom:5px}.na-help{margin:0 0 8px;color:#c5d9ba;font-size:13px}.na-field textarea::placeholder{color:#a3b4a5;opacity:1}.na-table-scroll{overflow-x:auto}.na-rubric .na-table{min-width:740px;font-size:12px}.na-rubric .na-table th{min-width:100px}.na-rubric-desc{display:block;margin-top:4px;font-weight:400;color:#d3dfd0}.na-progress{font-weight:800;color:#d4f9ae;margin:10px 0}.na-code-status{padding:10px;background:#102e21;border:1px solid #4d865b;border-radius:8px}.na-check{padding:9px 12px;margin:6px 0;border-left:3px solid #96c882;background:#103021}.na-preview-list{margin:0;padding:0;list-style:none}.na-preview-list li{margin:11px 0}.na-block-grid{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}.na-block-chip{border:1px solid #5d9366;border-radius:8px;padding:4px 9px;background:#1d4129;font-size:12px}.na-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px}.na-compare>div{min-width:0}.na-compare .na-read{max-height:310px;overflow:auto}#na-message{white-space:pre-wrap;min-height:28px;color:#c6eead}@media(max-width:700px){.na-compare{grid-template-columns:1fr}}@media(max-width:700px){.na-box{margin:0;padding:12px;border-radius:0}}';
+ css.textContent+='#na-editor>.na-actions{position:sticky;bottom:0;z-index:50;padding:12px 16px;margin:10px 0;background:#10261af5;border:1px solid #547d59;border-radius:12px;box-shadow:0 -7px 24px #08180d99}#na-submit{font-size:16px;min-width:145px}';
  document.head.appendChild(css);
  panel=document.createElement('section');panel.id='na-root';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','수행평가 작성 및 관리');document.body.appendChild(panel);
 }
@@ -103,8 +104,8 @@ async function checkCodeStatus(){
  }catch(e){box.textContent='⚠ 코드 저장 상태를 확인하지 못했습니다: '+String(e.message||e)}
 }
 async function studentOpen(t){
- shell('📝 실생활 문제 해결 프로그래밍 수행평가',ctx.team.c+'반 '+ctx.team.g+'조 · 학생 개인 제출 · 총 100점');
- el('na-body').innerHTML='<div class="na-card">설계 30점 / 프로그램 구현 30점 / 개발 보고서 40점. <b>설계서·보고서는 개인별 작성</b>합니다. 조별 엔트리 코드는 서버에 저장된 사본으로 제출됩니다. AI 예상 점수·사전 피드백은 제공하지 않습니다.</div>'+rubricHtml()+'<div id="na-final-status"></div><div id="na-preview"></div><div id="na-editor"><div id="na-progress" class="na-progress">작성 기준 확인 중…</div><div class="na-card"><h3>① 프로그램 설계 (30점)</h3>'+FIELDS.slice(0,4).map(fieldHtml).join('')+'</div><div class="na-card"><h3>② 프로그램 구현 (30점)</h3><p>엔트리 개발자 모드에서 블록을 완성한 뒤 <b>반드시 💾 저장</b>을 누르세요. 최종 제출에는 서버에 저장된 조별 코드를 사용합니다.</p><div id="na-code-status" class="na-code-status">서버 저장 상태 확인 중…</div><button id="na-check-code" class="na-btn" type="button">↻ 엔트리 저장 상태 다시 확인</button></div><div class="na-card"><h3>③ 프로그램 개발 보고서 (40점)</h3>'+FIELDS.slice(4).map(fieldHtml).join('')+'</div><div id="na-save-state" class="na-muted" role="status">임시 저장 상태 확인 중…</div><div class="na-actions"><button id="na-save" class="na-btn" type="button">💾 임시 저장</button><button id="na-submit" class="na-btn primary" type="button">🔍 제출 전 확인</button></div><p class="na-muted">‘최종 제출 확정’ 이후에는 학생이 수정하거나 다시 제출할 수 없습니다.</p></div>';
+ shell('📝 엔트리 미션 1~7 이해 확인 수행평가',ctx.team.c+'반 '+ctx.team.g+'조 · 개인 이해 확인 · 총 100점 (최저 40점)');
+ el('na-body').innerHTML='<div class="na-card">개념 설계 30점 / 알고리즘 적용 30점 / 이해·설명 40점. 각 미션의 핵심 개념을 확인하며, <b>개인 답안과 서버에 저장한 조별 엔트리 코드</b>를 함께 제출합니다. 최저 점수는 40점입니다.</div>'+rubricHtml()+'<div id="na-final-status"></div><div id="na-preview"></div><div id="na-editor"><div id="na-progress" class="na-progress">작성 기준 확인 중…</div><div class="na-card"><h3>① 미션 1~4 · 기초 개념 (30점)</h3>'+FIELDS.slice(0,4).map(fieldHtml).join('')+'</div><div class="na-card"><h3>② 조별 엔트리 코드 저장 확인 (참고 자료)</h3><p>엔트리 개발자 모드에서 블록을 완성한 뒤 <b>반드시 💾 저장</b>을 누르세요. 최종 제출에는 서버에 저장된 조별 코드를 사용합니다.</p><div id="na-code-status" class="na-code-status">서버 저장 상태 확인 중…</div><button id="na-check-code" class="na-btn" type="button">↻ 엔트리 저장 상태 다시 확인</button></div><div class="na-card"><h3>③ SEMI FINAL·미션 6·FINAL · 이해와 적용 (70점)</h3>'+FIELDS.slice(4).filter(([k])=>k!=='aiUse').map(fieldHtml).join('')+'</div><textarea id="na-aiUse" hidden maxlength="1300"></textarea><small id="na-count-aiUse" hidden></small><div id="na-save-state" class="na-muted" role="status">임시 저장 상태 확인 중…</div><div class="na-actions"><button id="na-save" class="na-btn" type="button">💾 임시 저장</button><button id="na-submit" class="na-btn primary" type="button">🔒 최종 제출</button></div><p class="na-muted">최종 제출을 누르면 확인창이 한 번 표시되며, 제출 완료 후에는 수정하거나 다시 제출할 수 없습니다.</p></div>';
  message('저장된 작성 내용을 불러오는 중…');
  try{
   const [submitted,draft]=await Promise.all([ctx.db.ref(ROOT+'/submissions/'+ctx.user.uid).once('value'),ctx.db.ref(ROOT+'/drafts/'+ctx.user.uid).once('value')]);
@@ -123,9 +124,9 @@ async function studentOpen(t){
   updateProgress();
   el('na-check-code').onclick=checkCodeStatus;
   el('na-save').onclick=()=>saveDraft(true);
-  el('na-submit').onclick=previewSubmission;
+  el('na-submit').onclick=submitDirect;
   saveState('불러온 임시 저장 내용을 확인하세요. 입력 후 자동 저장됩니다.');
-  message('마지막에는 [제출 전 확인] → [최종 제출 확정]을 눌러야 제출됩니다.');
+  message('각 문항에 답한 뒤 아래 [최종 제출] 버튼을 눌러 주세요.');
   checkCodeStatus();
  }catch(e){message('불러오기 실패: '+String(e.code||e.message||e))}
 }
@@ -152,57 +153,47 @@ function cancelPreview(reason){
  const editor=el('na-editor');if(editor)editor.hidden=false;
  if(reason)message(reason);
 }
-async function previewSubmission(){
+async function submitDirect(){
  if(finalDoc)return;
  const answer=fields(),missing=FIELDS.filter(([k])=>answer[k].length<minLength(k));
  if(missing.length){
-  message('작성 기준에 못 미치는 문항: '+missing.map(x=>x[1]).join(', '));
+  message('작성되지 않은 문항을 확인하세요: '+missing.filter(([k])=>k!=='aiUse').map(x=>x[1]).join(', '));
   el('na-'+missing[0][0])?.focus();return;
  }
- const btn=el('na-submit');btn.disabled=true;message('제출할 서버 저장 코드와 기존 제출 여부를 확인 중…');
+ if(!confirm('개인별 수행평가 답안과 현재 서버에 저장된 조별 엔트리 코드를 최종 제출할까요?\n제출 후에는 수정하거나 다시 제출할 수 없습니다.'))return;
+ const btn=el('na-submit');btn.disabled=true;
+ message('최종 제출을 확인하고 있습니다. 제출 완료 메시지가 표시될 때까지 창을 닫지 마세요.');
+ const submittedUid=ctx.user.uid,submittedClass=ctx.team.c,submittedGroup=ctx.team.g,opened=token;
  try{
   const [codeSnap,submittedSnap]=await Promise.all([
-   ctx.db.ref(ctx.workPath(ctx.team.c,ctx.team.g)+'/code').once('value'),
-   ctx.db.ref(ROOT+'/submissions/'+ctx.user.uid).once('value')
+   ctx.db.ref(ctx.workPath(submittedClass,submittedGroup)+'/code').once('value'),
+   ctx.db.ref(ROOT+'/submissions/'+submittedUid).once('value')
   ]);
-  if(submittedSnap.exists())throw Error('이미 최종 제출한 기록이 있습니다. 화면을 다시 열어 확인하세요.');
+  if(submittedSnap.exists())throw Error('이미 제출한 기록이 있습니다. 중복 제출을 차단했습니다.');
+  if(token!==opened||ctx.user.uid!==submittedUid||ctx.team.c!==submittedClass||ctx.team.g!==submittedGroup)
+   throw Error('로그인 계정 또는 조가 바뀌었습니다. 수행평가를 다시 열어 주세요.');
   const info=codeInfo(codeSnap.val());
-  if(!info.ok)throw Error(info.reason);
-  prepared={answer,code:info.code,updatedAt:info.updatedAt,bytes:info.bytes,classId:'c'+ctx.team.c,groupId:'g'+ctx.team.g,uid:ctx.user.uid};
-  clearTimeout(timer);
-  el('na-preview').innerHTML='<div class="na-card"><h3>🔒 최종 제출 전 확인</h3><p><b>'+esc(ctx.team.c+'반 '+ctx.team.g+'조 · '+String(ctx.user.displayName||'학생'))+'</b> · 개인 답안 10문항과 조별 저장 코드를 함께 제출합니다.</p><div class="na-check">✓ 서술형 답안 10개 모두 작성 기준 충족</div><div class="na-check">✓ 서버에 저장된 엔트리 블록 사본 확인 · 약 '+Math.round(info.bytes/1024)+'KB · 저장 시간: '+(info.updatedAt?formatTime(info.updatedAt):'기록 없음')+'</div><p class="na-muted">제출 직전에 다른 조원이 코드를 다시 저장하면 변경된 코드로 새 미리보기를 확인해야 합니다. 현재 엔트리 편집기에 저장하지 않은 변경 사항은 제출되지 않습니다.</p><h3>제출 답안 미리보기</h3><ol class="na-preview-list">'+FIELDS.map(([k,name],i)=>'<li><b>'+(i+1)+'. '+esc(name)+'</b><div class="na-read">'+esc(answer[k])+'</div></li>').join('')+'</ol><label class="na-check"><input type="checkbox" id="na-ack"> 실제 작성한 내용과 조별 저장 코드를 확인했으며, 제출 후 학생이 수정하거나 재제출할 수 없음을 이해했습니다.</label><div class="na-actions"><button type="button" class="na-btn" id="na-back">← 수정하러 돌아가기</button><button type="button" class="na-btn primary" id="na-final-submit" disabled>🔒 최종 제출 확정</button></div></div>';
-  el('na-editor').hidden=true;
-  el('na-back').onclick=()=>{cancelPreview('미리보기에서 돌아왔습니다. 작성 내용을 수정할 수 있습니다.');checkCodeStatus()};
-  el('na-ack').onchange=()=>{el('na-final-submit').disabled=!el('na-ack').checked};
-  el('na-final-submit').onclick=submitPrepared;
-  message('답안과 서버 저장 코드를 확인하고 체크한 다음 최종 제출을 확정하세요.');
- }catch(e){prepared=null;message('⚠ 제출 전 확인 실패: '+String(e.code||e.message||e))}
- finally{if(btn.isConnected)btn.disabled=false}
-}
-async function submitPrepared(){
- if(finalDoc||!prepared||!el('na-ack')?.checked)return;
- const pending=prepared,btn=el('na-final-submit');
- btn.disabled=true;message('최종 제출 중 · 코드 변경 여부와 기존 제출 기록을 다시 확인합니다…');
- try{
-  if(ctx.user.uid!==pending.uid||'c'+ctx.team.c!==pending.classId||'g'+ctx.team.g!==pending.groupId)
-   throw Error('로그인 계정 또는 조 정보가 바뀌었습니다. 수행평가를 다시 열어 주세요.');
-  const [codeSnap,submittedSnap]=await Promise.all([
-   ctx.db.ref(ctx.workPath(ctx.team.c,ctx.team.g)+'/code').once('value'),
-   ctx.db.ref(ROOT+'/submissions/'+ctx.user.uid).once('value')
+  if(!info.ok)throw Error(info.reason+' 먼저 엔트리 개발자 모드에서 저장해 주세요.');
+  // Preserve the existing double-check against a collaborator saving new code mid-submit.
+  const [latestCode,latestSubmission]=await Promise.all([
+   ctx.db.ref(ctx.workPath(submittedClass,submittedGroup)+'/code').once('value'),
+   ctx.db.ref(ROOT+'/submissions/'+submittedUid).once('value')
   ]);
-  if(submittedSnap.exists())throw Error('이미 제출된 기록이 있습니다. 중복 제출하지 않습니다.');
-  const current=codeInfo(codeSnap.val());
-  if(!current.ok||current.code!==pending.code)throw Error('미리보기 이후 서버 저장 코드가 변경되었습니다. 다시 [제출 전 확인]을 진행하세요.');
+  if(latestSubmission.exists())throw Error('이미 제출 완료된 기록이 있습니다.');
+  const current=codeInfo(latestCode.val());
+  if(!current.ok||current.code!==info.code)throw Error('제출 처리 중 조별 코드가 변경되었습니다. 저장 상태를 확인한 후 다시 제출해 주세요.');
   const timestamp=ctx.fb.database.ServerValue.TIMESTAMP;
-  const doc={classId:pending.classId,groupId:pending.groupId,displayName:String(ctx.user.displayName||'학생').slice(0,60),fields:pending.answer,codeSnapshot:pending.code,codeBytes:pending.bytes,submittedAt:timestamp,version:1};
-  const index={classId:doc.classId,groupId:doc.groupId,displayName:doc.displayName,codeBytes:pending.bytes,submittedAt:timestamp};
-  await ctx.db.ref(ROOT).update({['submissions/'+ctx.user.uid]:doc,['index/'+ctx.user.uid]:index});
-  prepared=null;clearTimeout(timer);
+  const doc={classId:'c'+submittedClass,groupId:'g'+submittedGroup,displayName:String(ctx.user.displayName||'학생').slice(0,60),fields:answer,codeSnapshot:info.code,codeBytes:info.bytes,submittedAt:timestamp,version:1};
+  const index={classId:doc.classId,groupId:doc.groupId,displayName:doc.displayName,codeBytes:info.bytes,submittedAt:timestamp};
+  await ctx.db.ref(ROOT).update({['submissions/'+submittedUid]:doc,['index/'+submittedUid]:index});
   finalDoc={...doc,submittedAt:Date.now()};
-  el('na-preview').innerHTML='';
+  clearTimeout(timer);
   finished();
- }catch(e){cancelPreview('⚠ 최종 제출 실패: '+String(e.code||e.message||e)+'\n원본 답안과 엔트리 코드는 삭제되지 않았습니다.');checkCodeStatus()}
- finally{if(btn.isConnected)btn.disabled=false}
+  message('✓ 수행평가 최종 제출 완료 · 개인 답안과 조별 코드 사본이 함께 보관되었습니다.');
+ }catch(e){
+  message('⚠ 최종 제출 실패: '+String(e.code||e.message||e)+'\n원본 작성 내용과 엔트리 코드는 삭제되지 않았습니다.');
+  checkCodeStatus();
+ }finally{if(btn?.isConnected)btn.disabled=false}
 }
 async function teacherOpen(t){
  shell('📊 수행평가 제출·채점 현황','최종 제출본을 확인하고 AI 채점 제안을 참고하여 교사가 점수를 확정합니다.');
@@ -247,7 +238,7 @@ async function loadReview(uid){
   if(teacherUid!==uid)return;
   teacherDoc=snap.val();aiResult=ai.val();if(!teacherDoc)throw Error('제출본이 없습니다.');
   const answerOverview='<div class="na-compare"><div><b>학생 설명 요약 (자기 서술 근거)</b>'+['io','algorithm','functions','test1','test2','changes'].map(k=>'<div class="na-read"><b>'+esc(FIELDS.find(f=>f[0]===k)?.[1]||k)+'</b>\n'+esc(teacherDoc.fields?.[k]||'미작성')+'</div>').join('')+'</div><div><b>실제 제출 코드 구성</b>'+blockSummary(teacherDoc.codeSnapshot)+'<p class="na-muted">학생의 설명과 코드 구조를 비교한 후 실행 결과를 확인하세요. 제출 코드 JSON은 별도 다운로드가 가능합니다.</p></div></div>';
-  container.innerHTML='<div class="na-card"><h3>'+esc(teacherDoc.displayName)+' · '+esc(teacherDoc.classId.slice(1))+'반 '+esc(teacherDoc.groupId.slice(1))+'조</h3><p>'+esc(formatTime(teacherDoc.submittedAt))+' · 코드 '+Math.round((teacherDoc.codeBytes||0)/1024)+'KB</p><button id="na-code" class="na-btn">엔트리 제출 코드 JSON 내려받기</button></div>'+rubricHtml()+'<div class="na-card"><h3>🔍 학생 설명 ↔ 제출 코드 비교</h3>'+answerOverview+'</div>'+FIELDS.map(([k,label])=>'<div class="na-card"><b>'+esc(label)+'</b><div class="na-read">'+esc(teacherDoc.fields?.[k]||'미작성')+'</div></div>').join('')+'<div class="na-card"><h3>AI 1차 채점 (교사에게만 표시)</h3><div id="na-ai"></div><button id="na-run-ai" class="na-btn">AI 채점 요청</button></div><div class="na-card"><h3>교사 최종 평가</h3><div class="na-score">'+[['design','설계',[30,25,20,15]],['implementation','구현',[30,25,20,15]],['report','보고서',[40,30,20,10]]].map(([k,name,scores])=>'<label>'+name+'<select id="na-score-'+k+'"><option value="">선택</option>'+scores.map(x=>'<option value="'+x+'">'+x+'점</option>').join('')+'</select></label>').join('')+'</div><label class="na-field"><strong>교사 채점 근거</strong><textarea id="na-teacher-note" maxlength="2400"></textarea></label><button class="na-btn primary" id="na-grade">교사 점수 저장</button></div>';
+  container.innerHTML='<div class="na-card"><h3>'+esc(teacherDoc.displayName)+' · '+esc(teacherDoc.classId.slice(1))+'반 '+esc(teacherDoc.groupId.slice(1))+'조</h3><p>'+esc(formatTime(teacherDoc.submittedAt))+' · 코드 '+Math.round((teacherDoc.codeBytes||0)/1024)+'KB</p><button id="na-code" class="na-btn">엔트리 제출 코드 JSON 내려받기</button></div>'+rubricHtml()+'<div class="na-card"><h3>🔍 학생 설명 ↔ 제출 코드 비교</h3>'+answerOverview+'</div>'+FIELDS.filter(([k])=>k!=='aiUse').map(([k,label])=>'<div class="na-card"><b>'+esc(label)+'</b><div class="na-read">'+esc(teacherDoc.fields?.[k]||'미작성')+'</div></div>').join('')+'<div class="na-card"><h3>AI 1차 채점 (교사에게만 표시)</h3><div id="na-ai"></div><button id="na-run-ai" class="na-btn">AI 채점 요청</button></div><div class="na-card"><h3>교사 최종 평가</h3><div class="na-score">'+[['design','설계',[30,25,20,15]],['implementation','구현',[30,25,20,15]],['report','보고서',[40,30,20,10]]].map(([k,name,scores])=>'<label>'+name+'<select id="na-score-'+k+'"><option value="">선택</option>'+scores.map(x=>'<option value="'+x+'">'+x+'점</option>').join('')+'</select></label>').join('')+'</div><label class="na-field"><strong>교사 채점 근거</strong><textarea id="na-teacher-note" maxlength="2400"></textarea></label><button class="na-btn primary" id="na-grade">교사 점수 저장</button></div>';
   const old=review.val()||{};
   for(const key of ['design','implementation','report'])el('na-score-'+key).value=old[key]??'';
   el('na-teacher-note').value=old.note||'';
