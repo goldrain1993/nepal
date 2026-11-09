@@ -1191,7 +1191,7 @@ async function openAssessment(){
  }
  try{
   await initReady;
-  if(!assessmentModuleLoading)assessmentModuleLoading=src('./nepal_assessment.js?v=5').catch(error=>{assessmentModuleLoading=null;throw error});
+  if(!assessmentModuleLoading)assessmentModuleLoading=src('./nepal_assessment.js?v=6').catch(error=>{assessmentModuleLoading=null;throw error});
   await assessmentModuleLoading;
   if(!guidedAssessmentModuleLoading)guidedAssessmentModuleLoading=src('./nepal_assessment_guided.js?v=2').catch(error=>{guidedAssessmentModuleLoading=null;throw error});
   await guidedAssessmentModuleLoading;
