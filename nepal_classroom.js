@@ -1190,7 +1190,7 @@ async function openAssessment(){
  }
  try{
   await initReady;
-  if(!assessmentModuleLoading)assessmentModuleLoading=src('./nepal_assessment.js?v=3').catch(error=>{assessmentModuleLoading=null;throw error});
+  if(!assessmentModuleLoading)assessmentModuleLoading=src('./nepal_assessment.js?v=4').catch(error=>{assessmentModuleLoading=null;throw error});
   await assessmentModuleLoading;
   await global.NepalAssessment.open({
    fb,db,user,team,isTeacher:requireTeacher(user),workPath
