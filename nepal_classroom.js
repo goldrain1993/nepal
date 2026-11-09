@@ -1193,7 +1193,7 @@ async function openAssessment(){
   await initReady;
   if(!assessmentModuleLoading)assessmentModuleLoading=src('./nepal_assessment.js?v=7').catch(error=>{assessmentModuleLoading=null;throw error});
   await assessmentModuleLoading;
-  if(!guidedAssessmentModuleLoading)guidedAssessmentModuleLoading=src('./nepal_assessment_guided.js?v=3').catch(error=>{guidedAssessmentModuleLoading=null;throw error});
+  if(!guidedAssessmentModuleLoading)guidedAssessmentModuleLoading=src('./nepal_assessment_guided.js?v=4').catch(error=>{guidedAssessmentModuleLoading=null;throw error});
   await guidedAssessmentModuleLoading;
   await global.NepalAssessment.open({
    fb,db,user,team,isTeacher:requireTeacher(user),workPath
