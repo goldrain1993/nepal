@@ -199,7 +199,7 @@ async function submitPrepared(){
   finalDoc={...doc,submittedAt:Date.now()};
   el('na-preview').innerHTML='';
   finished();
- }catch(e){cancelPreview('⚠ 최종 제출 실패: '+String(e.code||e.message||e)+'\\n원본 답안과 엔트리 코드는 삭제되지 않았습니다.');checkCodeStatus()}
+ }catch(e){cancelPreview('⚠ 최종 제출 실패: '+String(e.code||e.message||e)+'\n원본 답안과 엔트리 코드는 삭제되지 않았습니다.');checkCodeStatus()}
  finally{if(btn.isConnected)btn.disabled=false}
 }
 async function teacherOpen(t){
@@ -244,7 +244,7 @@ async function loadReview(uid){
   const [snap,review,ai]=await Promise.all([ctx.db.ref(ROOT+'/submissions/'+uid).once('value'),ctx.db.ref(ROOT+'/reviews/'+uid).once('value'),ctx.db.ref(ROOT+'/aiReviews/'+uid).once('value')]);
   if(teacherUid!==uid)return;
   teacherDoc=snap.val();aiResult=ai.val();if(!teacherDoc)throw Error('제출본이 없습니다.');
-  const answerOverview='<div class="na-compare"><div><b>학생 설명 요약 (자기 서술 근거)</b>'+['io','algorithm','functions','test1','test2','changes'].map(k=>'<div class="na-read"><b>'+esc(FIELDS.find(f=>f[0]===k)?.[1]||k)+'</b>\\n'+esc(teacherDoc.fields?.[k]||'미작성')+'</div>').join('')+'</div><div><b>실제 제출 코드 구성</b>'+blockSummary(teacherDoc.codeSnapshot)+'<p class="na-muted">학생의 설명과 코드 구조를 비교한 후 실행 결과를 확인하세요. 제출 코드 JSON은 별도 다운로드가 가능합니다.</p></div></div>';
+  const answerOverview='<div class="na-compare"><div><b>학생 설명 요약 (자기 서술 근거)</b>'+['io','algorithm','functions','test1','test2','changes'].map(k=>'<div class="na-read"><b>'+esc(FIELDS.find(f=>f[0]===k)?.[1]||k)+'</b>\n'+esc(teacherDoc.fields?.[k]||'미작성')+'</div>').join('')+'</div><div><b>실제 제출 코드 구성</b>'+blockSummary(teacherDoc.codeSnapshot)+'<p class="na-muted">학생의 설명과 코드 구조를 비교한 후 실행 결과를 확인하세요. 제출 코드 JSON은 별도 다운로드가 가능합니다.</p></div></div>';
   container.innerHTML='<div class="na-card"><h3>'+esc(teacherDoc.displayName)+' · '+esc(teacherDoc.classId.slice(1))+'반 '+esc(teacherDoc.groupId.slice(1))+'조</h3><p>'+esc(formatTime(teacherDoc.submittedAt))+' · 코드 '+Math.round((teacherDoc.codeBytes||0)/1024)+'KB</p><button id="na-code" class="na-btn">엔트리 제출 코드 JSON 내려받기</button></div>'+rubricHtml()+'<div class="na-card"><h3>🔍 학생 설명 ↔ 제출 코드 비교</h3>'+answerOverview+'</div>'+FIELDS.map(([k,label])=>'<div class="na-card"><b>'+esc(label)+'</b><div class="na-read">'+esc(teacherDoc.fields?.[k]||'미작성')+'</div></div>').join('')+'<div class="na-card"><h3>AI 1차 채점 (교사에게만 표시)</h3><div id="na-ai"></div><button id="na-run-ai" class="na-btn">AI 채점 요청</button></div><div class="na-card"><h3>교사 최종 평가</h3><div class="na-score">'+[['design','설계',[30,25,20,15]],['implementation','구현',[30,25,20,15]],['report','보고서',[40,30,20,10]]].map(([k,name,scores])=>'<label>'+name+'<select id="na-score-'+k+'"><option value="">선택</option>'+scores.map(x=>'<option value="'+x+'">'+x+'점</option>').join('')+'</select></label>').join('')+'</div><label class="na-field"><strong>교사 채점 근거</strong><textarea id="na-teacher-note" maxlength="2400"></textarea></label><button class="na-btn primary" id="na-grade">교사 점수 저장</button></div>';
   const old=review.val()||{};
   for(const key of ['design','implementation','report'])el('na-score-'+key).value=old[key]??'';
