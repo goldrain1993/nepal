@@ -271,6 +271,8 @@ function updateNativeCaptions(){
  if(nativeButtons.length!==3)return;
  const names=sessionActive?simulatorCaptions:loginCaptions;
  nativeButtons.forEach((button,i)=>{button.textContent=names[i];button.style.display=nativeStudentPanel&&!nativeStudentPanel.hidden?'none':'';});
+ const assessmentLink=$('nepalAssessmentEntrance');
+ if(assessmentLink)assessmentLink.hidden=!!(nativeStudentPanel&&!nativeStudentPanel.hidden);
 }
 function showNativeHome(active){
  sessionActive=!!active;
@@ -363,12 +365,11 @@ function refreshButtons(){
  const sessionVisible=sessionActive;
  const signedIn=!guestActive&&sessionVisible&&!!((team&&user)||(!team&&requireTeacher(user)));
  const editorActive=sessionVisible&&!!(team||guestActive||requireTeacher(user));
- const save=$('np-save'),boardButton=$('np-board-button'),changeButton=$('np-change'),assessmentButton=$('np-assessment');
+ const save=$('np-save'),boardButton=$('np-board-button'),changeButton=$('np-change');
  if(save){const hasWorkspace=!!(team||requireTeacher(user)&&designReady);save.disabled=guestActive||!hasWorkspace;save.style.display=sessionVisible&&hasWorkspace?'':'none';save.textContent='💾 저장'}
  if(boardButton){boardButton.disabled=guestActive;boardButton.style.display=signedIn?'':'none'}
- if(assessmentButton)assessmentButton.style.display=signedIn&&(requireTeacher(user)||assessmentEnabled)?'':'none';
  const boardAssessment=$('np-board-assessment');
- if(boardAssessment)boardAssessment.style.display=signedIn&&(requireTeacher(user)||assessmentEnabled)?'':'none';
+ if(boardAssessment)boardAssessment.style.display=signedIn?'':'none';
  if(changeButton){changeButton.style.display=(signedIn||guestActive&&sessionVisible)?'':'none';changeButton.textContent=guestActive?'🌐 게스트 모드 종료':'🚪 로그아웃'}
  const floatingBoard=$('nepal-class-board'),floatingLogout=$('nepal-class-switch'),trigger=$('nepal-entry-trigger');
  if(floatingBoard)floatingBoard.style.display=signedIn?'':'none';
@@ -1180,31 +1181,12 @@ function closeBoard(){board.classList.remove('show');clearBoard();if(boardFromGa
  }refreshButtons()}
 function showGate(){if(guestActive||team||requireTeacher(user)){openEditor();return}landing()}
 function showLogin(){if(guestActive){endGuest();landing();return}if(team||requireTeacher(user)){signout();return}landing()}
-let assessmentModuleLoading=null;
-let guidedAssessmentModuleLoading=null;
-async function openAssessment(){
- if(!user||guestActive||!sessionActive||!(team||requireTeacher(user))){
-  note('학교 계정으로 로그인한 후 수행평가를 열어 주세요.');return;
- }
- if(!requireTeacher(user)&&!assessmentEnabled){
-  note('수행평가는 선생님이 시작할 때 열립니다.');return;
- }
- try{
-  await initReady;
-  if(!assessmentModuleLoading)assessmentModuleLoading=src('./nepal_assessment.js?v=10').catch(error=>{assessmentModuleLoading=null;throw error});
-  await assessmentModuleLoading;
-  if(!guidedAssessmentModuleLoading)guidedAssessmentModuleLoading=src('./nepal_assessment_guided.js?v=5').catch(error=>{guidedAssessmentModuleLoading=null;throw error});
-  await guidedAssessmentModuleLoading;
-  await global.NepalAssessment.open({
-   fb,db,user,team,isTeacher:requireTeacher(user),workPath
-  });
- }catch(error){note('수행평가 화면 오류: '+String(error.message||error))}
-}
+function openAssessmentPortal(){window.location.assign('./assessment.html');}
 function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
  const originalEnterSimulator=callbacks.enterSimulator;
  callbacks.enterSimulator=()=>{showNativeHome(true);originalEnterSimulator?.()};
  const buttons=document.createElement('div');buttons.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto';
- buttons.innerHTML='<span id="np-save-label" class="np-saveinfo"></span><button id="np-save">💾 저장</button><button id="np-board-button">📊 현황판</button><button id="np-assessment">📝 수행평가</button><button id="np-change">🚪 로그아웃</button>';
+ buttons.innerHTML='<span id="np-save-label" class="np-saveinfo"></span><button id="np-save">💾 저장</button><button id="np-board-button">📊 현황판</button><button id="np-change">🚪 로그아웃</button>';
  opts.header.insertBefore(buttons,opts.header.lastElementChild);headerStatus=$('np-save-label');
  $('np-save').onclick=async()=>{
    if(guestActive){note('🌐 게스트 모드는 저장되지 않습니다.');return}
@@ -1218,7 +1200,6 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
    if(designOK&&progressOK&&codeOK)note('✓ 미션 진행도·센서 설계·엔트리 코드 저장 완료');
    else note('⚠ 일부 저장 실패: '+[!designOK?'센서 설계':null,!progressOK?'미션 진행도':null,!codeOK?'엔트리 코드':null].filter(Boolean).join('·'));
  };$('np-board-button').onclick=()=>showBoard(false);
- $('np-assessment').onclick=openAssessment;
  $('np-enter-guest').onclick=enterGuest;$('np-change').onclick=()=>guestActive?showLogin():signout();
  $('np-role-student').onclick=()=>selectRole('student');$('np-role-teacher').onclick=teacherSubmit;
  $('np-back').onclick=landing;
@@ -1239,7 +1220,7 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
    else deleteAdminMember(c,g,button.dataset.slot,button);
  });
  $('np-board-refresh').onclick=loadBoard;$('np-board-close').onclick=closeBoard;
- $('np-board-assessment').onclick=openAssessment;
+ $('np-board-assessment').onclick=openAssessmentPortal;
  $('np-board-signout').onclick=signout;
  $('np-teacher-sim').onclick=()=>{if(requireTeacher(user))enterTeacherSimulator();else if(team){board.classList.remove('show');clearBoard()}else note('학생은 반·조에 먼저 등록해야 합니다.');refreshButtons()};
  if(!autosave)autosave=setInterval(()=>{if((team||requireTeacher(user)&&sessionActive)&&readyToSave&&!restoring&&opts.isLayerOpen?.()&&!opts.isBusy?.())saveNow('auto')},8000);
