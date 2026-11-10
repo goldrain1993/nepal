@@ -293,6 +293,18 @@ button:disabled{opacity:.42;cursor:not-allowed}
   background:linear-gradient(180deg,#96d82a 0%,#76b900 100%);color:#081006;border:0;
 }
 .startBtn.secondary{background:#111811}
+.startMenu .startBtn.assessmentPortalBtn{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  text-decoration:none;color:#ecf8ff;
+  background:linear-gradient(135deg,#123853 0%,#205b8c 58%,#176495 100%);
+  border:1px solid #59b4ee;
+  box-shadow:inset 0 1px 0 #d1efff29,0 8px 23px #14558a40;
+}
+.startMenu .startBtn.assessmentPortalBtn:hover{
+  background:linear-gradient(135deg,#164b70,#2876ad 60%,#2479b5);
+  border-color:#a4e4ff;box-shadow:0 0 0 1px #9ddcff70,0 7px 26px #349af354;
+}
+.startMenu .startBtn.assessmentPortalBtn .as-link-mark{font-size:18px}
 .startBtn:hover{transform:translateY(-1px)}
 .startFooter{
   margin-top:18px;font-size:11px;color:#8daa84;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap
@@ -554,6 +566,7 @@ button:disabled{opacity:.42;cursor:not-allowed}
       <button id="enterLabBtn" class="startBtn primary" type="button">시작하기</button>
       <button id="enterAssessmentBtn" class="startBtn secondary" type="button">형성평가 바로가기</button>
       <button id="enterHowBtn" class="startBtn secondary" type="button">이용 방법 보기</button>
+      <a id="nepalAssessmentEntrance" class="startBtn assessmentPortalBtn" href="./assessment.html"><span class="as-link-mark">📝</span> 수행평가</a>
     </div>
     <div class="startFooter">
       <span>신정중학교 정보 · Data Disaster Lab</span>
