@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#081524">
+<meta name="description" content="신정중학교 네팔 홍수 경보 시스템 2차 수행평가. 엔트리 개발자 미션 1~7 이해 점검.">
+<title>NEPAL FLOOD · 수행평가</title>
+<style>
+:root{color-scheme:dark;--bg:#06121d;--panel:#0f2530;--blue:#62baff;--blue-soft:#bbebff;--line:#34546a;--text:#edf8ff;--muted:#b7cddb}
+*{box-sizing:border-box}body{margin:0;color:var(--text);font:15px/1.65 system-ui,"Malgun Gothic",sans-serif;min-height:100vh;background:radial-gradient(ellipse at 28% 8%,#20547877 0,transparent 48%),radial-gradient(ellipse at 90% 82%,#164e4d77 0,transparent 45%),linear-gradient(145deg,#06101b,#091e29 60%,#06120d)}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;background:linear-gradient(#499fca1b 1px,transparent 1px),linear-gradient(90deg,#499fca1b 1px,transparent 1px);background-size:37px 37px}
+button,input,select{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--blue);outline-offset:3px}button:disabled{opacity:.5;cursor:wait}
+.as-layout{position:relative;z-index:1;max-width:1040px;margin:0 auto;padding:26px 20px 66px}
+.as-nav{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.as-brand{font-weight:900;letter-spacing:.12em;font-size:12px;color:#abdbf9}.as-back{color:#dff5ff;text-decoration:none;background:#1b3543;border:1px solid #477089;border-radius:10px;padding:9px 16px;font-weight:800}.as-back:hover{background:#244b60}
+.as-hero{text-align:center;margin:45px auto 32px;max-width:890px}
+.as-kicker{color:#92d8ff;font-size:12px;font-weight:900;letter-spacing:.29em}
+.as-hero h1{margin:12px 0 10px;color:#e8f8ff;letter-spacing:-.045em;font-size:clamp(34px,6.5vw,69px);line-height:1.13;text-shadow:0 5px 38px #43a2e65e}
+.as-hero h1 span{color:#76cbff}
+.as-sub{color:#b7d3e3;margin:0 auto;max-width:660px;font-size:clamp(13px,1.6vw,17px)}
+.as-tags{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:22px auto 0}
+.as-tag{background:#183744;border:1px solid #456b7f;padding:5px 13px;border-radius:99px;font-size:12px;color:#cce9fa}
+.as-main{background:linear-gradient(165deg,#102e3eeb,#071a24f5);border:1px solid #47718a;border-radius:23px;padding:clamp(20px,4vw,38px);box-shadow:0 22px 75px #01090f9f}
+.as-main h2{margin:0 0 8px;color:#d3f2ff;font-size:23px}
+.as-caption{margin:0 0 22px;color:#b6cbd7}
+.as-roles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:15px}
+.as-role{min-height:142px;border:1px solid #4d86a3;border-radius:17px;background:linear-gradient(145deg,#225474,#173a51);color:white;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;text-align:left;padding:20px;gap:6px;transition:transform .15s,border-color .15s}
+.as-role:hover{transform:translateY(-3px);border-color:#a4e1ff;background:linear-gradient(145deg,#24658d,#185078)}
+.as-role .as-ico{font-size:30px}.as-role strong{font-size:19px}.as-role small{color:#c8e2f3}
+.as-status{min-height:24px;margin:14px 0;color:#c1d9e7;white-space:pre-wrap}.as-error{color:#ffd7ae}
+.as-signed{display:none;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:5px 0 17px;padding:12px 15px;border:1px solid #4c7b90;background:#14394a;border-radius:13px}
+.as-signed strong{color:#c8f1ff}.as-signed p{margin:2px 0;color:#c8dce8;font-size:12px}
+.as-small-btn{border:1px solid #58839d;border-radius:10px;padding:8px 13px;background:#244457;color:#e7f6ff;font-weight:800}
+.as-small-btn:hover{background:#2b5a74}
+.as-form{display:none;margin-top:17px;padding:20px;background:#091f2b;border:1px solid #456d84;border-radius:14px}
+.as-form h3{margin:0 0 5px;font-size:18px}.as-form p{color:#bad0dd;margin:0 0 16px;font-size:13px}
+.as-inputs{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:12px}
+.as-inputs label{font-size:12px;font-weight:800;color:#d6ebf7}
+.as-inputs input,.as-inputs select{width:100%;min-height:44px;padding:8px 10px;border:1px solid #68899b;border-radius:9px;background:#081823;color:#fff;display:block;margin-top:5px}
+.as-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:17px}
+.as-primary{background:linear-gradient(90deg,#5bb9fb,#a1e2ff);border:0;color:#072339;border-radius:12px;padding:13px 20px;font-weight:900}
+.as-secondary{border:1px solid #6f96ab;background:#1a4052;color:#e9f8ff;border-radius:12px;padding:12px 18px;font-weight:850}
+.as-primary:hover{filter:brightness(1.12)}.as-secondary:hover{background:#225972}
+.as-ready{display:none;border:1px solid #588ba5;background:#153e50;border-radius:16px;padding:20px;margin-top:15px}
+.as-ready h3{margin:0 0 7px;color:#d6f3ff;font-size:20px}.as-ready p{margin:0 0 13px;color:#cee5f2}
+.as-rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin:19px 0 0}
+.as-rule{border:1px solid #36576b;background:#0b2331;padding:13px 14px;border-radius:12px;font-size:12px;color:#b8d3e0}
+.as-rule strong{display:block;color:#d7f2ff;font-size:14px;margin-bottom:3px}
+.as-foot{font-size:11px;color:#8cb0c2;text-align:center;margin-top:20px}
+[hidden]{display:none!important}
+@media(max-width:700px){.as-roles{grid-template-columns:1fr}.as-inputs{grid-template-columns:1fr}.as-layout{padding:15px 12px 45px}.as-hero{margin:29px auto}.as-main{padding:17px}.as-rules{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="as-layout">
+<nav class="as-nav"><span class="as-brand">NEPAL FLOOD · CLASSROOM ASSESSMENT</span><a class="as-back" href="./">← 네팔 홍수 사이트로</a></nav>
+<header class="as-hero">
+<div class="as-kicker">INDEPENDENT ASSESSMENT PORTAL</div>
+<h1>NEPAL FLOOD <span>수행평가</span></h1>
+<p class="as-sub">엔트리 개발자 미션 1~7에서 배운 변수·조건·반복·리스트의 이해를 확인하는 개인별 수행평가입니다.</p>
+<div class="as-tags"><span class="as-tag">2026학년도 · 중학교 1학년</span><span class="as-tag">9개 문항</span><span class="as-tag">총 100점 · 최저 40점</span><span class="as-tag">교사 최종 검증</span></div>
+</header>
+<section class="as-main" aria-label="수행평가 입장">
+<div id="as-signed" class="as-signed"><div><strong id="as-signed-name">로그인 확인 중…</strong><p id="as-signed-info"></p></div><button id="as-logout" type="button" class="as-small-btn">로그아웃</button></div>
+<h2>📝 수행평가 입장</h2>
+<p class="as-caption">네팔 홍수 사이트와 동일한 Google 로그인을 사용합니다. 이미 로그인한 경우 다시 로그인하지 않고 이어서 진행할 수 있습니다.</p>
+<div id="as-login" class="as-roles" hidden>
+<button class="as-role" type="button" id="as-login-student"><span class="as-ico">🎒</span><strong>학생 로그인</strong><small>학교 Google 계정으로 개인 수행평가 시작</small></button>
+<button class="as-role" type="button" id="as-login-teacher"><span class="as-ico">🧑‍🏫</span><strong>교사 로그인</strong><small>제출 확인 · AI 1차 채점 · 성적 검증</small></button>
+</div>
+<form id="as-member" class="as-form" hidden>
+<h3>학생 반·조 연결</h3>
+<p>이미 학교 계정으로 로그인했습니다. 이전에 사용한 반·조가 자동으로 확인되지 않아, 본인의 반·조·등록 이름을 한 번 확인합니다.</p>
+<div class="as-inputs">
+<label>반 선택<select id="as-class" required><option value="">선택</option></select></label>
+<label>조 선택<select id="as-group" required><option value="">선택</option></select></label>
+<label>학생 이름<input id="as-name" required maxlength="18" autocomplete="off" placeholder="본인 이름"></label>
+</div>
+<div class="as-actions"><button class="as-primary" type="submit" id="as-link-team">반·조 확인하고 계속</button><button class="as-secondary" type="button" id="as-switch-user">다른 Google 계정 선택</button></div>
+</form>
+<div id="as-ready" class="as-ready" hidden>
+<h3 id="as-ready-title">로그인 확인 완료</h3>
+<p id="as-ready-info">수행평가를 시작할 수 있습니다.</p>
+<div class="as-actions"><button class="as-primary" id="as-open" type="button">📝 수행평가 시작</button><a class="as-back" href="./">🌊 네팔 홍수로 돌아가기</a></div>
+</div>
+<div id="as-status" class="as-status" role="status">로그인 상태를 확인하는 중…</div>
+<div class="as-rules">
+<div class="as-rule"><strong>① 이전 활동 이해 확인</strong>엔트리 미션 1~7에서 사용한 블록과 알고리즘을 바탕으로 답합니다.</div>
+<div class="as-rule"><strong>② 안전한 저장·최종 제출</strong>학교 계정별로 임시 저장하고 제출하며, 제출 후 수정할 수 없습니다.</div>
+<div class="as-rule"><strong>③ AI 제안 + 교사 확정</strong>AI는 채점안을 제안하고 실제 점수는 교사가 검토 후 확정합니다.</div>
+</div>
+</section>
+<p class="as-foot">신정중학교 정보 · 개인정보가 포함된 답안은 학교 지침에 따라 처리합니다. 게스트는 수행평가를 제출할 수 없습니다.</p>
+</main>
+<script src="./nepal_firebase_config.js?v=31"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="./nepal_assessment.js?v=10"></script>
+<script src="./nepal_assessment_guided.js?v=5"></script>
+<script src="./nepal_assessment_portal.js?v=1"></script>
+</body>
+</html>
