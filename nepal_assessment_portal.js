@@ -117,7 +117,7 @@ async function syncUser(user){
   catch(err){if(ticket===sequence)status('반·조 자동 조회 실패: '+String(err.message||err)+'. 아래 입력란에 직접 입력해 주세요.',true)}
   if(ticket!==sequence)return;
   const known=accountClass(user),field=$('as-class');
-  if(known&&field&&!field.value)field.value=String(known);
+  if(known&&field&&!field.value){field.value=String(known);await populateGroups();}
  }
  render();
 }
