@@ -195,12 +195,44 @@ const simulatorCaptions=['시작하기','형성평가 바로가기','이용 방�
 let team=null,role=null,editorLockHeld=false,codeListener=null,boardListener=null,projectToRestore=null;
 let teacherScores={floodBest:null,mission5NoListBest:null,finalBest:null};
 let designReady=false,designSavedAt=0;
+let saveBannerTimer=null;
 let progress=0,missionTotal=4,semiFinalPassed=false,progressSaved=0,progressRetry=null,lastProgressSaveError='',retryingProgress=false,lastProgressRetryAt=0,callbacks={},saveBusy=false,queued=false,readyToSave=false,restoring=false,importPending=null,exportPending=null,rpcId=0,headerStatus=null,lastSaved='',autosave=null,lockRefresh=null,lockedTeamPath='';
 function teamPath(c,g){return `${ROOT}/c${c}/teams/g${g}`}
 function workPath(c,g){return `${PRIVATE}/c${c}/teams/g${g}`}
 function teacherPath(){return user&&requireTeacher(user)?'nepal-v27/private/teacherWork/'+user.uid:null}
 function backupKey(){return guestActive||!user?null:requireTeacher(user)?BACKUP+user.uid+':teacher':team?BACKUP+user.uid+':c'+team.c+'g'+team.g:null}
-function localBackUp(project){
+// Keep a small rolling history, separate from the latest browser draft.
+const MAX_LOCAL_VERSIONS=8,MAX_LOCAL_HISTORY_CHARS=2100000;
+function projectSignature(project){
+ try{
+  return JSON.stringify((project?.objects||[]).map(o=>[o?.script,o?.variables,o?.lists]))+
+    JSON.stringify((project?.functions||[]).map(f=>f?.content));
+ }catch(_){return ''}
+}
+function historyVersions(){
+ try{
+  const key=backupKey(),rows=key?JSON.parse(localStorage.getItem(key+':versions')||'[]'):[];
+  return Array.isArray(rows)?rows.filter(r=>Array.isArray(r?.project?.objects)):[];
+ }catch(_){return []}
+}
+function archiveProject(project,label='코드 저장'){
+ const key=backupKey();if(!key||!Array.isArray(project?.objects))return;
+ try{
+  const signature=projectSignature(project);
+  const rows=historyVersions().filter(row=>projectSignature(row.project)!==signature);
+  rows.unshift({project,updatedAt:Date.now(),label});
+  const kept=[];let size=2;
+  for(const row of rows.slice(0,MAX_LOCAL_VERSIONS)){
+   const length=JSON.stringify(row).length;
+   if(size+length<=MAX_LOCAL_HISTORY_CHARS||kept.length===0){kept.push(row);size+=length+1}
+  }
+  while(kept.length){
+   try{localStorage.setItem(key+':versions',JSON.stringify(kept));return}
+   catch(e){kept.pop();if(!kept.length)console.warn('[NEPAL] 복구 이력 저장 공간 부족:',e)}
+  }
+ }catch(e){console.warn('[NEPAL] 복구 이력 기록 실패:',e)}
+}
+function localBackUp(project,allowShrink=false,label='코드 저장'){
  const key=backupKey();if(!key||!Array.isArray(project?.objects))return;
  try{
   const current=localRestore(),recovery=localRecovery();
@@ -208,12 +240,14 @@ function localBackUp(project){
    .sort((x,y)=>projectScriptBytes(y.project)-projectScriptBytes(x.project))[0];
   if(richest&&projectScriptBytes(richest.project)>projectScriptBytes(recovery?.project))
    localStorage.setItem(key+':recovery',JSON.stringify(richest));
-  if(isSuspiciousLoss(projectScriptBytes(current?.project),projectScriptBytes(project)))return;
-  const snapshot={project,updatedAt:Date.now()};
-  localStorage.setItem(key,JSON.stringify(snapshot));
+  // A confirmed smaller program can replace the current draft. Keep its old
+  // larger version separately so a legitimate deletion never "reverts" later.
+  if(!allowShrink&&isSuspiciousLoss(projectScriptBytes(current?.project),projectScriptBytes(project)))return;
+  localStorage.setItem(key,JSON.stringify({project,updatedAt:Date.now()}));
   if(projectScriptBytes(project)>projectScriptBytes(richest?.project))
-   localStorage.setItem(key+':recovery',JSON.stringify(snapshot));
- }catch(e){console.warn('로컬 엔트리 코드 백업 오류:',e)}
+   localStorage.setItem(key+':recovery',JSON.stringify({project,updatedAt:Date.now()}));
+  archiveProject(project,label);
+ }catch(e){console.warn('[NEPAL] 로컬 엔트리 코드 백업 오류:',e)}
 }
 function localRestore(){try{const key=backupKey();return key?JSON.parse(localStorage.getItem(key)||'null'):null}catch(_){return null}}
 function localRecovery(){try{const key=backupKey();return key?JSON.parse(localStorage.getItem(key+':recovery')||'null'):null}catch(_){return null}}
@@ -253,19 +287,82 @@ function projectScriptBytes(project){
 }
 function latestProject(cloud,local){
  let remote=null;
- if(cloud?.payload){remote=JSON.parse(cloud.payload);if(!Array.isArray(remote?.objects))throw Error('온라인 엔트리 코드 형식 오류')}
- const draft=local?.project;
- const candidates=[
-  {name:'온라인 코드',value:remote,time:Number(cloud?.updatedAt)||0},
-  {name:'브라우저 임시 저장본',value:draft,time:Number(local?.updatedAt)||0},
-  {name:'블록 복구 사본',value:localRecovery()?.project,time:Number(localRecovery()?.updatedAt)||0}
- ].filter(x=>Array.isArray(x.value?.objects));
- if(!candidates.length)return null;
- const richer=candidates.reduce((a,b)=>projectScriptBytes(a.value)>=projectScriptBytes(b.value)?a:b);
- const filtered=candidates.filter(x=>!isSuspiciousLoss(projectScriptBytes(richer.value),projectScriptBytes(x.value)));
- const selected=filtered.sort((a,b)=>b.time-a.time)[0]||richer;
- if(selected.name!=='온라인 코드')note('🛟 '+selected.name+'으로 코드를 복원합니다.');
- return selected.value;
+ if(cloud?.payload){
+  remote=JSON.parse(cloud.payload);
+  if(!Array.isArray(remote?.objects))throw Error('온라인 엔트리 코드 형식 오류');
+ }
+ const draft=Array.isArray(local?.project?.objects)?local.project:null;
+ // Recovery is never automatically preferred over a valid cloud/main draft:
+ // an older longer program can be intentional, not the student's latest work.
+ if(remote&&draft){
+  if(JSON.stringify(remote)===JSON.stringify(draft))return remote;
+  const remoteTime=Number(cloud?.updatedAt)||0,localTime=Number(local?.updatedAt)||0;
+  if(localTime>remoteTime+1000){
+   if(isSuspiciousLoss(projectScriptBytes(remote),projectScriptBytes(draft))){
+    const useDraft=window.confirm('이 PC에 온라인 저장본보다 최신인 임시 코드가 있지만 블록이 크게 줄어 있습니다.\n\n[확인] 이 PC의 최신 작업 복원\n[취소] 정상 저장된 온라인 코드 복원\n\n다른 복구본은 그대로 보관됩니다.');
+    if(!useDraft)return remote;
+   }
+   note('🛟 서버보다 최신인 이 PC의 임시 코드를 복원합니다.');
+   return draft;
+  }
+  return remote;
+ }
+ if(remote)return remote;
+ if(draft){note('🛟 이 PC에 남은 임시 코드를 복원합니다.');return draft}
+ const recovery=localRecovery()?.project;
+ if(Array.isArray(recovery?.objects)){note('🛟 이전 복구본을 복원합니다.');return recovery}
+ return null;
+}
+// Restore button: opt-in, save a snapshot of the visible code first, and do not
+// replace the live editor or cloud until the requested version is verified.
+async function restoreSavedCode(){
+ if(guestActive||!user||!readyToSave||!callbacks.isReady?.()||callbacks.isBusy?.()||restoring||saveBusy){
+  note('⚠ 코드 복원은 학생 로그인 후 편집기가 준비된 상태에서만 가능합니다.');return false;
+ }
+ const list=[],seen=new Set();
+ const add=(label,project,time)=>{
+  if(!Array.isArray(project?.objects))return;
+  const id=projectSignature(project);
+  if(seen.has(id))return;seen.add(id);
+  list.push({label,project,time:Number(time)||0});
+ };
+ try{
+  const path=requireTeacher(user)?teacherPath()+'/code':workPath(team.c,team.g)+'/code';
+  const cloud=(await db.ref(path).once('value')).val();
+  if(cloud?.payload)add('온라인 저장본',JSON.parse(cloud.payload),cloud.updatedAt);
+ }catch(e){note('⚠ 온라인 복구본 조회 실패: '+String(e.message||e))}
+ const draft=localRestore(),recovery=localRecovery();
+ add('이 PC의 임시 저장본',draft?.project,draft?.updatedAt);
+ add('이 PC의 추가 복구본',recovery?.project,recovery?.updatedAt);
+ for(const row of historyVersions())add(row.label||'과거 저장본',row.project,row.updatedAt);
+ if(!list.length){note('복구 가능한 코드 기록이 없습니다.');return false}
+ const choice=window.prompt('복원할 코드를 번호로 선택하세요.\n복원 직전 현재 블록도 이 PC에 보관합니다.\n\n'+list.map((r,i)=>
+  (i+1)+'. '+r.label+' · '+(r.time?new Date(r.time).toLocaleString('ko-KR'):'시간 미상')+' · 코드 약 '+projectScriptBytes(r.project)+'자').join('\n')+'\n\n취소를 누르면 변경하지 않습니다.','1');
+ if(choice===null)return false;
+ const i=Number(choice)-1;
+ if(!Number.isInteger(i)||!list[i]){note('복구 번호를 다시 확인해 주세요.');return false}
+ if(!window.confirm('선택한 저장본으로 현재 화면의 블록을 교체할까요?\n복원 직전 코드도 복구 이력에 보관합니다.'))return false;
+ let current=null;restoring=true;readyToSave=false;
+ try{
+  current=await rpc('export');
+  localBackUp(current,true,'복구 직전 작업');
+  archiveProject(current,'복구 직전 작업');
+  const result=await rpc('import',list[i].project);
+  if(!result?.ok)throw Error('선택한 블록을 복원하지 못했습니다.');
+  readyToSave=true;restoring=false;
+  // Manual save verifies the remote payload and requests confirmation for large deletions.
+  const saved=await saveNow('manual');
+  if(!saved){
+   note('⚠ 선택한 코드는 현재 편집기에 복원했지만 온라인 저장을 확인하지 못했습니다. [저장]을 다시 누르세요.');
+   return false;
+  }
+  note('✓ 선택한 버전을 복원하고 온라인 저장까지 확인했습니다.');
+  return true;
+ }catch(error){
+  note('⚠ 복원 실패: '+String(error.message||error));
+  if(current)try{await rpc('import',current);note('✓ 복원 전 코드를 다시 표시했습니다.')}catch(e){note('⚠ 복원 전 코드 다시 불러오기 실패: '+String(e.message||e))}
+  readyToSave=!!current;return false;
+ }finally{restoring=false}
 }
 function updateNativeCaptions(){
  if(nativeButtons.length!==3)return;
@@ -316,6 +413,12 @@ function setupNativeHome(){
  },true));
  showNativeHome(false);
 }
+function setCodeSaveState(state,message){
+ const el=document.getElementById('np-code-save-state');if(!el)return;
+ clearTimeout(saveBannerTimer);el.hidden=false;el.dataset.state=state;el.textContent=message;
+ el.style.borderColor=state==='error'?'#ff927d':state==='saving'?'#d8d289':'#9ad77c';
+ if(state==='ok')saveBannerTimer=setTimeout(()=>{if(el.dataset.state==='ok')el.hidden=true},6000);
+}
 function note(m){
  if(headerStatus)headerStatus.textContent=m;
  const el=$('np-gate-msg');if(el)el.textContent=m;
@@ -365,7 +468,8 @@ function refreshButtons(){
  const sessionVisible=sessionActive;
  const signedIn=!guestActive&&sessionVisible&&!!((team&&user)||(!team&&requireTeacher(user)));
  const editorActive=sessionVisible&&!!(team||guestActive||requireTeacher(user));
- const save=$('np-save'),boardButton=$('np-board-button'),changeButton=$('np-change');
+ const save=$('np-save'),recover=$('np-code-recover'),boardButton=$('np-board-button'),changeButton=$('np-change');
+ if(recover){recover.disabled=guestActive||!signedIn;recover.style.display=sessionVisible&&!guestActive?'':'none'}
  if(save){const hasWorkspace=!!(team||requireTeacher(user)&&designReady);save.disabled=guestActive||!hasWorkspace;save.style.display=sessionVisible&&hasWorkspace?'':'none';save.textContent='💾 저장'}
  if(boardButton){boardButton.disabled=guestActive;boardButton.style.display=signedIn?'':'none'}
  const boardAssessment=$('np-board-assessment');
@@ -706,6 +810,7 @@ async function saveNow(reason='manual'){
   const encoded=JSON.stringify(project);if(encoded.length>MAX_PROJECT_SIZE)throw Error('코드 용량이 1.25MB를 넘었습니다. 이미지/소리를 줄여 주세요.');
   const newScriptBytes=projectScriptBytes(project);
   if(reason==='auto'&&lastSaved===encoded)return true;
+  setCodeSaveState('saving','☁️ 엔트리 코드를 서버에 저장하고 있습니다…');
   const path=teacherSave?teacherPath()+'/code':workPath(team.c,team.g)+'/code';
   if(!teacherSave){
    const snap=await db.ref(workPath(team.c,team.g)+'/editorLock').once('value');
@@ -722,27 +827,36 @@ async function saveNow(reason='manual'){
   // An import failure must not silently replace earlier student work.
   const referenceBytes=Math.max(projectScriptBytes(projectToRestore),
     projectScriptBytes(localRestore()?.project),projectScriptBytes(localRecovery()?.project),projectScriptBytes(oldProject));
+  if(newScriptBytes===0&&referenceBytes>0){
+   if(oldProject)archiveProject(oldProject,'빈 코드 덮어쓰기 차단');
+   throw Error('기존 프로젝트를 빈 코드로 덮어쓰지 않도록 차단했습니다.');
+  }
   if(isSuspiciousLoss(referenceBytes,newScriptBytes)){
-   if(reason==='auto')throw Error('저장 블록이 크게 감소하여 자동 덮어쓰기를 차단했습니다.');
-   if(!window.confirm('기존 코드의 절반 이상이 없어졌습니다.\\n직접 블록을 대량 삭제했나요?\\n[취소]를 눌러 이전 블록을 보호하세요.'))
-    throw Error('블록이 급감한 저장을 취소했습니다.');
+   // Keep the student's latest smaller draft, but require an intentional action
+   // before it overwrites the cloud. This is not a permanent autosave dead-end.
+   localBackUp(project,true,'감소한 블록 · 저장 확인 전');
+   if(reason==='auto')
+    throw Error('코드가 크게 줄어 자동저장을 보류했습니다. [💾 저장]을 눌러 변경한 코드를 확인하세요.');
+   if(!window.confirm('기존 코드의 절반 이상이 없어졌습니다.\n직접 블록을 많이 삭제했나요?\n\n[확인] 새 코드 저장 (이전 코드 복구 가능)\n[취소] 기존 온라인 코드 보호'))
+    throw Error('블록 감소 확인을 취소했습니다. 이 PC에 변경본은 보관했습니다.');
   }
-  if(newScriptBytes===0&&referenceBytes>0)
-   throw Error('빈 코드로 기존 프로젝트를 덮어쓰지 않도록 저장을 차단했습니다.');
-  if(oldProject && projectScriptBytes(oldProject)>projectScriptBytes(localRestore()?.project))
-   localBackUp(oldProject);
-  localBackUp(project);
+  if(oldProject)archiveProject(oldProject,'기존 서버 저장본');
+  localBackUp(project,true,'온라인 저장 요청');
   await codeRef.set({payload:encoded,updatedAt:fb.database.ServerValue.TIMESTAMP,updatedBy:user.uid});
-  if(reason!=='auto'){
-    const readback=(await codeRef.once('value')).val();
-    if(readback?.payload!==encoded||readback?.updatedBy!==user.uid)
-      throw Error('서버에 저장된 엔트리 코드가 현재 블록과 일치하지 않습니다.');
-  }
+  // Check all saves, including the 8-second autosave.
+  const readback=(await codeRef.once('value')).val();
+  if(readback?.payload!==encoded||readback?.updatedBy!==user.uid)
+   throw Error('서버 코드가 방금 저장한 블록과 일치하지 않습니다.');
   lastSaved=encoded;
   projectToRestore=project;
-  note('✓ '+(teacherSave?'교사':'조별')+' 블록 온라인 저장 확인 · 코드 약 '+newScriptBytes+'자 · '+new Date().toLocaleTimeString('ko-KR'));
+  const message='✓ '+(teacherSave?'교사':'조별')+' 코드 서버 저장 확인 · '+new Date().toLocaleTimeString('ko-KR');
+  note(message+' · 코드 약 '+newScriptBytes+'자');setCodeSaveState('ok',message);
   return true;
- }catch(e){note('⚠ 온라인 저장 실패: '+String(e.message||e)+' · 현재 브라우저에 보조 저장이 있다면 같은 계정으로 다시 확인하세요.');return false}
+ }catch(e){
+  const message='⚠ 온라인 저장 실패: '+String(e.message||e);
+  note(message+' · 이 PC의 임시 저장/복구본은 유지됩니다.');
+  setCodeSaveState('error',message+'\n코드를 닫지 말고 [💾 저장]을 다시 시도하세요.');return false
+ }
  finally{saveBusy=false;if(queued){queued=false;setTimeout(()=>saveNow('auto'),500)}}
 }
 // Record progress in Firebase and verify the server committed it.
@@ -1186,7 +1300,10 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
  const originalEnterSimulator=callbacks.enterSimulator;
  callbacks.enterSimulator=()=>{showNativeHome(true);originalEnterSimulator?.()};
  const buttons=document.createElement('div');buttons.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto';
- buttons.innerHTML='<span id="np-save-label" class="np-saveinfo"></span><button id="np-save">💾 저장</button><button id="np-board-button">📊 현황판</button><button id="np-change">🚪 로그아웃</button>';
+ buttons.innerHTML='<span id="np-save-label" class="np-saveinfo"></span><button id="np-save">💾 저장</button><button id="np-code-recover">↶ 코드 복구</button><button id="np-board-button">📊 현황판</button><button id="np-change">🚪 로그아웃</button>';
+ const saveBanner=document.createElement('div');saveBanner.id='np-code-save-state';saveBanner.hidden=true;saveBanner.setAttribute('role','status');saveBanner.setAttribute('aria-live','polite');
+ saveBanner.style.cssText='position:fixed;z-index:15500;right:18px;bottom:18px;max-width:min(460px,calc(100vw - 36px));padding:12px 16px;border-radius:10px;background:#173924;color:white;border:2px solid #9ad77c;font:700 13px/1.5 system-ui;box-shadow:0 10px 40px #0008;white-space:pre-wrap';
+ document.body.appendChild(saveBanner);
  opts.header.insertBefore(buttons,opts.header.lastElementChild);headerStatus=$('np-save-label');
  $('np-save').onclick=async()=>{
    if(guestActive){note('🌐 게스트 모드는 저장되지 않습니다.');return}
@@ -1199,7 +1316,7 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
    const codeOK=readyToSave ? await saveNow('manual') : !opts.isLayerOpen?.();
    if(designOK&&progressOK&&codeOK)note('✓ 미션 진행도·센서 설계·엔트리 코드 저장 완료');
    else note('⚠ 일부 저장 실패: '+[!designOK?'센서 설계':null,!progressOK?'미션 진행도':null,!codeOK?'엔트리 코드':null].filter(Boolean).join('·'));
- };$('np-board-button').onclick=()=>showBoard(false);
+ };$('np-code-recover').onclick=restoreSavedCode;$('np-board-button').onclick=()=>showBoard(false);
  $('np-enter-guest').onclick=enterGuest;$('np-change').onclick=()=>guestActive?showLogin():signout();
  $('np-role-student').onclick=()=>selectRole('student');$('np-role-teacher').onclick=teacherSubmit;
  $('np-back').onclick=landing;
@@ -1224,6 +1341,8 @@ function setup(opts){callbacks=opts;missionTotal=opts.totalMissions||4;
  $('np-board-signout').onclick=signout;
  $('np-teacher-sim').onclick=()=>{if(requireTeacher(user))enterTeacherSimulator();else if(team){board.classList.remove('show');clearBoard()}else note('학생은 반·조에 먼저 등록해야 합니다.');refreshButtons()};
  if(!autosave)autosave=setInterval(()=>{if((team||requireTeacher(user)&&sessionActive)&&readyToSave&&!restoring&&opts.isLayerOpen?.()&&!opts.isBusy?.())saveNow('auto')},8000);
+  window.addEventListener('online',()=>{if(readyToSave&&opts.isLayerOpen?.()&&!opts.isBusy?.())saveNow('auto')});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden&&readyToSave&&!restoring&&opts.isLayerOpen?.()&&!opts.isBusy?.())saveNow('auto')});
   setInterval(retryPendingProgress,45000);
   window.addEventListener('online',retryPendingProgress);
  setupNativeHome();refreshButtons();
