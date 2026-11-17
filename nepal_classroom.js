@@ -113,7 +113,7 @@ let currentClassCount=CLASS_COUNT;
 function normalizeClassCount(raw){const n=Number(raw);return Number.isInteger(n)&&n>=CLASS_COUNT&&n<=MAX_CLASS_COUNT?n:CLASS_COUNT}
 async function readClassCount(){
  if(!db)return currentClassCount;
- try{currentClassCount=normalizeClassCount((await db.ref(`${ROOT}/settings/classCount`).once('value')).val());return currentClassCount}
+ try{currentClassCount=normalizeClassCount((await db.ref(`nepal-v27/public/settings/classCount`).once('value')).val());return currentClassCount}
  catch(error){console.warn('반 개수 조회 실패',error);return currentClassCount}
 }
 function refreshClassSelectors(){
@@ -1023,7 +1023,7 @@ async function addClass(){
  if(!confirm((current+1)+'반을 새로 추가할까요?'))return;
  const button=$('np-add-class');button.disabled=true;
  try{
-  const ref=db.ref(`${ROOT}/settings/classCount`);
+  const ref=db.ref(`nepal-v27/public/settings/classCount`);
   const tx=await ref.transaction(old=>{
    const number=normalizeClassCount(old);
    return number<MAX_CLASS_COUNT?number+1:undefined;
