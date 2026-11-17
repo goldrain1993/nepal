@@ -199,6 +199,7 @@ async function submitDirect(){
 }
 
 let gradebookRows=[],gradebookLoaded=false,gradebookLoading=false;
+let aiBatchRunning=false,aiBatchCancel=false;
 function selectedGradeRows(){
  const v=el('na-gb-class')?.value||'all';
  return v==='all'?gradebookRows:gradebookRows.filter(r=>r.clazz===Number(v));
@@ -209,6 +210,7 @@ function showGradebook(){
  const list=selectedGradeRows(),submitted=list.filter(r=>r.submitted).length,confirmed=list.filter(r=>r.status==='확정').length;
  status.textContent='계정·제출 기록 '+list.length+'명 / 제출 '+submitted+'명 / 점수 확정 '+confirmed+'명 / 미채점 '+(submitted-confirmed)+'명 / 미제출 '+(list.length-submitted)+'명 · 미로그인 학생은 명단에 없을 수 있습니다.';
  csv.disabled=list.length===0;
+ const batch=el('na-ai-batch');if(batch)batch.disabled=aiBatchRunning||el('na-gb-class')?.value==='all'||!list.some(r=>r.submitted&&r.uid&&r.status!=='확정');
  const val=(v)=>esc(v==null?'—':v);
  box.innerHTML=list.length?'<table class="na-table"><thead><tr><th>반</th><th>번호</th><th>이름(등록명)</th><th>구글 계정 ID</th><th>조</th><th>개념 설계<br>30점</th><th>알고리즘 적용<br>30점</th><th>이해·설명<br>40점</th><th>총점<br>100점</th><th>상태·주의</th><th>상세</th></tr></thead><tbody>'+
  list.map(x=>{
@@ -256,13 +258,71 @@ async function fetchGradebook(){
  }finally{gradebookLoading=false;if(button?.isConnected)button.disabled=false}
 }
 
+
+async function ensureGradeCallable(){
+ const app=ctx.fb.app();
+ if(typeof app.functions!=='function'){
+  await new Promise((resolve,reject)=>{
+   const s=document.createElement('script');s.src='https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js';
+   s.onload=resolve;s.onerror=()=>reject(Error('Firebase SDK 불러오기 실패'));document.head.appendChild(s);
+  });
+ }
+ return ctx.fb.app().functions('asia-northeast3').httpsCallable('gradeNepalAssessment');
+}
+function confirmAIDataUse(){
+ if(aiPrivacyAcknowledged)return true;
+ if(!confirm('학교의 개인정보 처리 기준에 따라 AI 서비스에 학생의 서술형 답안을 제공할 수 있음을 확인했습니까?\n이름과 일반 연락처 패턴은 가리고, 엔트리 코드 원본 대신 블록 종류 요약만 전송됩니다.\nAI 점수는 교사가 검토하고 확정해야 합니다.'))return false;
+ aiPrivacyAcknowledged=true;return true;
+}
+async function runBatchAI(){
+ if(aiBatchRunning||!ctx?.isTeacher||!gradebookLoaded)return;
+ const clazz=el('na-gb-class')?.value;
+ if(!clazz||clazz==='all'){message('일괄 채점은 1개 학급씩 진행합니다.');return}
+ const students=selectedGradeRows().filter(r=>r.submitted&&r.uid&&r.status!=='확정');
+ if(!students.length){message('이 학급에서 아직 확정되지 않은 제출 답안이 없습니다.');return}
+ if(!confirmAIDataUse())return;
+ if(!confirm(clazz+'반 '+students.length+'명 AI 1차 채점을 시작할까요?\n이미 채점한 학생은 서버에 저장된 결과를 재사용합니다.'))return;
+ aiBatchRunning=true;aiBatchCancel=false;
+ const opened=token,button=el('na-ai-batch'),stop=el('na-ai-stop'),state=el('na-ai-batch-status');
+ button.disabled=true;stop.disabled=false;
+ let done=0,ok=0,legacy=0,fail=0,errorText='';
+ try{
+  const callable=await ensureGradeCallable();
+  for(const row of students){
+   if(aiBatchCancel||opened!==token)break;
+   state.textContent=clazz+'반 '+(done+1)+'/'+students.length+'명 진행 · 성공 '+ok+'명 / 형식 확인 '+legacy+'명 / 오류 '+fail+'명';
+   try{
+    const response=await callable({uid:row.uid});
+    if(response.data?.rubricVersion!==AI_RUBRIC_VERSION)throw Error('AI 채점 서버가 이전 기준입니다. Firebase Functions 재배포가 필요합니다.');
+    ok++;
+    if(teacherUid===row.uid&&opened===token){aiResult=response.data;showAI()}
+   }catch(e){
+    const msg=String(e.code||e.message||e);
+    if(msg.includes('failed-precondition'))legacy++;else{fail++;if(!errorText)errorText=msg}
+    if(msg.includes('재배포')||msg.includes('not-found')||msg.includes('permission-denied')){aiBatchCancel=true;break}
+   }
+   done++;
+  }
+ }catch(e){fail++;errorText=String(e.code||e.message||e)}
+ finally{
+  aiBatchRunning=false;
+  if(opened===token){
+   stop.disabled=true;
+   state.textContent=clazz+'반 '+(aiBatchCancel?'중단':'완료')+' · AI 제안 '+ok+'명 / 구형 답안 '+legacy+'명 / 오류 '+fail+'명'+(errorText?' · 오류: '+errorText:'')+' · 점수 최종 확정은 별도로 진행하세요.';
+   showGradebook();
+  }
+ }
+}
+
 async function teacherOpen(t){
  shell('📊 수행평가 제출·채점 현황','최종 제출본을 확인하고 AI 채점 제안을 참고하여 교사가 점수를 확정합니다.');
- el('na-body').innerHTML='<div class="na-card"><h3>🛡 학생 제출 공개 설정</h3><p>처음에는 학생에게 수행평가 버튼이 보이지 않습니다. 시험 제출과 Firebase 권한 확인을 마친 뒤 학생 제출을 열어 주세요.</p><button class="na-btn" id="na-publish" type="button">설정 확인 중…</button><div id="na-publish-state" class="na-muted"></div></div><div class="na-card">AI는 미션별 선택·개인 설명과 엔트리 코드의 블록 종류만으로 1차 채점안을 제안합니다. 학생 이름과 연락처 등 일반적인 식별정보는 가려 전송하지만 자유서술에 개인정보가 포함되지 않았는지 교사가 확인하고 학교 지침에 따라 이용하세요. 교사가 최종 점수를 확정하며, AI 제안은 학생에게 공개되지 않습니다.</div><div class="na-card"><h3>📊 반별 수행평가 성적표</h3><p class="na-muted">2026학년도 1학년 · 구글 계정 26-10101은 1학년 1반 1번입니다. 이름은 학생 등록명과 연결하며 교사 확정점수만 표시합니다.</p><div class="na-actions"><label for="na-gb-class">학급 선택</label><select id="na-gb-class" style="padding:9px;color:#fff;background:#092015;border:1px solid #739775;border-radius:8px"><option value="all">전체 1학년</option>'+Array.from({length:11},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'반</option>').join('')+'</select><button id="na-gb-refresh" type="button" class="na-btn">↻ 조회</button><button id="na-gb-csv" type="button" class="na-btn" disabled>CSV 내려받기</button></div><div id="na-gb-status" class="na-muted">학교 계정과 성적표를 불러오는 중…</div><div id="na-gb-table" style="overflow:auto;max-height:62vh;margin-top:12px"></div></div><div class="na-card"><h3>학생 제출 목록</h3><div id="na-roster">조회 중…</div></div><div id="na-review"></div>';
- gradebookRows=[];gradebookLoaded=false;gradebookLoading=false;
+ el('na-body').innerHTML='<div class="na-card"><h3>🛡 학생 제출 공개 설정</h3><p>처음에는 학생에게 수행평가 버튼이 보이지 않습니다. 시험 제출과 Firebase 권한 확인을 마친 뒤 학생 제출을 열어 주세요.</p><button class="na-btn" id="na-publish" type="button">설정 확인 중…</button><div id="na-publish-state" class="na-muted"></div></div><div class="na-card">AI는 미션별 선택·개인 설명과 엔트리 코드의 블록 종류만으로 1차 채점안을 제안합니다. 학생 이름과 연락처 등 일반적인 식별정보는 가려 전송하지만 자유서술에 개인정보가 포함되지 않았는지 교사가 확인하고 학교 지침에 따라 이용하세요. 교사가 최종 점수를 확정하며, AI 제안은 학생에게 공개되지 않습니다.</div><div class="na-card"><h3>📊 반별 수행평가 성적표</h3><p class="na-muted">2026학년도 1학년 · 구글 계정 26-10101은 1학년 1반 1번입니다. 이름은 학생 등록명과 연결하며 교사 확정점수만 표시합니다.</p><div class="na-actions"><label for="na-gb-class">학급 선택</label><select id="na-gb-class" style="padding:9px;color:#fff;background:#092015;border:1px solid #739775;border-radius:8px"><option value="all">전체 1학년</option>'+Array.from({length:11},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'반</option>').join('')+'</select><button id="na-gb-refresh" type="button" class="na-btn">↻ 조회</button><button id="na-gb-csv" type="button" class="na-btn" disabled>CSV 내려받기</button></div><div id="na-gb-status" class="na-muted">학교 계정과 성적표를 불러오는 중…</div><div id="na-gb-table" style="overflow:auto;max-height:62vh;margin-top:12px"></div></div><div class="na-card"><h3>🤖 학급 AI 1차 일괄 채점</h3><p class="na-muted">한 반씩 채점합니다. 제출 완료·성적 미확정 학생 대상이며, 객관식 11개는 정답표로 계산하고 서술형 6개는 AI가 1차 판단합니다. 교사가 최종 점수를 확정해야 합니다. 채점 중에는 이 화면을 열어 두세요.</p><div class="na-actions"><button id="na-ai-batch" class="na-btn" disabled>선택 학급 AI 일괄 채점</button><button id="na-ai-stop" class="na-btn" disabled>⏹ 중단</button></div><div id="na-ai-batch-status" class="na-muted" role="status">학급을 선택해 주세요.</div></div><div class="na-card"><h3>학생 제출 목록</h3><div id="na-roster">조회 중…</div></div><div id="na-review"></div>';
+ gradebookRows=[];gradebookLoaded=false;gradebookLoading=false;aiBatchCancel=true;
  el('na-gb-class').onchange=showGradebook;
  el('na-gb-refresh').onclick=fetchGradebook;
  el('na-gb-csv').onclick=exportGradebook;
+ el('na-ai-batch').onclick=runBatchAI;
+ el('na-ai-stop').onclick=()=>{aiBatchCancel=true;el('na-ai-batch-status').textContent='현재 학생 요청 종료 후 중단합니다.'};
  el('na-gb-table').onclick=e=>{const btn=e.target.closest('button[data-gb-uid]');if(btn)loadReview(btn.dataset.gbUid)};
  fetchGradebook();
  let enabled=false;
@@ -361,19 +421,12 @@ function applyAI(){
 async function runAI(){
  const btn=el('na-run-ai');
  if(!btn||!teacherUid)return;
- if(!aiPrivacyAcknowledged){
-  if(!confirm('AI 1차 채점은 학생 답안(이름·일반 연락처 패턴 가림)과 엔트리 블록 종류 요약을 외부 AI 서비스로 전송합니다. 학생의 자유서술에 추가 개인정보가 포함되지 않았고 학교 개인정보 처리 지침상 이용 가능함을 확인했습니까?'))return;
-  aiPrivacyAcknowledged=true;
- }
+ if(!confirmAIDataUse())return;
  const uid=teacherUid;
  btn.disabled=true;message('AI 1차 채점 요청 중 · 제출 답안의 개인정보를 제외하고 미션 평가 기준으로 분석합니다…');
  try{
-  if(!ctx.fb.functions)await new Promise((ok,fail)=>{
-   const x=document.createElement('script');
-   x.src='https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js';
-   x.onload=ok;x.onerror=fail;document.head.appendChild(x);
-  });
-  const result=await ctx.fb.app().functions('asia-northeast3').httpsCallable('gradeNepalAssessment')({uid});
+  const callable=await ensureGradeCallable();
+  const result=await callable({uid});
   if(uid!==teacherUid)return;
   const suggested=result.data;
   if(!suggested||suggested.rubricVersion!==AI_RUBRIC_VERSION)
