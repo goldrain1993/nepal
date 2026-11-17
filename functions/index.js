@@ -253,26 +253,7 @@ exports.getNepalAssessmentGradebook=onCall({
    if(!pageToken)break;
    if(page===29)throw new Error('Authentication 조회 페이지 수 제한 초과');
   }
-  const teamKeys=new Map();
-  for(const entry of Object.values(indexes)){
-   const c=Number(String(entry?.classId||'').replace(/^c/,'')),
-         g=Number(String(entry?.groupId||'').replace(/^g/,''));
-   if(Number.isInteger(c)&&c>=1&&c<=20&&Number.isInteger(g)&&g>=1&&g<=30)
-    teamKeys.set('c'+c+'/g'+g,{c,g});
-  }
-  const studentNames=new Map();
-  const teams=[...teamKeys.values()];
-  for(let start=0;start<teams.length;start+=25){
-   const subset=teams.slice(start,start+25);
-   const snapshots=await Promise.all(subset.map(x=>
-    db.ref('nepal-v27/public/classes/c'+x.c+'/teams/g'+x.g+'/members').once('value')));
-   snapshots.forEach(snap=>{
-    for(const member of Object.values(snap.val()||{})){
-     if(typeof member?.uid==='string'&&typeof member.displayName==='string')
-      studentNames.set(member.uid,member.displayName.trim().slice(0,60));
-    }
-   });
-  }
+  // Personal assessment is independent of Nepal team memberships.
   const safeName=(value,account)=>{
    const n=String(value||'').trim().slice(0,60);
    return n&&n!=='학생'&&n!==account&&!/^26-\d{5}$/.test(n)?n:'';
@@ -280,15 +261,14 @@ exports.getNepalAssessmentGradebook=onCall({
   const rows=[],seen=new Set();
   for(const u of studentAuth){
    const index=indexes[u.uid]||null;
-   const name=safeName(studentNames.get(u.uid),u.accountId)||
-     safeName(index?.displayName,u.accountId)||
+   const name=safeName(index?.displayName,u.accountId)||
      safeName(u.authName,u.accountId)||'이름 미확인';
    const submitted=!!index,score=submitted?gradebookFinalScore(reviews[u.uid]):null;
    const submittedClass=Number(String(index?.classId||'').replace(/^c/,''));
    const mismatch=submitted&&submittedClass!==u.clazz;
    rows.push({
     uid:u.uid,accountId:u.accountId,year:u.year,grade:u.grade,clazz:u.clazz,number:u.number,
-    name,group:submitted?Number(String(index.groupId||'').replace(/^g/,''))||null:null,
+    name,
     submitted,score,status:score?'확정':submitted?'미채점':'미제출',
     warning:mismatch?'계정 반과 제출 반 불일치':name==='이름 미확인'?'이름 확인 필요':'',
     submittedAt:submitted?Number(index.submittedAt)||0:0
@@ -303,8 +283,7 @@ exports.getNepalAssessmentGradebook=onCall({
    const score=gradebookFinalScore(reviews[uid]);
    rows.push({
     uid,accountId:'',year:2026,grade:1,clazz,number:null,
-    name:safeName(studentNames.get(uid),'')||safeName(index?.displayName,'')||'이름 미확인',
-    group:Number(String(index.groupId||'').replace(/^g/,''))||null,
+    name:safeName(index?.displayName,'')||'이름 미확인',
     submitted:true,score,status:score?'확정':'미채점',
     warning:'학교 계정 학번 확인 필요',submittedAt:Number(index.submittedAt)||0
    });
