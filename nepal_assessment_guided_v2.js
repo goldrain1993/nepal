@@ -37,6 +37,13 @@ function mountStudent(){
  const host=document.createElement('section');host.id='na-wizard';host.className='na-wizard';
  host.innerHTML='<div class="na-wizard-top"><div class="na-wizard-meta"><span>📝 <span id="na-wizard-current">01 / 17</span></span><span id="na-wizard-tally">열람 0 / 17 · 작성 0 / 17</span></div><nav class="na-wizard-grid" id="na-wizard-grid" aria-label="문항별 이동"></nav><div class="na-wizard-key">파랑 테두리: 현재 문항 · 초록: 작성 완료 · 갈색: 열람했지만 미응답 · 회색: 미열람</div></div><div id="na-wizard-pages"></div><div class="na-wizard-bottom"><div class="na-wizard-info" id="na-wizard-info"></div><div class="na-wizard-actions" id="na-wizard-actions"><button type="button" class="na-btn" id="na-wizard-prev">← 이전</button><button type="button" class="na-btn primary" id="na-wizard-next">다음 →</button></div></div>';
  editor.prepend(host);
+ const oldProgress=document.getElementById('na-progress');if(oldProgress)oldProgress.hidden=true;
+ const rubric=document.querySelector('#na-body > .na-rubric');
+ if(rubric){
+  const details=document.createElement('details');details.className='na-card na-rubric-details';
+  const heading=document.createElement('summary');heading.textContent='📋 채점 기준 확인하기';details.appendChild(heading);
+  rubric.parentNode.insertBefore(details,rubric);details.appendChild(rubric);editor.after(details);
+ }
  for(const key of groupKeys){
   const field=document.getElementById('na-'+key);
   const card=field.closest('.na-card');
