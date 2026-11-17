@@ -11,7 +11,7 @@ const ROOT='nepal-v27/private/assessments';
 const TEACHER_UID='GIoPe92By9esQ6H0KcJjvYoPiyN2';
 const TEACHER_EMAIL='goldrain1993@gmail.com';
 const rubric={design:[30,25,20,15],implementation:[30,25,20,15],report:[40,30,20,10]};
-const RUBRIC_VERSION='mission-comprehension-2026-v4';
+const RUBRIC_VERSION='mission-comprehension-2026-v5';
 const QUESTION_GROUPS={"purpose":["Q01"],"io":["Q02","Q03"],"scenes":["Q04","Q05"],"algorithm":["Q06"],"functions":["Q07","Q08","Q09","Q10"],"test1":["Q11","Q12","Q13","Q14"],"test2":["Q15"],"changes":["Q16"],"contribution":["Q17"]};
 const QUESTION_IDS=["Q01","Q02","Q03","Q04","Q05","Q06","Q07","Q08","Q09","Q10","Q11","Q12","Q13","Q14","Q15","Q16","Q17"];
 const SUBJECTIVE_IDS=["Q02","Q08","Q13","Q14","Q15","Q17"];
@@ -45,9 +45,9 @@ function parse17Questions(fields){
    if(m&&ids.includes(m[1])&&answer[m[1]]===undefined)answer[m[1]]=m[2];
   }
  }
- const missing=QUESTION_IDS.filter(id=>!String(answer[id]||'').trim());
+ const missing=QUESTION_IDS.filter(id=>answer[id]===undefined);
  if(missing.length)throw new HttpsError('failed-precondition',
-  '17문항 형식이 아닌 제출본 또는 미완성 답안입니다. 교사가 수동으로 확인해 주세요: '+missing.join(', '));
+  '17문항 형식이 아닌 제출본입니다. 교사가 확인해 주세요: '+missing.join(', '));
  return answer;
 }
 function objectiveArea(answers,ids){
@@ -141,10 +141,12 @@ exports.gradeNepalAssessment=onCall({
    'Q15: 불필요 경보는 혼란·시간·자원 낭비·신뢰 저하, 경보 누락은 대피 실패·피해 증가 같은 각각의 영향 설명.',
    'Q17: 엔트리 개발자 모드에서 사용한 코드 중 한 부분의 변수·반복·조건·리스트 개념과 작동 원리를 구체적으로 설명했는지 판단한다. 실제 실행 여부나 조별 코드 제출 여부를 요구하지 않는다.',
    '학생의 말이 모범답안과 일치하지 않더라도 의미가 정확하면 충분. 근거 없는 일반적 표현은 보완 필요. 수행평가의 반·계정 외에 조 정보와 조별 코드 자료는 채점에서 사용하지 않는다.',
-   '반드시 Q02,Q08,Q13,Q14,Q15,Q17 여섯 개 키를 각각 하나씩 반환하고, 짧은 판단 이유를 작성한다.',
+   '반드시 Q02,Q08,Q13,Q14,Q15,Q17 여섯 개 키를 각각 하나씩 반환하고, 짧은 판단 이유를 작성한다. 미응답(빈 문자열)은 반드시 보완 필요로 처리한다.',
    '개인정보는 출력하지 말고 학교 수행평가 채점 근거만 간결하게 한국어로 작성한다.'
   ].join('\n');
   const payload={subjectiveAnswers:subjectiveInput,rubricVersion:RUBRIC_VERSION};
+  let grade={reason:'서술형이 모두 미응답이므로 10점(기본점수)으로 처리했습니다.',warnings:[],subjective:[]};
+  if(SUBJECTIVE_IDS.some(id=>String(answers[id]||'').trim())){
   const response=await fetch('https://api.openai.com/v1/responses',{
    method:'POST',
    headers:{Authorization:'Bearer '+SECRET.value(),'Content-Type':'application/json'},
@@ -161,21 +163,23 @@ exports.gradeNepalAssessment=onCall({
   if(result.status==='incomplete')throw Error('AI 응답이 완료되지 않았습니다.');
   const output=result.output?.flatMap(x=>x.content||[]).filter(x=>x.type==='output_text').map(x=>x.text).join('')||result.output_text;
   if(!output)throw Error('AI 채점 결과가 비어 있습니다.');
-  let grade;try{grade=JSON.parse(output)}catch(_){throw Error('AI 채점 결과 형식이 잘못되었습니다.')}
+  try{grade=JSON.parse(output)}catch(_){throw Error('AI 채점 결과 형식이 잘못되었습니다.')}
+  }
   const provided=Array.isArray(grade.subjective)?grade.subjective:[];
   const used=new Set(),warnings=(Array.isArray(grade.warnings)?grade.warnings:[]).map(v=>String(v).slice(0,250)).slice(0,10);
   const subjective=SUBJECTIVE_IDS.map(id=>{
    const found=provided.find(x=>x.key===id&&!used.has(x));
    if(found)used.add(found);
-   const judgment=['충분','보완 필요','교사확인'].includes(found?.judgment)?found.judgment:'교사확인';
+   const blank=!String(answers[id]||'').trim();
+   const judgment=blank?'보완 필요':['충분','보완 필요','교사확인'].includes(found?.judgment)?found.judgment:'교사확인';
    if(judgment==='교사확인')warnings.push(id+' 서술형 답안 교사 확인 필요');
-   return {key:id,judgment,reason:String(found?.reason||'AI 판단 근거 누락').slice(0,400)};
+   return {key:id,judgment,reason:blank?'미응답 — 기본점수 적용':String(found?.reason||'AI 판단 근거 누락').slice(0,400)};
   });
   const report=subjectiveArea(subjective);
   const detailed=QUESTION_IDS.map(id=>{
    if(OBJECTIVE_ANSWERS[id]!==undefined){
     const right=answers[id]===OBJECTIVE_ANSWERS[id];
-    return {key:id,judgment:right?'정확':'오개념',reason:right?'정답표와 일치':'정답: '+OBJECTIVE_ANSWERS[id]};
+    return {key:id,judgment:right?'정확':'오개념',reason:right?'정답표와 일치':String(answers[id]||'').trim()?'정답: '+OBJECTIVE_ANSWERS[id]:'미응답 — 오답 처리'};
    }
    const answer=subjective.find(x=>x.key===id);
    return {key:id,judgment:answer.judgment==='충분'?'정확':answer.judgment==='보완 필요'?'부분정확':'교사확인',reason:answer.reason};
