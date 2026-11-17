@@ -11,7 +11,7 @@ const TEACHER_EMAIL='goldrain1993@gmail.com';
 const PROFILE_KEY='nepal-assessment-student-profile-v2:';
 const schoolDomain=String(cfg.schoolDomain||'').replace(/^@/,'').toLowerCase();
 const allowedTeachers=Array.isArray(cfg.teacherUids)?cfg.teacherUids:[];
-let fb=null,auth=null,db=null,me=null,student=null,role='',isEnabled=false,sequence=0,busy=false;
+let fb=null,auth=null,db=null,me=null,student=null,role='',isEnabled=false,sequence=0,busy=false,releaseRef=null,releaseCb=null;
 function status(message,error){
  const node=$('as-status');
  if(node){node.textContent=message||'';node.classList.toggle('as-error',!!error)}
@@ -42,6 +42,28 @@ function saveProfile(user,data){
  try{localStorage.setItem(PROFILE_KEY+user.uid,JSON.stringify(data))}
  catch(error){console.warn('수행평가 이름 로컬 저장 실패',error)}
 }
+function stopClassRelease(){
+ if(releaseRef&&releaseCb)releaseRef.off('value',releaseCb);
+ releaseRef=null;releaseCb=null;isEnabled=false;
+}
+function watchClassRelease(user){
+ stopClassRelease();
+ const clazz=accountClass(user);
+ if(!clazz||!db)return;
+ const ref=db.ref(ASSESS+'/config/enabledByClass/c'+clazz);
+ const cb=snapshot=>{
+  if(me?.uid!==user.uid||role!=='student')return;
+  isEnabled=snapshot.val()===true;
+  render();
+ };
+ releaseRef=ref;releaseCb=cb;
+ ref.on('value',cb,error=>{
+  if(me?.uid!==user.uid)return;
+  isEnabled=false;render();
+  status('학급별 공개 설정을 불러오지 못했습니다. Firebase 규칙 배포를 확인해 주세요: '+String(error.code||error.message||error),true);
+ });
+}
+
 function render(){
  const signed=role==='teacher'||role==='student';
  show('as-login',!signed);
@@ -59,7 +81,7 @@ function render(){
   $('as-open').disabled=busy;
  }else if(role==='student'&&student){
   $('as-ready-title').textContent=student.c+'반 · '+student.name;
-  $('as-ready-info').textContent=isEnabled?'조와 관계없이 학교 계정으로 개인별 수행평가에 입장할 수 있습니다.':'교사가 아직 수행평가 제출을 열지 않았습니다.';
+  $('as-ready-info').textContent=isEnabled?'조와 관계없이 학교 계정으로 개인별 수행평가에 입장할 수 있습니다.':'현재 반의 수행평가가 아직 공개되지 않았습니다.';
   $('as-open').textContent='📝 수행평가 시작';
   $('as-open').disabled=!isEnabled||busy;
  }
@@ -71,7 +93,7 @@ function render(){
 }
 async function syncUser(user){
  const ticket=++sequence;
- me=user;role=teacherUser(user)?'teacher':schoolUser(user)?'student':'';student=null;
+ stopClassRelease();me=user;role=teacherUser(user)?'teacher':schoolUser(user)?'student':'';student=null;
  if(role==='student'){
   const c=accountClass(user);
   const field=$('as-class');
@@ -80,6 +102,7 @@ async function syncUser(user){
   if(ticket!==sequence)return;
   student=stored;
   if($('as-name'))$('as-name').value=stored?.name||normalizedName(user.displayName);
+  watchClassRelease(user);
  }
  render();
 }
@@ -107,7 +130,7 @@ function confirmStudent(event){
 }
 async function launchAssessment(){
  if(busy||!me||!(role==='teacher'||role==='student'&&student))return;
- if(role==='student'&&!isEnabled){status('교사가 아직 수행평가를 공개하지 않았습니다.',true);return}
+ if(role==='student'&&!isEnabled){status('현재 반의 수행평가가 아직 공개되지 않았습니다.',true);return}
  busy=true;$('as-open').disabled=true;
  status('수행평가를 불러오는 중…');
  try{
@@ -121,7 +144,7 @@ async function logOut(){
  if(busy)return;
  busy=true;
  try{
-  await auth.signOut();me=null;student=null;role='';render();
+  stopClassRelease();await auth.signOut();me=null;student=null;role='';render();
  }catch(err){status('로그아웃 실패: '+String(err.message||err),true)}
  finally{busy=false}
 }
@@ -143,7 +166,6 @@ async function init(){
   if(!fb.apps.length)fb.initializeApp(config);
   auth=fb.auth();db=fb.database();
   await auth.setPersistence(fb.auth.Auth.Persistence.LOCAL);
-  db.ref(ASSESS+'/config/enabled').on('value',snap=>{isEnabled=snap.val()===true;render()},err=>{isEnabled=false;render();console.warn('수행평가 공개 상태:',err)});
   auth.onAuthStateChanged(user=>syncUser(user).catch(err=>status('로그인 확인 실패: '+String(err.message||err),true)),
    err=>status('Firebase 로그인 상태 확인 실패: '+String(err.message||err),true));
  }catch(err){
