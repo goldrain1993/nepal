@@ -6,70 +6,140 @@ const Q=[["Q01","purpose","미션 1","mc","수위값 변수에 저장해야 할 
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const shuffled=items=>{const a=items.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-function mountStudent(){
+function applyBlueTheme(){
+ if(document.getElementById('na-blue-theme'))return;
+ const style=document.createElement('style');style.id='na-blue-theme';style.textContent="\n#na-root{background:radial-gradient(ellipse at 18% 0%,#194562,transparent 42%),radial-gradient(ellipse at 92% 80%,#134253,transparent 40%),#061322;color:#eaf7ff}\n#na-root .na-box{max-width:1030px;background:linear-gradient(135deg,#0d2a3f,#081c2c);border:1px solid #497c98;box-shadow:0 20px 60px #0006}\n#na-root .na-box h2,#na-root .na-card h3{color:#c3efff}\n#na-root .na-card{background:#0f2b40;border:1px solid #43718c}\n#na-root .na-muted,#na-root .na-help{color:#bdd8e9}\n#na-root .na-read{background:#071e30;border:1px solid #3e6c86}\n#na-root .na-table td,#na-root .na-table th{border-bottom:1px solid #47778f}\n#na-root .na-btn{background:#224b64;border:1px solid #638eaa;color:#eaf9ff}\n#na-root .na-btn:hover{background:#306d8f;border-color:#a5e2ff}\n#na-root .na-btn.primary{background:linear-gradient(110deg,#50b8fa,#a2e9ff);color:#06233a;border-color:transparent}\n#na-root .na-score select,#na-root .na-field textarea{background:#071c2e;color:#eafaff;border:1px solid #648eaa}\n#na-root #na-editor>.na-actions{position:static;background:transparent;border:0;box-shadow:none;padding:0}\n#na-root .na-check{background:#12384d;border-left:3px solid #8ad5ff}\n#na-root #na-message{color:#b6e6ff}\n#na-root .na-release-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:9px;margin:12px 0}\n#na-root .na-release-class{padding:12px 9px;font-size:13px}\n#na-root .na-release-class.is-open{background:#135156;border-color:#6cd9bb;color:#d0fff0}\n#na-root .na-release-class[aria-pressed=\"false\"]{background:#17354a}\n#na-root .na-wizard{margin:12px 0}\n#na-root .na-wizard-top{position:sticky;top:0;z-index:4;background:#092338f5;backdrop-filter:blur(12px);border:1px solid #497b96;border-radius:13px;padding:15px;box-shadow:0 11px 22px #0005}\n#na-root .na-wizard-meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#c0e8fb;font-weight:850;margin-bottom:10px}\n#na-root .na-wizard-grid{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:7px}\n#na-root .na-wizard-jump{min-width:0;min-height:50px;padding:5px 3px;border-radius:9px;border:1px solid #4c718a;background:#122b40;color:#c5ddeb;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;font:inherit}\n#na-root .na-wizard-jump strong{font-size:13px}#na-root .na-wizard-jump small{font-size:10px}\n#na-root .na-wizard-jump.is-visited{background:#4a3927;border-color:#c49d61;color:#ffe0b4}\n#na-root .na-wizard-jump.is-answered{background:#134c55;border-color:#5bbca7;color:#cbffed}\n#na-root .na-wizard-jump.is-active{outline:2px solid #a1e3ff;outline-offset:0;background:#236184;color:#fff}\n#na-root .na-wizard-key{font-size:12px;color:#b8d7e8;margin-top:9px}\n#na-root .na-wizard-page{background:linear-gradient(145deg,#12364e,#0b2438);border:1px solid #4b7892;border-radius:15px;padding:clamp(16px,3vw,30px);margin-top:15px;min-height:245px}\n#na-root .na-wizard-page[hidden]{display:none!important}\n#na-root .na-wizard-stage{font-size:13px;color:#9edfff;font-weight:850}\n#na-root .na-wizard-question{display:block;color:#f3fbff;font-size:clamp(17px,2.4vw,21px);font-weight:850;line-height:1.5;margin:16px 0}\n#na-root .na-wizard-hint{font-size:13px;color:#bbd7e9;margin-bottom:13px}\n#na-root .na-wizard-option{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid #4d7895;background:#0b2539;border-radius:11px;margin:9px 0;cursor:pointer}\n#na-root .na-wizard-option:has(input:checked){background:#1d526f;border-color:#9ce1ff;box-shadow:inset 0 0 0 1px #9ce1ff}\n#na-root .na-wizard-option input{accent-color:#80d7ff}#na-root .na-wizard-option span{flex:1}\n#na-root .na-wizard-answer{width:100%;min-height:150px;padding:14px;resize:vertical;background:#081d2d;border:1px solid #6b95b0;border-radius:11px;color:#f4fbff;font:inherit}\n#na-root .na-wizard-bottom{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-top:15px;margin-top:15px;border-top:1px solid #4c758d}\n#na-root .na-wizard-actions{display:flex;gap:9px;flex-wrap:wrap}\n#na-root .na-wizard-actions .na-btn{min-width:110px;padding:11px 15px}\n#na-root .na-wizard-actions #na-submit{min-width:150px;font-size:16px}\n#na-root .na-wizard-info{font-size:12px;color:#c3dbe9;max-width:445px}\n#na-root .na-wizard-legacy{padding:12px;color:#ffe8b5;border:1px solid #9d7f53;background:#43321c;border-radius:9px;margin:10px 0}\n@media(max-width:700px){#na-root .na-wizard-grid{grid-template-columns:repeat(6,minmax(0,1fr))}#na-root .na-wizard-top{padding:10px}#na-root .na-wizard-jump{min-height:42px}#na-root .na-wizard-bottom{flex-direction:column;align-items:stretch}#na-root .na-wizard-actions{display:grid;grid-template-columns:repeat(2,1fr)}#na-root .na-wizard-actions .na-btn{min-width:0!important}}\n";
+ document.head.appendChild(style);
+}
+
+function mountStudent(userUid){
  const editor=document.getElementById('na-editor');
  if(!editor||editor.hidden||editor.dataset.guided17)return;
  editor.dataset.guided17='yes';
- const st=document.createElement('style');st.textContent='.na-guided-host{padding:0!important;border:none!important}.na-question{background:#10261a;border:1px solid #496d55;border-radius:11px;margin:12px 0;padding:14px}.na-question-meta{font-size:12px;color:#a4dbce;font-weight:750}.na-question-title{display:block;margin:8px 0 10px;font-size:15px;color:#f3ffed;font-weight:750}.na-q-select,.na-q-text{width:100%;box-sizing:border-box;border:1px solid #789a7d;border-radius:8px;padding:10px;color:#f5fff5;background:#08180d;font:14px/1.5 system-ui}.na-q-text{resize:vertical;min-height:88px}.na-guided-old{color:#ffebca;background:#392a18;border-radius:8px;padding:10px}.na-guide-note{font-size:12px;color:#c4deb9}';document.head.appendChild(st);
+ const uid=String(userUid||'');
+ if(!uid)throw Error('학생 계정 정보가 없어 문항 열람 상태를 기록할 수 없습니다.');
+ const visitKey='nepal-assessment-17q-visit-v3:'+uid;
+ let visited=new Set(),index=0;
+ try{
+  const stored=JSON.parse(localStorage.getItem(visitKey)||'[]');
+  if(Array.isArray(stored))for(const id of stored)if(Q.some(q=>q[0]===id))visited.add(id);
+ }catch(_){}
  const ai=document.getElementById('na-aiUse');
- if(ai){ai.value='해당 없음 (미션 이해 확인 수행평가에서 제외된 문항)';ai.dispatchEvent(new Event('input',{bubbles:true}));}
- function elem(q){return document.getElementById('as-'+q[0])}
- function done(q){const val=String(elem(q)?.value||'').trim();return q[3]==='mc'?!!val:val.length>=8}
- function progress(){
-  const n=Q.filter(done).length;
-  const el=document.getElementById('na-progress');
-  if(el)el.textContent='문항 완료 '+n+'/17 · 객관식 11개 / 서술형 6개';
+ if(ai){ai.value='해당 없음 (17문항 개인 수행평가)';ai.dispatchEvent(new Event('input',{bubbles:true}))}
+ const groupKeys=[...new Set(Q.map(q=>q[1]))],saved={},legacy=[];
+ for(const key of groupKeys){
+  const field=document.getElementById('na-'+key);
+  if(!field)throw Error('답안 저장 필드가 없습니다: '+key);
+  const text=String(field.value||''),values={};
+  text.split(/\r?\n/).forEach(line=>{const m=/^(Q\d{2}):\s*(.*)$/.exec(line);if(m)values[m[1]]=m[2]});
+  if(text.trim()&&!Object.keys(values).length)legacy.push(key);
+  Object.assign(saved,values);
  }
- function sync(key){
-  const target=document.getElementById('na-'+key);
-  target.value=Q.filter(q=>q[1]===key).map(q=>q[0]+': '+String(elem(q)?.value||'').replace(/\s+/g,' ').trim()).join('\n');
-  target.dispatchEvent(new Event('input',{bubbles:true}));
-  progress();
+ const host=document.createElement('section');host.id='na-wizard';host.className='na-wizard';
+ host.innerHTML='<div class="na-wizard-top"><div class="na-wizard-meta"><span>📝 <span id="na-wizard-current">01 / 17</span></span><span id="na-wizard-tally">열람 0 / 17 · 작성 0 / 17</span></div><nav class="na-wizard-grid" id="na-wizard-grid" aria-label="문항별 이동"></nav><div class="na-wizard-key">파랑 테두리: 현재 문항 · 초록: 작성 완료 · 갈색: 열람했지만 미응답 · 회색: 미열람</div></div><div id="na-wizard-pages"></div><div class="na-wizard-bottom"><div class="na-wizard-info" id="na-wizard-info"></div><div class="na-wizard-actions" id="na-wizard-actions"><button type="button" class="na-btn" id="na-wizard-prev">← 이전</button><button type="button" class="na-btn primary" id="na-wizard-next">다음 →</button></div></div>';
+ editor.prepend(host);
+ const oldProgress=document.getElementById('na-progress');if(oldProgress)oldProgress.hidden=true;
+ const rubric=document.querySelector('#na-body > .na-rubric');
+ if(rubric){
+  const details=document.createElement('details');details.className='na-card na-rubric-details';
+  const heading=document.createElement('summary');heading.textContent='📋 채점 기준 확인하기';details.appendChild(heading);
+  rubric.parentNode.insertBefore(details,rubric);details.appendChild(rubric);editor.after(details);
  }
- const keys=[...new Set(Q.map(q=>q[1]))];
- for(const key of keys){
-  const target=document.getElementById('na-'+key),outer=target?.closest('.na-field');
-  if(!target||!outer)continue;
-  const saved=String(target.value||''),parsed={};
-  saved.split(/\r?\n/).forEach(line=>{const m=/^(Q\d{2}):\s*(.*)$/.exec(line);if(m)parsed[m[1]]=m[2]});
-  outer.classList.add('na-guided-host');
-  outer.querySelector('label[for="na-'+key+'"]')?.remove();
-  outer.querySelector('.na-help')?.remove();
-  target.style.display='none';
-  const count=document.getElementById('na-count-'+key);if(count)count.hidden=true;
-  for(const q of Q.filter(q=>q[1]===key)){
-   const [id,_,stage,type,label,choices]=q,block=document.createElement('section');
-   block.className='na-question';
-   block.innerHTML='<div class="na-question-meta">문항 '+id.slice(1)+' · '+esc(stage)+' · '+(type==='mc'?'객관식':'서술형')+'</div>'+
-    '<label class="na-question-title" for="as-'+id+'">'+esc(label)+'</label>'+
-    (type==='mc'?'<select class="na-q-select" id="as-'+id+'"><option value="">선택하세요</option>'+shuffled(choices).map(s=>'<option value="'+esc(s)+'">'+esc(s)+'</option>').join('')+'</select>':
-     '<textarea class="na-q-text" rows="3" maxlength="400" id="as-'+id+'" placeholder="자신의 말로 설명하세요. (8자 이상)"></textarea>');
-   target.parentNode.insertBefore(block,target);
-   const ctrl=elem(q);
-   if(parsed[id]&&(type==='short'||choices.includes(parsed[id])))ctrl.value=parsed[id];
-   ctrl.addEventListener(type==='mc'?'change':'input',()=>sync(key));
-  }
-  if(saved.trim()&&!Object.keys(parsed).length){
-   const notice=document.createElement('div');notice.className='na-guided-old';notice.textContent='이전 9문항 형식의 임시 답안이 있습니다. 이번 17문항 형식으로 다시 작성해야 합니다. 새 답변 입력 전까지 기존 내용은 유지됩니다.';
-   outer.insertBefore(notice,target);
-  }
+ for(const key of groupKeys){
+  const field=document.getElementById('na-'+key);
+  const card=field.closest('.na-card');
+  if(card)card.hidden=true;
  }
- const headings=editor.querySelectorAll('.na-card > h3');
- const titles=['① 미션 1~4 · 기초 개념','② 미션 5·6·FINAL · 알고리즘 적용과 이해'];
- titles.forEach((s,i)=>{if(headings[i])headings[i].textContent=s});
- const intro=document.querySelector('#na-body > .na-card:not(.na-rubric)');
- if(intro)intro.innerHTML='<h3>🧩 2차 수행평가 · 엔트리 개발자 모드</h3><p>총 17문항(객관식 11개·서술형 6개). 기초 개념 30점, 알고리즘 적용 30점, 이해·설명 40점. 총점 40~100점(5점 간격), 교사 최종 확정.</p>';
- const submit=document.getElementById('na-submit'),previous=submit?.onclick;
- if(submit&&typeof previous==='function')submit.onclick=function(e){
-  const missing=Q.filter(q=>!done(q));
-  if(missing.length){
-   const msg=document.getElementById('na-message');
-   if(msg)msg.textContent='미완성 문항: '+missing.map(q=>q[0]).join(', ')+' · 서술형은 8자 이상 작성하세요.';
-   elem(missing[0])?.focus();return;
+ const grid=host.querySelector('#na-wizard-grid'),pages=host.querySelector('#na-wizard-pages'),controls={};
+ function syncGroup(key){
+  const field=document.getElementById('na-'+key);
+  field.value=Q.filter(q=>q[1]===key).map(q=>q[0]+': '+String(controls[q[0]]?.value||'').replace(/\s+/g,' ').trim()).join('\n');
+  field.dispatchEvent(new Event('input',{bubbles:true}));
+ }
+ function answered(q){return !!String(controls[q[0]]?.value||'').trim()}
+ for(let n=0;n<Q.length;n++){
+  const [id,key,stage,type,title,choices]=Q[n];
+  const page=document.createElement('section');page.className='na-wizard-page';page.id='na-wizard-page-'+id;page.hidden=true;
+  page.innerHTML='<div class="na-wizard-stage">문항 '+id.slice(1)+' / 17 · '+esc(stage)+' · '+(type==='mc'?'객관식':'서술형')+'</div>'+
+   '<label class="na-wizard-question" '+(type==='short'?'for="as-'+id+'"':'')+'>'+esc(title)+'</label>'+
+   (type==='mc'?'<p class="na-wizard-hint">정답을 하나 선택하세요. 모르겠다면 비워두고 넘어가도 됩니다.</p>'+shuffled(choices).map(choice=>'<label class="na-wizard-option"><input type="radio" name="as-'+id+'" value="'+esc(choice)+'"><span>'+esc(choice)+'</span></label>').join(''):
+    '<p class="na-wizard-hint">자신의 말로 설명하세요. 미응답도 가능하며, 미응답은 채점 시 인정되지 않습니다.</p><textarea class="na-wizard-answer" id="as-'+id+'" maxlength="400" placeholder="답변을 작성하거나 다음 문항으로 넘어가세요."></textarea>');
+  pages.appendChild(page);
+  if(type==='short'){
+   const input=page.querySelector('textarea');input.value=saved[id]||'';
+   controls[id]={get value(){return input.value}};
+   input.addEventListener('input',()=>{syncGroup(key);refresh()});
+  }else{
+   const inputs=[...page.querySelectorAll('input[type="radio"]')];
+   inputs.forEach(input=>{
+    if(input.value===saved[id])input.checked=true;
+    input.addEventListener('change',()=>{syncGroup(key);refresh()});
+   });
+   controls[id]={get value(){return inputs.find(x=>x.checked)?.value||''}};
   }
-  return previous.call(this,e);
+  const jump=document.createElement('button');jump.type='button';jump.className='na-wizard-jump';jump.dataset.index=String(n);
+  jump.addEventListener('click',()=>go(n));grid.appendChild(jump);
+ }
+ const prev=host.querySelector('#na-wizard-prev'),next=host.querySelector('#na-wizard-next'),submit=document.getElementById('na-submit');
+ const actions=host.querySelector('#na-wizard-actions');
+ if(!submit)throw Error('최종 제출 버튼을 찾지 못했습니다.');
+ actions.appendChild(submit);
+ const originalSubmit=submit.onclick;
+ submit.onclick=function(event){
+  const notSeen=Q.filter(q=>!visited.has(q[0]));
+  if(index!==16||notSeen.length){
+   host.querySelector('#na-wizard-info').textContent='열어보지 않은 문항: '+notSeen.map(q=>q[0]).join(', ')+' · 모든 문항을 한 번씩 확인해야 합니다.';
+   return;
+  }
+  groupKeys.forEach(syncGroup);
+  return originalSubmit?.call(this,event);
  };
- progress();
+ function refresh(){
+  grid.querySelectorAll('button').forEach((button,n)=>{
+   const q=Q[n],seen=visited.has(q[0]),filled=answered(q);
+   const status=filled?'작성 완료':seen?'미응답':'미열람';
+   button.className='na-wizard-jump'+(filled?' is-answered':seen?' is-visited':'')+(n===index?' is-active':'');
+   button.innerHTML='<strong>'+q[0].slice(1)+'</strong><small>'+status+'</small>';
+   button.setAttribute('aria-label',q[0]+' '+status+(n===index?' 현재 문항':''));
+   if(n===index)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');
+  });
+  host.querySelector('#na-wizard-current').textContent=String(index+1).padStart(2,'0')+' / 17';
+  host.querySelector('#na-wizard-tally').textContent='열람 '+visited.size+' / 17 · 작성 '+Q.filter(answered).length+' / 17';
+  const left=Q.length-visited.size;
+  host.querySelector('#na-wizard-info').textContent=left?'답은 비워도 됩니다. 미열람 '+left+'문항을 모두 열면 마지막 문항에서 제출할 수 있습니다.':'모든 문항을 열어보았습니다. 17번 문항에서 최종 제출할 수 있습니다.';
+  prev.disabled=index===0;next.hidden=index===16;
+  submit.hidden=index!==16;submit.disabled=index!==16||left>0;
+ }
+ function go(n){
+  if(!Number.isInteger(n)||n<0||n>=Q.length)return;
+  index=n;visited.add(Q[n][0]);
+  try{localStorage.setItem(visitKey,JSON.stringify([...visited]))}catch(_){}
+  [...pages.children].forEach((page,i)=>page.hidden=i!==n);
+  refresh();
+  const root=document.getElementById('na-root');
+  if(root?.scrollTo){
+   const top=host.getBoundingClientRect().top-root.getBoundingClientRect().top+root.scrollTop;
+   root.scrollTo({top:Math.max(0,top-8),behavior:'smooth'});
+  }
+ }
+ prev.addEventListener('click',()=>go(index-1));
+ next.addEventListener('click',()=>go(index+1));
+ if(legacy.length){
+  const info=document.createElement('div');info.className='na-wizard-legacy';
+  info.textContent='이전 9문항 형식의 임시 답안이 있습니다. 17문항은 새로 작성해야 하며, 기존 답안은 최종 제출 전까지 저장 필드에 남아 있습니다.';
+  host.querySelector('.na-wizard-top').after(info);
+ }
+ const oldActions=editor.querySelector(':scope > .na-actions');
+ if(oldActions){
+  const save=oldActions.querySelector('#na-save');
+  if(save){
+   const button=document.createElement('button');button.type='button';button.className='na-btn';button.textContent='💾 임시 저장';
+   button.onclick=()=>{groupKeys.forEach(syncGroup);save.click()};
+   actions.prepend(button);
+  }
+  oldActions.hidden=true;
+ }
+ go(0);
 }
 function patchRubric(root){
  const table=root?.querySelector?.('.na-rubric .na-table');
@@ -86,13 +156,14 @@ function patchRubric(root){
   d[1].forEach((v,j)=>{const span=cells[j+1].querySelector('.na-rubric-desc');if(span)span.textContent=v});
  });
  const p=root.querySelector('.na-rubric p');
- if(p)p.textContent='기초 개념 30점 · 알고리즘 적용 30점 · 이해·설명 40점. 최저 40점(15+15+10), 5점 간격. 서술형은 개념의 정확성과 인과관계를 교사가 판단합니다.';
+ if(p)p.textContent='기초 개념 30점 · 알고리즘 적용 30점 · 이해·설명 40점. 기본점수 40점(15+15+10), 5점 간격. 미응답은 오답 또는 보완 필요로 처리됩니다.';
 }
 const prev=global.NepalAssessment.open;
 global.NepalAssessment.open=async function(opts){
  const result=await prev.call(this,opts);
+ applyBlueTheme();
  patchRubric(document);
- if(!opts?.isTeacher)mountStudent();
+ if(!opts?.isTeacher)mountStudent(opts?.user?.uid);
  const review=document.getElementById('na-review');
  if(opts?.isTeacher&&review){
   const obs=new MutationObserver(()=>patchRubric(review));
