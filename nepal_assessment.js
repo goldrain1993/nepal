@@ -3,7 +3,7 @@
 'use strict';
 if(global.NepalAssessment)return;
 const ROOT='nepal-v27/private/assessments';
-const AI_RUBRIC_VERSION='mission-comprehension-2026-v4';
+const AI_RUBRIC_VERSION='mission-comprehension-2026-v5';
 const AI_QUESTION_LABELS={"Q01":"미션 1 · 수위값 변수에 저장해야 할 데이터는 무엇인가요?","Q02":"미션 1·2 · 수위값을 저장할 때 '계속 반복하기'를 사용하지 않으면 어떤 문제가 생길까요?","Q03":"미션 2 · 실시간 수위 경보 프로그램의 올바른 처리 순서는?","Q04":"미션 3 · 위험 기준이 수위 4.0m 이상이고 현재 수위가 4.2m일 때, 수위위험 값은?","Q05":"미션 3 · 수위위험 변수에는 어떤 값이 저장되나요?","Q06":"미션 4 · 네 센서의 위험 여부를 각각 저장하는 올바른 방법은?","Q07":"미션 5 · 수위위험 + 유속위험 + 진동위험 + 강수위험의 값의 범위는?","Q08":"미션 5 · 네 개의 위험 변수(각 0 또는 1)를 모두 더한 값은 무엇을 의미하나요?","Q09":"미션 5 · 위험개수 ≥ N 규칙에서 N은 무엇을 뜻하나요?","Q10":"미션 5 · 위험 신호가 [1,0,1,0]이고 N=2라면, 위험개수 ≥ N 규칙의 결과는?","Q11":"미션 6 · 엔트리 리스트는 무엇을 순서대로 모아 저장하는 자료구조인가요?","Q12":"미션 6 · 리스트 [1,0,1,1]에 기록된 위험한 센서는 몇 개인가요?","Q13":"미션 6 · 반복 계산할 때 '위험개수를 0으로 정하기' 코드가 빠지면 어떤 일이 생기나요?","Q14":"미션 6 · 여러 개의 변수를 따로 사용하는 것보다 리스트와 반복문을 함께 사용할 때 장점은?","Q15":"FINAL · 불필요한 경보와 경보 누락은 각각 네팔 주민에게 어떤 영향을 주나요?","Q16":"FINAL · 위험개수=2, N=2일 때 '위험개수 ≥ N'과 '위험개수 > N'의 결과를 비교하면?","Q17":"개인 코드 설명 · 엔트리 개발자 모드에서 사용한 코드 중 한 부분을 골라, 관련 프로그래밍 개념과 작동 원리를 자신의 말로 설명하세요."};
 let aiPrivacyAcknowledged=false;
 const FIELDS=[
@@ -138,9 +138,9 @@ function cancelPreview(reason){
 }
 async function submitDirect(){
  if(finalDoc||!ctx?.student)return;
- const answer=fields(),missing=FIELDS.filter(([k])=>answer[k].length<minLength(k));
- if(missing.length){message('작성되지 않은 문항: '+missing.filter(([k])=>k!=='aiUse').map(x=>x[1]).join(', '));el('na-'+missing[0][0])?.focus();return}
- if(!confirm('개인별 수행평가 답안을 최종 제출할까요?\n조별 엔트리 코드는 필요하지 않으며, 제출 후 수정·재제출할 수 없습니다.'))return;
+ const answer=Object.fromEntries(Object.entries(fields()).map(([k,value])=>[k,value||' ']));
+ // Blank answers are allowed; the guided 17-page UI separately requires every page to have been viewed.
+ if(!confirm('17문항을 최종 제출할까요?\n미응답 문항은 오답 또는 서술형 보완 필요로 처리됩니다. 제출 후 수정·재제출할 수 없습니다.'))return;
  const btn=el('na-submit');btn.disabled=true;message('개인 수행평가 최종 제출 중입니다…');
  const uid=ctx.user.uid,classId='c'+ctx.student.c,displayName=ctx.student.name,opened=token;
  try{
@@ -274,7 +274,11 @@ async function runBatchAI(){
 
 async function teacherOpen(t){
  shell('📊 수행평가 제출·채점 현황','최종 제출본을 확인하고 AI 채점 제안을 참고하여 교사가 점수를 확정합니다.');
- el('na-body').innerHTML='<div class="na-card"><h3>🛡 학생 제출 공개 설정</h3><p>처음에는 학생에게 수행평가 버튼이 보이지 않습니다. 시험 제출과 Firebase 권한 확인을 마친 뒤 학생 제출을 열어 주세요.</p><button class="na-btn" id="na-publish" type="button">설정 확인 중…</button><div id="na-publish-state" class="na-muted"></div></div><div class="na-card">AI는 객관식을 정답표로 계산하고 서술형 답변을 바탕으로 1차 채점안을 제안합니다. 학생 이름과 연락처 등 일반적인 식별정보는 가려 전송하지만 자유서술에 개인정보가 포함되지 않았는지 교사가 확인하고 학교 지침에 따라 이용하세요. 교사가 최종 점수를 확정하며, AI 제안은 학생에게 공개되지 않습니다.</div><div class="na-card"><h3>📊 반별 수행평가 성적표</h3><p class="na-muted">2026학년도 1학년 · 구글 계정 26-10101은 1학년 1반 1번입니다. 이름은 학생 등록명과 연결하며 교사 확정점수만 표시합니다.</p><div class="na-actions"><label for="na-gb-class">학급 선택</label><select id="na-gb-class" style="padding:9px;color:#fff;background:#092015;border:1px solid #739775;border-radius:8px"><option value="all">전체 1학년</option>'+Array.from({length:11},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'반</option>').join('')+'</select><button id="na-gb-refresh" type="button" class="na-btn">↻ 조회</button><button id="na-gb-csv" type="button" class="na-btn" disabled>CSV 내려받기</button></div><div id="na-gb-status" class="na-muted">학교 계정과 성적표를 불러오는 중…</div><div id="na-gb-table" style="overflow:auto;max-height:62vh;margin-top:12px"></div></div><div class="na-card"><h3>🤖 학급 AI 1차 일괄 채점</h3><p class="na-muted">한 반씩 채점합니다. 제출 완료·성적 미확정 학생 대상이며, 객관식 11개는 정답표로 계산하고 서술형 6개는 AI가 1차 판단합니다. 교사가 최종 점수를 확정해야 합니다. 채점 중에는 이 화면을 열어 두세요.</p><div class="na-actions"><button id="na-ai-batch" class="na-btn" disabled>선택 학급 AI 일괄 채점</button><button id="na-ai-stop" class="na-btn" disabled>⏹ 중단</button></div><div id="na-ai-batch-status" class="na-muted" role="status">학급을 선택해 주세요.</div></div><div class="na-card"><h3>학생 제출 목록</h3><div id="na-roster">조회 중…</div></div><div id="na-review"></div>';
+ const classSnap=await ctx.db.ref('nepal-v27/public/settings/classCount').once('value').catch(()=>null);
+ if(t!==token)return;
+ const classValue=Number(classSnap?.val());
+ const classLimit=Number.isInteger(classValue)&&classValue>=11&&classValue<=20?classValue:11;
+ el('na-body').innerHTML='<div class="na-card"><h3>🛡 반별 수행평가 공개 설정</h3><p>공개할 반만 선택하세요. 처음에는 모든 반이 비공개이며 기존 전체 공개 설정은 사용하지 않습니다. 한 반을 닫아도 다른 반과 이미 제출한 답안에는 영향이 없습니다.</p><div id="na-release-list" class="na-release-list">반별 공개 상태를 확인하는 중…</div><div id="na-release-state" class="na-muted" role="status"></div></div><div class="na-card">AI는 객관식을 정답표로 계산하고 서술형 답변을 바탕으로 1차 채점안을 제안합니다. 학생 이름과 연락처 등 일반적인 식별정보는 가려 전송하지만 자유서술에 개인정보가 포함되지 않았는지 교사가 확인하고 학교 지침에 따라 이용하세요. 교사가 최종 점수를 확정하며, AI 제안은 학생에게 공개되지 않습니다.</div><div class="na-card"><h3>📊 반별 수행평가 성적표</h3><p class="na-muted">2026학년도 1학년 · 구글 계정 26-10101은 1학년 1반 1번입니다. 이름은 학생 등록명과 연결하며 교사 확정점수만 표시합니다.</p><div class="na-actions"><label for="na-gb-class">학급 선택</label><select id="na-gb-class" style="padding:9px;color:#fff;background:#092015;border:1px solid #739775;border-radius:8px"><option value="all">전체 1학년</option>'+Array.from({length:classLimit},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'반</option>').join('')+'</select><button id="na-gb-refresh" type="button" class="na-btn">↻ 조회</button><button id="na-gb-csv" type="button" class="na-btn" disabled>CSV 내려받기</button></div><div id="na-gb-status" class="na-muted">학교 계정과 성적표를 불러오는 중…</div><div id="na-gb-table" style="overflow:auto;max-height:62vh;margin-top:12px"></div></div><div class="na-card"><h3>🤖 학급 AI 1차 일괄 채점</h3><p class="na-muted">한 반씩 채점합니다. 제출 완료·성적 미확정 학생 대상이며, 객관식 11개는 정답표로 계산하고 서술형 6개는 AI가 1차 판단합니다. 교사가 최종 점수를 확정해야 합니다. 채점 중에는 이 화면을 열어 두세요.</p><div class="na-actions"><button id="na-ai-batch" class="na-btn" disabled>선택 학급 AI 일괄 채점</button><button id="na-ai-stop" class="na-btn" disabled>⏹ 중단</button></div><div id="na-ai-batch-status" class="na-muted" role="status">학급을 선택해 주세요.</div></div><div class="na-card"><h3>학생 제출 목록</h3><div id="na-roster">조회 중…</div></div><div id="na-review"></div>';
  gradebookRows=[];gradebookLoaded=false;gradebookLoading=false;aiBatchCancel=true;
  el('na-gb-class').onchange=showGradebook;
  el('na-gb-refresh').onclick=fetchGradebook;
@@ -283,29 +287,48 @@ async function teacherOpen(t){
  el('na-ai-stop').onclick=()=>{aiBatchCancel=true;el('na-ai-batch-status').textContent='현재 학생 요청 종료 후 중단합니다.'};
  el('na-gb-table').onclick=e=>{const btn=e.target.closest('button[data-gb-uid]');if(btn)loadReview(btn.dataset.gbUid)};
  fetchGradebook();
- let enabled=false;
- const configRef=ctx.db.ref(ROOT+'/config/enabled');
- const publish=el('na-publish'),status=el('na-publish-state');
- publish.disabled=true;
- try{
-  const enabledSnap=await configRef.once('value');
-  enabled=enabledSnap.val()===true;
-  status.textContent=enabled?'학생 제출 공개 중':'학생에게 아직 비공개 상태입니다.';
-  publish.textContent=enabled?'⛔ 학생 제출 닫기':'📢 학생 제출 열기';
-  publish.disabled=false;
-  publish.onclick=async()=>{
-   if(!confirm(enabled?'학생이 새롭게 제출 화면에 접근하지 못하도록 닫을까요?\n기존 제출 기록은 보존됩니다.':'학생에게 수행평가 작성·제출 화면을 공개할까요?\nFirebase 보안 규칙과 제출 흐름을 먼저 확인해 주세요.'))return;
-   publish.disabled=true;
-   try{
-    await configRef.set(!enabled);
-    enabled=!enabled;
-    status.textContent=enabled?'학생 제출 공개 중':'학생에게 아직 비공개 상태입니다.';
-    publish.textContent=enabled?'⛔ 학생 제출 닫기':'📢 학생 제출 열기';
-    message(enabled?'✓ 학생 수행평가 제출 기능을 열었습니다.':'✓ 학생 수행평가 제출 기능을 닫았습니다.');
-   }catch(e){message('공개 설정 실패: '+String(e.code||e.message||e))}
-   finally{publish.disabled=false}
-  };
- }catch(e){publish.textContent='Firebase 규칙 게시 후 공개 설정 가능';status.textContent='설정 조회 실패: '+String(e.code||e.message||e)}
+ const releaseList=el('na-release-list'),releaseState=el('na-release-state');
+ const flagsRef=ctx.db.ref(ROOT+'/config/enabledByClass');
+ let releaseBusy=false,currentFlags={};
+ async function refreshRelease(){
+  if(t!==token)return;
+  try{
+   const snap=await flagsRef.once('value');
+   if(t!==token)return;
+   currentFlags=snap.val()||{};
+   const count=Array.from({length:classLimit},(_,i)=>'c'+(i+1)).filter(id=>currentFlags[id]===true).length;
+   releaseList.innerHTML=Array.from({length:classLimit},(_,i)=>{
+    const key='c'+(i+1),open=currentFlags[key]===true;
+    return '<button type="button" class="na-btn na-release-class '+(open?'is-open':'')+'" data-release-class="'+key+'" aria-pressed="'+(open?'true':'false')+'">'+(i+1)+'반 · '+(open?'🟢 공개 중':'🔒 비공개')+'</button>';
+   }).join('');
+   releaseState.textContent=classLimit+'개 반 중 '+count+'개 반 공개 · 버튼을 누르면 해당 반만 열거나 닫습니다.';
+  }catch(error){
+   releaseList.innerHTML='';
+   releaseState.textContent='⚠ 반별 설정 조회 실패: '+String(error.code||error.message||error)+' · Firebase Realtime Database 규칙을 먼저 배포해 주세요.';
+  }
+ }
+ releaseList.onclick=async event=>{
+  const button=event.target.closest('button[data-release-class]');
+  if(!button||releaseBusy||!ctx?.isTeacher)return;
+  const id=button.dataset.releaseClass,num=Number(id.slice(1));
+  if(!Number.isInteger(num)||num<1||num>classLimit)return;
+  const open=currentFlags[id]===true;
+  if(!confirm(open?num+'반의 수행평가를 닫을까요?\n다른 반과 기존 제출 기록에는 영향이 없습니다.':num+'반 학생에게 수행평가를 공개할까요?\n이 반의 학생만 작성·제출할 수 있습니다.'))return;
+  releaseBusy=true;
+  releaseList.querySelectorAll('button').forEach(x=>x.disabled=true);
+  releaseState.textContent=num+'반 설정을 저장하는 중…';
+  try{
+   await ctx.db.ref(ROOT+'/config/enabledByClass/'+id).set(!open);
+   if(t===token)message('✓ '+num+'반 수행평가 '+(!open?'공개':'비공개')+'로 변경했습니다.');
+   await refreshRelease();
+  }catch(error){
+   releaseState.textContent='⚠ '+num+'반 설정 저장 실패: '+String(error.code||error.message||error)+' · Firebase 데이터베이스 규칙을 확인해 주세요.';
+  }finally{
+   releaseBusy=false;
+   releaseList.querySelectorAll('button').forEach(x=>x.disabled=false);
+  }
+ };
+ await refreshRelease();
  try{
   const snap=await ctx.db.ref(ROOT+'/index').once('value');
   if(t!==token)return;
