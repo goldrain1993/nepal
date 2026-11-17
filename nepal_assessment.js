@@ -4,7 +4,7 @@
 if(global.NepalAssessment)return;
 const ROOT='nepal-v27/private/assessments';
 const AI_RUBRIC_VERSION='mission-comprehension-2026-v3';
-const AI_QUESTION_LABELS={"Q01":"미션 1 · 수위값 변수에 저장해야 할 데이터는 무엇인가요?","Q02":"미션 1·2 · 수위값을 저장할 때 '계속 반복하기'를 사용하지 않으면 어떤 문제가 생길까요?","Q03":"미션 2 · 실시간 수위 경보 프로그램의 올바른 처리 순서는?","Q04":"미션 3 · 위험 기준이 수위 4.0m 이상이고 현재 수위가 4.2m일 때, 수위위험 값은?","Q05":"미션 3 · 수위위험 변수에는 어떤 값이 저장되나요?","Q06":"미션 4 · 네 센서의 위험 여부를 각각 저장하는 올바른 방법은?","Q07":"미션 5 · 수위위험 + 유속위험 + 진동위험 + 강수위험의 값의 범위는?","Q08":"미션 5 · 네 개의 위험 변수(각 0 또는 1)를 모두 더한 값은 무엇을 의미하나요?","Q09":"미션 5 · 위험개수 ≥ N 규칙에서 N은 무엇을 뜻하나요?","Q10":"미션 5 · 위험 신호가 [1,0,1,0]이고 N=2라면, 위험개수 ≥ N 규칙의 결과는?","Q11":"미션 6 · 엔트리 리스트는 무엇을 순서대로 모아 저장하는 자료구조인가요?","Q12":"미션 6 · 리스트 [1,0,1,1]에 기록된 위험한 센서는 몇 개인가요?","Q13":"미션 6 · 반복 계산할 때 '위험개수를 0으로 정하기' 코드가 빠지면 어떤 일이 생기나요?","Q14":"미션 6 · 여러 개의 변수를 따로 사용하는 것보다 리스트와 반복문을 함께 사용할 때 장점은?","Q15":"FINAL · 불필요한 경보와 경보 누락은 각각 네팔 주민에게 어떤 영향을 주나요?","Q16":"FINAL · 위험개수=2, N=2일 때 '위험개수 ≥ N'과 '위험개수 > N'의 결과를 비교하면?","Q17":"개인 코드 설명 · 자신의 조에서 작성한 엔트리 코드 중 한 부분을 골라, 관련 프로그래밍 개념과 작동 원리를 자신의 말로 설명하세요."};
+const AI_QUESTION_LABELS={"Q01":"미션 1 · 수위값 변수에 저장해야 할 데이터는 무엇인가요?","Q02":"미션 1·2 · 수위값을 저장할 때 '계속 반복하기'를 사용하지 않으면 어떤 문제가 생길까요?","Q03":"미션 2 · 실시간 수위 경보 프로그램의 올바른 처리 순서는?","Q04":"미션 3 · 위험 기준이 수위 4.0m 이상이고 현재 수위가 4.2m일 때, 수위위험 값은?","Q05":"미션 3 · 수위위험 변수에는 어떤 값이 저장되나요?","Q06":"미션 4 · 네 센서의 위험 여부를 각각 저장하는 올바른 방법은?","Q07":"미션 5 · 수위위험 + 유속위험 + 진동위험 + 강수위험의 값의 범위는?","Q08":"미션 5 · 네 개의 위험 변수(각 0 또는 1)를 모두 더한 값은 무엇을 의미하나요?","Q09":"미션 5 · 위험개수 ≥ N 규칙에서 N은 무엇을 뜻하나요?","Q10":"미션 5 · 위험 신호가 [1,0,1,0]이고 N=2라면, 위험개수 ≥ N 규칙의 결과는?","Q11":"미션 6 · 엔트리 리스트는 무엇을 순서대로 모아 저장하는 자료구조인가요?","Q12":"미션 6 · 리스트 [1,0,1,1]에 기록된 위험한 센서는 몇 개인가요?","Q13":"미션 6 · 반복 계산할 때 '위험개수를 0으로 정하기' 코드가 빠지면 어떤 일이 생기나요?","Q14":"미션 6 · 여러 개의 변수를 따로 사용하는 것보다 리스트와 반복문을 함께 사용할 때 장점은?","Q15":"FINAL · 불필요한 경보와 경보 누락은 각각 네팔 주민에게 어떤 영향을 주나요?","Q16":"FINAL · 위험개수=2, N=2일 때 '위험개수 ≥ N'과 '위험개수 > N'의 결과를 비교하면?","Q17":"개인 코드 설명 · 엔트리 개발자 모드에서 사용한 코드 중 한 부분을 골라, 관련 프로그래밍 개념과 작동 원리를 자신의 말로 설명하세요."};
 let aiPrivacyAcknowledged=false;
 const FIELDS=[
  ['purpose','미션 1 · 변수와 센서값의 역할',1600],
@@ -37,7 +37,7 @@ const RUBRICS=[
  ['이해·설명','40점','경보 경계값·개별 코드 원리·경보 안전성에 대해 근거를 들어 구체적으로 설명','30점','핵심 근거와 설명을 대체로 제시','20점','일부 근거나 설명만 적절','10점','설명과 근거가 매우 부족']
 ];
 function rubricHtml(){
- return '<div class="na-card na-rubric"><h3>📋 수행평가 채점 기준 (총 100점)</h3><p class="na-muted">각 영역별 4단계 평가 · 교사가 제출한 설계서·실제 코드·보고서를 확인하여 최종 확정합니다.</p><div class="na-table-scroll"><table class="na-table"><thead><tr><th scope="col">영역</th><th scope="col">최상</th><th scope="col">상</th><th scope="col">중</th><th scope="col">하</th></tr></thead><tbody>'+RUBRICS.map(r=>'<tr><th scope="row">'+r[0]+'</th>'+[1,3,5,7].map(i=>'<td><b>'+r[i]+'</b><span class="na-rubric-desc">'+r[i+1]+'</span></td>').join('')+'</tr>').join('')+'</tbody></table></div></div>';
+ return '<div class="na-card na-rubric"><h3>📋 수행평가 채점 기준 (총 100점)</h3><p class="na-muted">각 영역별 4단계 평가 · 교사가 개인 답안과 채점 근거를 확인하여 최종 확정합니다.</p><div class="na-table-scroll"><table class="na-table"><thead><tr><th scope="col">영역</th><th scope="col">최상</th><th scope="col">상</th><th scope="col">중</th><th scope="col">하</th></tr></thead><tbody>'+RUBRICS.map(r=>'<tr><th scope="row">'+r[0]+'</th>'+[1,3,5,7].map(i=>'<td><b>'+r[i]+'</b><span class="na-rubric-desc">'+r[i+1]+'</span></td>').join('')+'</tr>').join('')+'</tbody></table></div></div>';
 }
 function minLength(k){return k==='aiUse'?2:15}
 function updateProgress(){
@@ -46,16 +46,7 @@ function updateProgress(){
  if(progress)progress.textContent='작성 기준 충족 '+count+'/'+FIELDS.length+'개 문항 (각 항목의 내용 적절성은 교사가 평가)';
 }
 function saveState(textValue){const status=el('na-save-state');if(status)status.textContent=textValue}
-function codeInfo(snapshot){
- const obj=snapshot||{},raw=obj.payload;
- if(!raw)return {ok:false,reason:'서버에 저장된 조별 엔트리 코드가 없습니다.'};
- if(typeof raw!=='string'||raw.length>1250000)return {ok:false,reason:'저장된 엔트리 코드 용량 또는 형식이 올바르지 않습니다.'};
- let parsed;
- try{parsed=JSON.parse(raw)}catch(_){return {ok:false,reason:'저장된 엔트리 코드의 JSON 형식이 올바르지 않습니다.'}}
- const scripts=Array.isArray(parsed.objects)?parsed.objects.map(x=>JSON.stringify(x.script||[])).join(''):'';
- if(scripts.length<20)return {ok:false,reason:'작성된 엔트리 블록이 충분히 확인되지 않습니다.'};
- return {ok:true,code:raw,bytes:raw.length,updatedAt:Number(obj.updatedAt)||0,project:parsed};
-}
+
 function blockSummary(code){
  let project;
  try{project=JSON.parse(code||'')}catch(_){return '<p class="na-muted">제출 코드 구조를 읽을 수 없습니다.</p>'}
@@ -93,22 +84,10 @@ function fieldHtml([k,title,max]){
 }
 function storageKey(){return 'nepal-assessment-draft-v1:'+ctx.user.uid}
 let prepared=null;
-async function checkCodeStatus(){
- if(!ctx?.team)return;
- const box=el('na-code-status');if(!box)return;
- box.textContent='저장된 엔트리 코드 조회 중…';
- try{
-  const snap=await ctx.db.ref(ctx.workPath(ctx.team.c,ctx.team.g)+'/code').once('value');
-  if(!box.isConnected)return;
-  const result=codeInfo(snap.val());
-  box.textContent=result.ok
-   ?'✓ 서버 저장 코드 확인 · 약 '+Math.round(result.bytes/1024)+'KB · 마지막 저장: '+(result.updatedAt?formatTime(result.updatedAt):'시간 기록 없음')+' · 현재 편집 중인 블록은 별도 저장해야 합니다.'
-   :'⚠ '+result.reason+' 엔트리 개발자 모드에서 먼저 저장하세요.';
- }catch(e){box.textContent='⚠ 코드 저장 상태를 확인하지 못했습니다: '+String(e.message||e)}
-}
+
 async function studentOpen(t){
- shell('📝 엔트리 미션 1~7 이해 확인 수행평가',ctx.team.c+'반 '+ctx.team.g+'조 · 개인 이해 확인 · 총 100점 (최저 40점)');
- el('na-body').innerHTML='<div class="na-card">개념 설계 30점 / 알고리즘 적용 30점 / 이해·설명 40점. 17문항으로 각 미션의 핵심 개념을 확인하며, <b>개인 답안과 서버에 저장한 조별 엔트리 코드</b>를 함께 제출합니다. 최저 점수는 40점입니다.</div>'+rubricHtml()+'<div id="na-final-status"></div><div id="na-preview"></div><div id="na-editor"><div id="na-progress" class="na-progress">작성 기준 확인 중…</div><div class="na-card"><h3>① 미션 1~4 · 기초 개념 (30점)</h3>'+FIELDS.slice(0,4).map(fieldHtml).join('')+'</div><div class="na-card"><h3>② 조별 엔트리 코드 저장 확인 (참고 자료)</h3><p>엔트리 개발자 모드에서 블록을 완성한 뒤 <b>반드시 💾 저장</b>을 누르세요. 최종 제출에는 서버에 저장된 조별 코드를 사용합니다.</p><div id="na-code-status" class="na-code-status">서버 저장 상태 확인 중…</div><button id="na-check-code" class="na-btn" type="button">↻ 엔트리 저장 상태 다시 확인</button></div><div class="na-card"><h3>③ SEMI FINAL·미션 6·FINAL · 이해와 적용 (70점)</h3>'+FIELDS.slice(4).filter(([k])=>k!=='aiUse').map(fieldHtml).join('')+'</div><textarea id="na-aiUse" hidden maxlength="1300"></textarea><small id="na-count-aiUse" hidden></small><div id="na-save-state" class="na-muted" role="status">임시 저장 상태 확인 중…</div><div class="na-actions"><button id="na-save" class="na-btn" type="button">💾 임시 저장</button><button id="na-submit" class="na-btn primary" type="button">🔒 최종 제출</button></div><p class="na-muted">최종 제출을 누르면 확인창이 한 번 표시되며, 제출 완료 후에는 수정하거나 다시 제출할 수 없습니다.</p></div>';
+ shell('📝 엔트리 미션 1~7 이해 확인 수행평가',ctx.student.c+'반 · '+ctx.student.name+' · 개인 이해 확인 · 총 100점 (최저 40점)');
+ el('na-body').innerHTML='<div class="na-card">개념 설계 30점 / 알고리즘 적용 30점 / 이해·설명 40점. 17문항으로 각 미션의 핵심 개념을 확인하며, <b>개인별 답안</b>만 제출하며 조별 코드 저장은 필요하지 않습니다. 최저 점수는 40점입니다.</div>'+rubricHtml()+'<div id="na-final-status"></div><div id="na-preview"></div><div id="na-editor"><div id="na-progress" class="na-progress">작성 기준 확인 중…</div><div class="na-card"><h3>① 미션 1~4 · 기초 개념 (30점)</h3>'+FIELDS.slice(0,4).map(fieldHtml).join('')+'</div><div class="na-card"><h3>② SEMI FINAL·미션 6·FINAL · 이해와 적용 (70점)</h3>'+FIELDS.slice(4).filter(([k])=>k!=='aiUse').map(fieldHtml).join('')+'</div><textarea id="na-aiUse" hidden maxlength="1300"></textarea><small id="na-count-aiUse" hidden></small><div id="na-save-state" class="na-muted" role="status">임시 저장 상태 확인 중…</div><div class="na-actions"><button id="na-save" class="na-btn" type="button">💾 임시 저장</button><button id="na-submit" class="na-btn primary" type="button">🔒 최종 제출</button></div><p class="na-muted">최종 제출을 누르면 확인창이 한 번 표시되며, 제출 완료 후에는 수정하거나 다시 제출할 수 없습니다.</p></div>';
  message('저장된 작성 내용을 불러오는 중…');
  try{
   const [submitted,draft]=await Promise.all([ctx.db.ref(ROOT+'/submissions/'+ctx.user.uid).once('value'),ctx.db.ref(ROOT+'/drafts/'+ctx.user.uid).once('value')]);
@@ -125,30 +104,31 @@ async function studentOpen(t){
    field.oninput=()=>{update();updateProgress();saveState('작성 내용 변경됨 · 서버 임시 저장 대기');try{localStorage.setItem(storageKey(),JSON.stringify({fields:fields(),updatedAt:Date.now()}))}catch(_){}clearTimeout(timer);timer=setTimeout(()=>saveDraft(false),1800)};
   }
   updateProgress();
-  el('na-check-code').onclick=checkCodeStatus;
+
   el('na-save').onclick=()=>saveDraft(true);
   el('na-submit').onclick=submitDirect;
   saveState('불러온 임시 저장 내용을 확인하세요. 입력 후 자동 저장됩니다.');
   message('각 문항에 답한 뒤 아래 [최종 제출] 버튼을 눌러 주세요.');
-  checkCodeStatus();
+
  }catch(e){message('불러오기 실패: '+String(e.code||e.message||e))}
 }
 async function saveDraft(manual){
- if(writing||finalDoc||!ctx?.team)return false;
+ if(writing||finalDoc||!ctx?.student)return false;
  writing=true;
  try{
   const draftFields=Object.fromEntries(Object.entries(fields()).map(([key,value])=>[key,value||' ']));
-   // RTDB deletes empty-string values; keep blank draft fields as a single space so schema validation passes.
-   await ctx.db.ref(ROOT+'/drafts/'+ctx.user.uid).set({classId:'c'+ctx.team.c,groupId:'g'+ctx.team.g,fields:draftFields,updatedAt:ctx.fb.database.ServerValue.TIMESTAMP});
-  saveState('✓ Firebase 임시 저장 완료 · '+new Date().toLocaleTimeString('ko-KR')+' (최종 제출 전)');
-   if(manual)message('✓ 임시 저장 완료. 최종 제출 전 확인은 별도로 진행하세요.');
+  await ctx.db.ref(ROOT+'/drafts/'+ctx.user.uid).set({classId:'c'+ctx.student.c,fields:draftFields,updatedAt:ctx.fb.database.ServerValue.TIMESTAMP});
+  saveState('✓ Firebase 개인별 임시 저장 완료 · '+new Date().toLocaleTimeString('ko-KR'));
+  if(manual)message('✓ 개인 답안 임시 저장 완료.');
   return true;
- }catch(e){saveState('⚠ 서버 임시 저장 실패 · 브라우저에는 작성 사본 보관 중');message('⚠ 임시 저장 실패: '+String(e.code||e.message||e)+' (브라우저에 작성 사본 보관)');return false}
- finally{writing=false}
+ }catch(e){
+  saveState('⚠ 서버 임시 저장 실패 · 브라우저에는 작성 사본 보관 중');
+  message('⚠ 임시 저장 실패: '+String(e.code||e.message||e));return false;
+ }finally{writing=false}
 }
 function finished(){
- el('na-final-status').innerHTML='<div class="na-card"><h3>✅ 최종 제출 완료</h3><p>제출 시각: '+esc(formatTime(finalDoc.submittedAt))+'</p>이 내용과 제출 시점 엔트리 코드는 별도 보관되었습니다. 수정이나 재제출은 학생이 임의로 할 수 없습니다. 평가 점수는 교사가 최종 확정합니다.</div>';
- el('na-editor').hidden=true;message('조별 엔트리 원본 코드는 그대로 유지됩니다.');
+ el('na-final-status').innerHTML='<div class="na-card"><h3>✅ 최종 제출 완료</h3><p>제출 시각: '+esc(formatTime(finalDoc.submittedAt))+'</p>개인별 답안이 보관되었습니다. 학생은 수정하거나 재제출할 수 없으며, 교사가 최종 점수를 확정합니다.</div>';
+ el('na-editor').hidden=true;message('개인별 수행평가 제출이 완료되었습니다.');
 }
 function cancelPreview(reason){
  prepared=null;
@@ -157,48 +137,25 @@ function cancelPreview(reason){
  if(reason)message(reason);
 }
 async function submitDirect(){
- if(finalDoc)return;
+ if(finalDoc||!ctx?.student)return;
  const answer=fields(),missing=FIELDS.filter(([k])=>answer[k].length<minLength(k));
- if(missing.length){
-  message('작성되지 않은 문항을 확인하세요: '+missing.filter(([k])=>k!=='aiUse').map(x=>x[1]).join(', '));
-  el('na-'+missing[0][0])?.focus();return;
- }
- if(!confirm('개인별 수행평가 답안과 현재 서버에 저장된 조별 엔트리 코드를 최종 제출할까요?\n제출 후에는 수정하거나 다시 제출할 수 없습니다.'))return;
- const btn=el('na-submit');btn.disabled=true;
- message('최종 제출을 확인하고 있습니다. 제출 완료 메시지가 표시될 때까지 창을 닫지 마세요.');
- const submittedUid=ctx.user.uid,submittedClass=ctx.team.c,submittedGroup=ctx.team.g,opened=token;
+ if(missing.length){message('작성되지 않은 문항: '+missing.filter(([k])=>k!=='aiUse').map(x=>x[1]).join(', '));el('na-'+missing[0][0])?.focus();return}
+ if(!confirm('개인별 수행평가 답안을 최종 제출할까요?\n조별 엔트리 코드는 필요하지 않으며, 제출 후 수정·재제출할 수 없습니다.'))return;
+ const btn=el('na-submit');btn.disabled=true;message('개인 수행평가 최종 제출 중입니다…');
+ const uid=ctx.user.uid,classId='c'+ctx.student.c,displayName=ctx.student.name,opened=token;
  try{
-  const [codeSnap,submittedSnap]=await Promise.all([
-   ctx.db.ref(ctx.workPath(submittedClass,submittedGroup)+'/code').once('value'),
-   ctx.db.ref(ROOT+'/submissions/'+submittedUid).once('value')
-  ]);
-  if(submittedSnap.exists())throw Error('이미 제출한 기록이 있습니다. 중복 제출을 차단했습니다.');
-  if(token!==opened||ctx.user.uid!==submittedUid||ctx.team.c!==submittedClass||ctx.team.g!==submittedGroup)
-   throw Error('로그인 계정 또는 조가 바뀌었습니다. 수행평가를 다시 열어 주세요.');
-  const info=codeInfo(codeSnap.val());
-  if(!info.ok)throw Error(info.reason+' 먼저 엔트리 개발자 모드에서 저장해 주세요.');
-  // Preserve the existing double-check against a collaborator saving new code mid-submit.
-  const [latestCode,latestSubmission]=await Promise.all([
-   ctx.db.ref(ctx.workPath(submittedClass,submittedGroup)+'/code').once('value'),
-   ctx.db.ref(ROOT+'/submissions/'+submittedUid).once('value')
-  ]);
-  if(latestSubmission.exists())throw Error('이미 제출 완료된 기록이 있습니다.');
-  const current=codeInfo(latestCode.val());
-  if(!current.ok||current.code!==info.code)throw Error('제출 처리 중 조별 코드가 변경되었습니다. 저장 상태를 확인한 후 다시 제출해 주세요.');
+  const prev=await ctx.db.ref(ROOT+'/submissions/'+uid).once('value');
+  if(prev.exists())throw Error('이미 제출한 기록이 있습니다. 중복 제출을 차단했습니다.');
+  if(token!==opened||ctx.user.uid!==uid||'c'+ctx.student.c!==classId)throw Error('학생 계정이나 반이 바뀌었습니다.');
   const timestamp=ctx.fb.database.ServerValue.TIMESTAMP;
-  const doc={classId:'c'+submittedClass,groupId:'g'+submittedGroup,displayName:String(ctx.user.displayName||'학생').slice(0,60),fields:answer,codeSnapshot:info.code,codeBytes:info.bytes,submittedAt:timestamp,version:1};
-  const index={classId:doc.classId,groupId:doc.groupId,displayName:doc.displayName,codeBytes:info.bytes,submittedAt:timestamp};
-  await ctx.db.ref(ROOT).update({['submissions/'+submittedUid]:doc,['index/'+submittedUid]:index});
-  finalDoc={...doc,submittedAt:Date.now()};
-  clearTimeout(timer);
-  finished();
-  message('✓ 수행평가 최종 제출 완료 · 개인 답안과 조별 코드 사본이 함께 보관되었습니다.');
- }catch(e){
-  message('⚠ 최종 제출 실패: '+String(e.code||e.message||e)+'\n원본 작성 내용과 엔트리 코드는 삭제되지 않았습니다.');
-  checkCodeStatus();
- }finally{if(btn?.isConnected)btn.disabled=false}
+  const doc={classId,displayName,fields:answer,submittedAt:timestamp,version:2};
+  const index={classId,displayName,submittedAt:timestamp,version:2};
+  await ctx.db.ref(ROOT).update({['submissions/'+uid]:doc,['index/'+uid]:index});
+  finalDoc={...doc,submittedAt:Date.now()};clearTimeout(timer);finished();
+  message('✓ 개인별 수행평가 최종 제출 완료 · 조 정보와 무관하게 기록되었습니다.');
+ }catch(e){message('⚠ 제출 실패: '+String(e.code||e.message||e)+'\n답안은 삭제되지 않았습니다.')}
+ finally{if(btn?.isConnected)btn.disabled=false}
 }
-
 let gradebookRows=[],gradebookLoaded=false,gradebookLoading=false;
 let aiBatchRunning=false,aiBatchCancel=false;
 function selectedGradeRows(){
@@ -464,7 +421,7 @@ global.NepalAssessment={open:async options=>{
  ctx=options;mount();clearTimeout(timer);prepared=null;writing=false;finalDoc=null;teacherDoc=null;teacherUid=null;aiResult=null;
  const t=++token;
  if(options.isTeacher)await teacherOpen(t);
- else if(options.team)await studentOpen(t);
- else{shell('수행평가','반·조 로그인 후 이용할 수 있습니다.');message('학생 로그인 후 다시 시도하세요.')}
+ else if(options.student)await studentOpen(t);
+ else{shell('수행평가','학교 계정의 반과 이름 확인 후 이용할 수 있습니다.');message('학생 로그인 후 다시 시도하세요.')}
 }};
 })(window);
