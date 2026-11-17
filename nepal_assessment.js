@@ -3,7 +3,7 @@
 'use strict';
 if(global.NepalAssessment)return;
 const ROOT='nepal-v27/private/assessments';
-const AI_RUBRIC_VERSION='mission-comprehension-2026-v2';
+const AI_RUBRIC_VERSION='mission-comprehension-2026-v3';
 let aiPrivacyAcknowledged=false;
 const FIELDS=[
  ['purpose','미션 1 · 변수와 센서값의 역할',1600],
