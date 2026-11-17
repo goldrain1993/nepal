@@ -4,6 +4,7 @@
 if(global.NepalAssessment)return;
 const ROOT='nepal-v27/private/assessments';
 const AI_RUBRIC_VERSION='mission-comprehension-2026-v3';
+const AI_QUESTION_LABELS={"Q01":"미션 1 · 수위값 변수에 저장해야 할 데이터는 무엇인가요?","Q02":"미션 1·2 · 수위값을 저장할 때 '계속 반복하기'를 사용하지 않으면 어떤 문제가 생길까요?","Q03":"미션 2 · 실시간 수위 경보 프로그램의 올바른 처리 순서는?","Q04":"미션 3 · 위험 기준이 수위 4.0m 이상이고 현재 수위가 4.2m일 때, 수위위험 값은?","Q05":"미션 3 · 수위위험 변수에는 어떤 값이 저장되나요?","Q06":"미션 4 · 네 센서의 위험 여부를 각각 저장하는 올바른 방법은?","Q07":"미션 5 · 수위위험 + 유속위험 + 진동위험 + 강수위험의 값의 범위는?","Q08":"미션 5 · 네 개의 위험 변수(각 0 또는 1)를 모두 더한 값은 무엇을 의미하나요?","Q09":"미션 5 · 위험개수 ≥ N 규칙에서 N은 무엇을 뜻하나요?","Q10":"미션 5 · 위험 신호가 [1,0,1,0]이고 N=2라면, 위험개수 ≥ N 규칙의 결과는?","Q11":"미션 6 · 엔트리 리스트는 무엇을 순서대로 모아 저장하는 자료구조인가요?","Q12":"미션 6 · 리스트 [1,0,1,1]에 기록된 위험한 센서는 몇 개인가요?","Q13":"미션 6 · 반복 계산할 때 '위험개수를 0으로 정하기' 코드가 빠지면 어떤 일이 생기나요?","Q14":"미션 6 · 여러 개의 변수를 따로 사용하는 것보다 리스트와 반복문을 함께 사용할 때 장점은?","Q15":"FINAL · 불필요한 경보와 경보 누락은 각각 네팔 주민에게 어떤 영향을 주나요?","Q16":"FINAL · 위험개수=2, N=2일 때 '위험개수 ≥ N'과 '위험개수 > N'의 결과를 비교하면?","Q17":"개인 코드 설명 · 자신의 조에서 작성한 엔트리 코드 중 한 부분을 골라, 관련 프로그래밍 개념과 작동 원리를 자신의 말로 설명하세요."};
 let aiPrivacyAcknowledged=false;
 const FIELDS=[
  ['purpose','미션 1 · 변수와 센서값의 역할',1600],
@@ -285,7 +286,7 @@ async function runBatchAI(){
  aiBatchRunning=true;aiBatchCancel=false;
  const opened=token,button=el('na-ai-batch'),stop=el('na-ai-stop'),state=el('na-ai-batch-status');
  button.disabled=true;stop.disabled=false;
- let done=0,ok=0,legacy=0,fail=0,errorText='';
+ let done=0,ok=0,legacy=0,fail=0,errorText='',consecutiveErrors=0;
  try{
   const callable=await ensureGradeCallable();
   for(const row of students){
@@ -294,12 +295,12 @@ async function runBatchAI(){
    try{
     const response=await callable({uid:row.uid});
     if(response.data?.rubricVersion!==AI_RUBRIC_VERSION)throw Error('AI 채점 서버가 이전 기준입니다. Firebase Functions 재배포가 필요합니다.');
-    ok++;
+    ok++;consecutiveErrors=0;
     if(teacherUid===row.uid&&opened===token){aiResult=response.data;showAI()}
    }catch(e){
     const msg=String(e.code||e.message||e);
-    if(msg.includes('failed-precondition'))legacy++;else{fail++;if(!errorText)errorText=msg}
-    if(msg.includes('재배포')||msg.includes('not-found')||msg.includes('permission-denied')){aiBatchCancel=true;break}
+    if(msg.includes('failed-precondition')){legacy++;consecutiveErrors=0}else{fail++;consecutiveErrors++;if(!errorText)errorText=msg}
+    if(consecutiveErrors>=3||msg.includes('재배포')||msg.includes('not-found')||msg.includes('permission-denied')){aiBatchCancel=true;break}
    }
    done++;
   }
@@ -406,7 +407,7 @@ function showAI(){
  '<div class="na-read"><b>종합 판단</b>\n'+esc(aiResult.reason||'')+'</div>'+
  (aiResult.warnings?.length?'<div class="na-read"><b>⚠ 교사 검증 필요</b>\n'+aiResult.warnings.map(x=>'• '+esc(x)).join('\n')+'</div>':'')+
  '<details class="na-card"><summary>17개 문항(9개 답안 묶음)별 AI 판단 펼쳐 보기</summary><div>'+questions.map(x=>{
-  const label=FIELDS.find(f=>f[0]===x.key)?.[1]||x.key;
+  const label=AI_QUESTION_LABELS[x.key]||FIELDS.find(f=>f[0]===x.key)?.[1]||x.key;
   return '<div class="na-read"><b>'+esc(label)+' — '+esc(x.judgment)+'</b>\n'+esc(x.reason)+'</div>';
  }).join('')+'</div></details>';
 }
