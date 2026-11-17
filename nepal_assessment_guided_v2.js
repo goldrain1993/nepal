@@ -12,11 +12,12 @@ function applyBlueTheme(){
  document.head.appendChild(style);
 }
 
-function mountStudent(){
+function mountStudent(userUid){
  const editor=document.getElementById('na-editor');
  if(!editor||editor.hidden||editor.dataset.guided17)return;
  editor.dataset.guided17='yes';
- const uid=String(global.firebase?.auth?.()?.currentUser?.uid||'anonymous');
+ const uid=String(userUid||'');
+ if(!uid)throw Error('학생 계정 정보가 없어 문항 열람 상태를 기록할 수 없습니다.');
  const visitKey='nepal-assessment-17q-visit-v3:'+uid;
  let visited=new Set(),index=0;
  try{
@@ -162,7 +163,7 @@ global.NepalAssessment.open=async function(opts){
  const result=await prev.call(this,opts);
  applyBlueTheme();
  patchRubric(document);
- if(!opts?.isTeacher)mountStudent();
+ if(!opts?.isTeacher)mountStudent(opts?.user?.uid);
  const review=document.getElementById('na-review');
  if(opts?.isTeacher&&review){
   const obs=new MutationObserver(()=>patchRubric(review));
