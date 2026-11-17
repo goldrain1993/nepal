@@ -3,7 +3,7 @@
 'use strict';
 if(global.NepalAssessment)return;
 const ROOT='nepal-v27/private/assessments';
-const AI_RUBRIC_VERSION='mission-comprehension-2026-v1';
+const AI_RUBRIC_VERSION='mission-comprehension-2026-v2';
 let aiPrivacyAcknowledged=false;
 const FIELDS=[
  ['purpose','미션 1 · 변수와 센서값의 역할',1600],
@@ -107,7 +107,7 @@ async function checkCodeStatus(){
 }
 async function studentOpen(t){
  shell('📝 엔트리 미션 1~7 이해 확인 수행평가',ctx.team.c+'반 '+ctx.team.g+'조 · 개인 이해 확인 · 총 100점 (최저 40점)');
- el('na-body').innerHTML='<div class="na-card">개념 설계 30점 / 알고리즘 적용 30점 / 이해·설명 40점. 각 미션의 핵심 개념을 확인하며, <b>개인 답안과 서버에 저장한 조별 엔트리 코드</b>를 함께 제출합니다. 최저 점수는 40점입니다.</div>'+rubricHtml()+'<div id="na-final-status"></div><div id="na-preview"></div><div id="na-editor"><div id="na-progress" class="na-progress">작성 기준 확인 중…</div><div class="na-card"><h3>① 미션 1~4 · 기초 개념 (30점)</h3>'+FIELDS.slice(0,4).map(fieldHtml).join('')+'</div><div class="na-card"><h3>② 조별 엔트리 코드 저장 확인 (참고 자료)</h3><p>엔트리 개발자 모드에서 블록을 완성한 뒤 <b>반드시 💾 저장</b>을 누르세요. 최종 제출에는 서버에 저장된 조별 코드를 사용합니다.</p><div id="na-code-status" class="na-code-status">서버 저장 상태 확인 중…</div><button id="na-check-code" class="na-btn" type="button">↻ 엔트리 저장 상태 다시 확인</button></div><div class="na-card"><h3>③ SEMI FINAL·미션 6·FINAL · 이해와 적용 (70점)</h3>'+FIELDS.slice(4).filter(([k])=>k!=='aiUse').map(fieldHtml).join('')+'</div><textarea id="na-aiUse" hidden maxlength="1300"></textarea><small id="na-count-aiUse" hidden></small><div id="na-save-state" class="na-muted" role="status">임시 저장 상태 확인 중…</div><div class="na-actions"><button id="na-save" class="na-btn" type="button">💾 임시 저장</button><button id="na-submit" class="na-btn primary" type="button">🔒 최종 제출</button></div><p class="na-muted">최종 제출을 누르면 확인창이 한 번 표시되며, 제출 완료 후에는 수정하거나 다시 제출할 수 없습니다.</p></div>';
+ el('na-body').innerHTML='<div class="na-card">개념 설계 30점 / 알고리즘 적용 30점 / 이해·설명 40점. 17문항으로 각 미션의 핵심 개념을 확인하며, <b>개인 답안과 서버에 저장한 조별 엔트리 코드</b>를 함께 제출합니다. 최저 점수는 40점입니다.</div>'+rubricHtml()+'<div id="na-final-status"></div><div id="na-preview"></div><div id="na-editor"><div id="na-progress" class="na-progress">작성 기준 확인 중…</div><div class="na-card"><h3>① 미션 1~4 · 기초 개념 (30점)</h3>'+FIELDS.slice(0,4).map(fieldHtml).join('')+'</div><div class="na-card"><h3>② 조별 엔트리 코드 저장 확인 (참고 자료)</h3><p>엔트리 개발자 모드에서 블록을 완성한 뒤 <b>반드시 💾 저장</b>을 누르세요. 최종 제출에는 서버에 저장된 조별 코드를 사용합니다.</p><div id="na-code-status" class="na-code-status">서버 저장 상태 확인 중…</div><button id="na-check-code" class="na-btn" type="button">↻ 엔트리 저장 상태 다시 확인</button></div><div class="na-card"><h3>③ SEMI FINAL·미션 6·FINAL · 이해와 적용 (70점)</h3>'+FIELDS.slice(4).filter(([k])=>k!=='aiUse').map(fieldHtml).join('')+'</div><textarea id="na-aiUse" hidden maxlength="1300"></textarea><small id="na-count-aiUse" hidden></small><div id="na-save-state" class="na-muted" role="status">임시 저장 상태 확인 중…</div><div class="na-actions"><button id="na-save" class="na-btn" type="button">💾 임시 저장</button><button id="na-submit" class="na-btn primary" type="button">🔒 최종 제출</button></div><p class="na-muted">최종 제출을 누르면 확인창이 한 번 표시되며, 제출 완료 후에는 수정하거나 다시 제출할 수 없습니다.</p></div>';
  message('저장된 작성 내용을 불러오는 중…');
  try{
   const [submitted,draft]=await Promise.all([ctx.db.ref(ROOT+'/submissions/'+ctx.user.uid).once('value'),ctx.db.ref(ROOT+'/drafts/'+ctx.user.uid).once('value')]);
@@ -317,7 +317,7 @@ async function loadReview(uid){
    a.href=url;a.download='nepal_entry_'+teacherDoc.classId+'_'+teacherDoc.groupId+'_'+uid.slice(0,8)+'.json';a.click();
    setTimeout(()=>URL.revokeObjectURL(url),1500);
   };
-  showAI();message('AI의 영역별 근거와 9개 문항 판단을 확인하고, 교사가 점수를 수정·확정하세요.');
+  showAI();message('AI의 영역별 근거와 17개 문항(9개 답안 묶음) 판단을 확인하고, 교사가 점수를 수정·확정하세요.');
  }catch(e){message('제출본 읽기 실패: '+String(e.code||e.message||e))}
 }
 function currentAI(){
@@ -345,7 +345,7 @@ function showAI(){
  scores.map(([name,got,max,evidence])=>'<div class="na-read"><b>'+esc(name)+' '+got+'/'+max+'점</b>\n'+esc(evidence||'세부 평가 근거를 확인해 주세요.')+'</div>').join('')+
  '<div class="na-read"><b>종합 판단</b>\n'+esc(aiResult.reason||'')+'</div>'+
  (aiResult.warnings?.length?'<div class="na-read"><b>⚠ 교사 검증 필요</b>\n'+aiResult.warnings.map(x=>'• '+esc(x)).join('\n')+'</div>':'')+
- '<details class="na-card"><summary>9개 문항별 AI 판단 펼쳐 보기</summary><div>'+questions.map(x=>{
+ '<details class="na-card"><summary>17개 문항(9개 답안 묶음)별 AI 판단 펼쳐 보기</summary><div>'+questions.map(x=>{
   const label=FIELDS.find(f=>f[0]===x.key)?.[1]||x.key;
   return '<div class="na-read"><b>'+esc(label)+' — '+esc(x.judgment)+'</b>\n'+esc(x.reason)+'</div>';
  }).join('')+'</div></details>';
@@ -379,7 +379,7 @@ async function runAI(){
   if(!suggested||suggested.rubricVersion!==AI_RUBRIC_VERSION)
    throw Error('서버의 AI 채점 기준이 이전 버전입니다. Firebase Functions 서버를 새 버전으로 배포한 후 다시 실행하세요.');
   aiResult=suggested;showAI();
-  message('✓ AI 1차 채점안이 도착했습니다. 9개 문항별 근거를 확인한 후 교사가 점수를 확정하세요.');
+  message('✓ AI 1차 채점안이 도착했습니다. 17개 문항(9개 답안 묶음)별 근거를 확인한 후 교사가 점수를 확정하세요.');
  }catch(e){
   message('⚠ AI 채점 호출 실패: '+String(e.code||e.message||e)+'\nCloud Functions 배포·OPENAI_API_KEY 설정·교사 계정 권한을 확인하세요. AI 없이 직접 채점도 가능합니다.');
  }finally{if(btn.isConnected)btn.disabled=false}
