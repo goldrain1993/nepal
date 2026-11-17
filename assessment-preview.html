@@ -16,6 +16,17 @@ main{max-width:1120px;margin:28px auto 64px;padding:0 20px}.hide{display:none!im
 .tablewrap{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:580px}th,td{border:1px solid #42677a;padding:9px;text-align:center}th{background:#1a4056}td{background:#0c2638}.answer{white-space:pre-wrap;background:#071d2d;border-radius:10px;padding:11px;margin:12px 0;overflow-wrap:anywhere;border:1px solid #385b6e}.teacher-q{margin:14px 0;padding:17px;border:1px solid #426b81;border-radius:15px;background:#0c293b}.teacher-q b{display:block}.teacher-q .selectrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.teacher-q .selectrow label{display:flex;gap:6px;align-items:center;border-radius:8px;padding:8px 10px;background:#123a4d}
 footer{color:#91b7c9;text-align:center;font-size:12px;margin:50px 0 20px}
 @media(max-width:760px){.cols,.grade-grid,.options{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.hero{padding:25px 19px}.exam-toolbar{grid-template-columns:1fr}.panel{padding:18px}.question{padding:17px}.bottom{position:static}}
+
+.preview-nav{position:sticky;top:69px;z-index:8;border:1px solid #48768e;border-radius:14px;padding:14px;background:#092537f5;backdrop-filter:blur(10px);margin:14px 0}
+.preview-nav-head{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;color:#d4effd;font-weight:800;margin-bottom:10px}
+.preview-nav-grid{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:6px}
+.preview-jump{border:1px solid #486d84;background:#102d41;color:#d1e9f6;border-radius:8px;padding:5px 1px;min-height:47px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.preview-jump small{font-size:10px}.preview-jump.done{background:#164d55;color:#c9ffec;border-color:#5ebba9}
+.preview-jump.viewed{background:#483925;color:#ffe4b3;border-color:#c6a36b}
+.preview-jump.active{outline:2px solid #9cddff;background:#236184;color:#fff}
+.preview-page-buttons{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:13px 0}
+.preview-page-buttons button{min-width:115px}
+@media(max-width:760px){.preview-nav{top:0;padding:10px}.preview-nav-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
 </style></head><body>
 <header><div class="top"><div class="brand">🌊 NEPAL FLOOD · 수행평가 미리보기</div>
 <nav class="topnav"><button id="nav-home" class="outline" type="button">처음 화면</button><button id="nav-student" type="button">학생 화면</button><button id="nav-teacher" type="button">교사 화면</button></nav></div></header>
@@ -76,37 +87,57 @@ function nav(which){
  if(which==='student')renderStudent();
  if(which==='teacher')renderTeacher();
 }
-function valid(q){const value=String(data.answers[q[0]]||'').trim();return q[3]==='mc'?value!=='' : value.length>=8}
+function valid(q){return !!String(data.answers[q[0]]||'').trim()}
+let previewIndex=0;
+function goPreview(index){
+ if(!Number.isInteger(index)||index<0||index>=QUESTIONS.length)return;
+ previewIndex=index;renderStudent();
+}
+function previewState(){
+ const visited=Array.isArray(data.visited)?data.visited:[];
+ const area=$('preview-navigation');
+ if(!area)return;
+ area.querySelectorAll('[data-preview-index]').forEach(function(button){
+  const index=Number(button.dataset.previewIndex),q=QUESTIONS[index],answered=valid(q),seen=visited.includes(q[0]);
+  button.className='preview-jump'+(answered?' done':seen?' viewed':'')+(index===previewIndex?' active':'');
+  button.innerHTML='<strong>'+q[0].slice(1)+'</strong><small>'+(answered?'완료':seen?'미응답':'미열람')+'</small>';
+  button.setAttribute('aria-label',q[0]+' '+(answered?'작성 완료':seen?'미응답':'미열람'));
+ });
+ $('preview-visited').textContent='열람 '+visited.length+'/17 · 작성 '+QUESTIONS.filter(valid).length+'/17';
+ $('student-submit').hidden=previewIndex!==16;
+ $('student-submit').disabled=!!data.submittedAt||previewIndex!==16||visited.length!==17;
+ $('preview-explain').textContent=visited.length===17?'모든 문항 페이지를 열었습니다. 17번 문항에서 제출할 수 있습니다.':'답은 비워도 됩니다. 미열람 '+(17-visited.length)+'문항을 모두 열어본 뒤 17번 문항에서 제출할 수 있습니다.';
+}
 function renderStudent(){
- $('testName').value=data.name||'테스트 학생';
- $('student-name').textContent=data.name||'테스트 학생';
- const groups=[['변수·반복문·조건문','Q01','Q06'],['센서 위험개수와 경보 기준','Q07','Q10'],['리스트·FINAL·자기 설명','Q11','Q17']];
- const html=groups.map(function(g,index){
-  const selected=QUESTIONS.filter(function(q){return q[0]>=g[1]&&q[0]<=g[2]});
-  return '<h2 class="sectiontitle">'+(index+1)+'. '+esc(g[0])+'</h2>'+selected.map(studentCard).join('');
- }).join('');
- $('student-questions').innerHTML=html;
+ $('testName').value=data.name||'테스트 학생';$('student-name').textContent=data.name||'테스트 학생';
+ if(!Array.isArray(data.visited))data.visited=[];
+ const q=QUESTIONS[previewIndex];
+ if(!data.visited.includes(q[0])){data.visited.push(q[0]);save()}
+ const nav='<div class="preview-nav" id="preview-navigation"><div class="preview-nav-head"><span>문항 '+(previewIndex+1)+' / 17</span><span id="preview-visited"></span></div><nav class="preview-nav-grid" aria-label="문항별 이동">'+QUESTIONS.map(function(x,i){return '<button type="button" class="preview-jump" data-preview-index="'+i+'">'+x[0].slice(1)+'</button>'}).join('')+'</nav><div class="small" style="margin-top:10px">초록: 작성 완료 · 갈색: 열람했으나 미응답 · 회색: 미열람</div></div>';
+ $('student-questions').innerHTML=nav+studentCard(q)+'<div class="preview-page-buttons"><button type="button" id="preview-prev" '+(previewIndex===0?'disabled':'')+'>← 이전</button><button type="button" id="preview-next" '+(previewIndex===16?'hidden':'')+' class="primary">다음 →</button></div><p id="preview-explain" class="small"></p>';
+ $('student-questions').querySelectorAll('[data-preview-index]').forEach(function(el){el.addEventListener('click',function(){goPreview(Number(el.dataset.previewIndex))})});
+ $('preview-prev').addEventListener('click',function(){goPreview(previewIndex-1)});
+ $('preview-next').addEventListener('click',function(){goPreview(previewIndex+1)});
  $('student-questions').querySelectorAll('[data-ans]').forEach(function(el){
   const id=el.getAttribute('data-ans');
   if(el.type==='radio')el.checked=data.answers[id]===el.value;
   if(el.type==='textarea')el.value=data.answers[id]||'';
   el.addEventListener(el.type==='radio'?'change':'input',function(){
-   if(data.submittedAt){return}
-   data.answers[id]=el.value;save();updateStudentProgress();
+   if(data.submittedAt)return;
+   data.answers[id]=el.value;save();updateStudentProgress();previewState();
    $('save-status').textContent='✓ 브라우저에 임시 저장됨 · '+new Date().toLocaleTimeString('ko-KR');
   });
   el.disabled=!!data.submittedAt;
  });
- updateStudentProgress();
- if(data.submittedAt){$('save-status').textContent='✓ 테스트 제출 완료 · '+new Date(data.submittedAt).toLocaleString('ko-KR')+' · 답변 수정 불가'}else{$('save-status').textContent='자동 저장 활성화 · 최종 제출 전 수정 가능'}
- $('student-submit').disabled=!!data.submittedAt;
+ updateStudentProgress();previewState();
+ $('save-status').textContent=data.submittedAt?'✓ 테스트 제출 완료 · 수정 불가':'브라우저 자동 저장 활성화 · 미응답 제출 가능';
  $('student-reset').textContent=data.submittedAt?'전체 테스트 다시 시작':'답안 초기화';
 }
 function studentCard(q){
  const id=q[0],value=String(data.answers[id]||'');
  const inner=q[3]==='mc'?
   '<div class="options">'+q[5].map(function(c,i){return '<label class="choice"><input type="radio" name="'+id+'" data-ans="'+id+'" value="'+esc(c)+'"><span>'+String.fromCharCode(9312+i)+' '+esc(c)+'</span></label>'}).join('')+'</div>':
-  '<label for="txt-'+id+'" class="small">서술형: 핵심 원리와 이유를 자신의 말로 설명하세요.</label><textarea id="txt-'+id+'" data-ans="'+id+'" maxlength="400" placeholder="8자 이상으로 작성하세요.">'+esc(value)+'</textarea>';
+  '<label for="txt-'+id+'" class="small">서술형: 핵심 원리와 이유를 자신의 말로 설명하세요.</label><textarea id="txt-'+id+'" data-ans="'+id+'" maxlength="400" placeholder="미응답 가능 · 설명을 입력하세요.">'+esc(value)+'</textarea>';
  return '<article class="question" id="'+id+'"><div class="qhead"><span class="badge">'+id+'</span><span>'+esc(q[2])+'</span><span>· '+(q[3]==='mc'?'객관식':'서술형')+'</span></div><div class="qtitle">'+esc(q[4])+'</div>'+inner+'</article>'
 }
 function updateStudentProgress(){
@@ -161,15 +192,16 @@ $('student-to-teacher').addEventListener('click',function(){nav('teacher')});
 $('teacher-to-student').addEventListener('click',function(){nav('student')});
 $('student-save').addEventListener('click',function(){const ok=save();$('save-status').textContent=ok?'✓ 임시 저장 완료':'⚠ 브라우저 저장이 차단되었습니다. 현재 탭에서만 유지됩니다.'});
 $('student-submit').addEventListener('click',function(){
- const missing=QUESTIONS.filter(function(q){return !valid(q)});
- if(missing.length){alert('미완성 문항: '+missing.map(function(q){return q[0]}).join(', ')+'\n서술형은 8자 이상 작성해야 합니다.');document.getElementById(missing[0][0])?.scrollIntoView({behavior:'smooth'});return}
- if(!confirm('17문항을 테스트 제출할까요? 제출 후에는 이 미리보기에서 수정할 수 없습니다. 실제 성적에는 반영되지 않습니다.'))return;
+ if(previewIndex!==16||!Array.isArray(data.visited)||data.visited.length!==17){
+  alert('모든 문항 페이지를 한 번씩 연 뒤 17번 문항에서 제출할 수 있습니다.');return;
+ }
+ if(!confirm('17문항을 테스트 제출할까요? 미응답은 오답 처리되며 실제 성적에는 반영되지 않습니다.'))return;
  data.submittedAt=new Date().toISOString();save();renderStudent();
- alert('테스트 제출 완료! 교사 화면에서 채점을 검토해 보세요.');
+ alert('테스트 제출 완료! 교사 화면에서 기본점수와 서술형 채점 상태를 확인해 보세요.');
 });
 $('student-reset').addEventListener('click',function(){
  if(!confirm('이 브라우저의 테스트 답안과 채점을 모두 초기화할까요? 실제 제출 기록에는 영향이 없습니다.'))return;
- data={name:data.name||'테스트 학생',answers:{},rated:{},submittedAt:null,gradedAt:null,updatedAt:null};save();renderStudent();
+ data={name:data.name||'테스트 학생',answers:{},rated:{},visited:[],submittedAt:null,gradedAt:null,updatedAt:null};previewIndex=0;save();renderStudent();
 });
 $('teacher-save').addEventListener('click',function(){
  const reviewed=WRITING.filter(function(id){return data.rated[id]==='full'||data.rated[id]==='other'}).length;
