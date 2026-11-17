@@ -37,3 +37,41 @@ firebase deploy --project nepal-entry-classroom --only functions:gradeNepalAsses
 - 이미 최종 제출한 학생 답안은 교사가 임의로 수정하지 않음.
 - `aiReviews`에 생성되는 v3 기록은 AI 제안이며 `reviews`의 교사 확정 기록을 덮어쓰지 않음.
 - GitHub Pages 변경을 되돌려도 Firebase Functions 배포는 별도 관리해야 함.
+
+
+## 2026-11-17 추가 변경: 반 추가 및 조 없는 개인 수행평가
+
+- 현황판 반 추가 경로를 보안 규칙과 동일한 \`nepal-v27/public/settings/classCount\`로 정정했습니다. 기존 \`nepal-v27/public/classes/settings/classCount\`는 잘못된 경로였습니다.
+- 개인 수행평가 로그인은 학교 Google 계정 + 반 + 이름만 사용합니다. 메인 네팔/엔트리의 조별 로그인과 편집기는 그대로 유지합니다.
+- 개인 수행평가 임시 저장·제출에는 \`groupId\`, \`codeSnapshot\`, \`codeBytes\`가 필요하지 않습니다. 신규 제출물 \`version: 2\`는 학교 계정 UID별 1회만 작성됩니다.
+- 과거에 제출된 \`version: 1\`의 조별 코드 포함 문서는 그대로 남겨 둡니다. 기존 데이터 삭제·마이그레이션은 하지 않습니다.
+- \`firebase.rules.json\`을 수정했으므로 **Firebase Realtime Database 보안 규칙 게시가 필수**입니다. 웹 코드만 갱신하면 새 형식의 임시 저장·제출이 거부됩니다.
+- AI 채점 기준은 \`mission-comprehension-2026-v4\`로 변경되었습니다. Cloud Functions도 다시 배포해야 합니다.
+
+### 기존 Windows 환경에서 재배포
+
+기존 \`C:\nepal\` 환경에서 우선 로컬의 Firebase 규칙과 함수 코드를 백업한 뒤 최신 파일을 내려받습니다.
+
+\`\`\`bat
+cd /d C:\nepal
+copy firebase.rules.json firebase.rules.json.bak
+copy functions\index.js functions\index.js.bak
+curl.exe -fL "https://raw.githubusercontent.com/goldrain1993/nepal/main/firebase.rules.json" -o "C:\nepal\firebase.rules.json"
+curl.exe -fL "https://raw.githubusercontent.com/goldrain1993/nepal/main/functions/index.js" -o "C:\nepal\functions\index.js"
+node --check functions\index.js
+firebase deploy --project nepal-entry-classroom --only database
+firebase deploy --project nepal-entry-classroom --only "functions:gradeNepalAssessment,functions:getNepalAssessmentGradebook"
+\`\`\`
+
+**중요:** 데이터베이스 규칙 파일을 배포하면 Firebase의 현재 규칙 전체를 파일 내용으로 교체합니다. 학교에서 Firebase 콘솔에서 직접 수정한 미반영 규칙이 있다면 먼저 백업·비교·병합하세요. 배포는 학생 데이터 자체를 삭제하지 않으나 보안 접근 동작에 영향을 줍니다.
+
+### 확인
+
+1. 교사 로그인 → 현황판 → [＋ 반 추가] → 반 선택에 12반 등이 나타나는지 확인
+2. 조 로그인 없이 학교 Google 계정 + 반·이름으로 개인 수행평가에 입장
+3. 테스트 답안 임시 저장 → 새로고침 → 복원 확인 → 최종 제출 (조별 코드 없어도 가능)
+4. 교사 제출목록에서 반·학생 이름만 표시되는지 확인
+5. 테스트 제출물 1건에 AI 1차 채점 실행 → v4 결과와 서술형 판단 확인
+6. 기존 네팔 홍수·엔트리 조별 로그인, 조별 코드 및 진행도 저장 확인
+
+성적과 실제 학생 기록에 영향을 주는 테스트는 사용하지 않는 테스트 계정에서만 실시합니다.
