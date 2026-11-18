@@ -62,7 +62,7 @@ footer{color:#91b7c9;text-align:center;font-size:12px;margin:50px 0 20px}
  <div id="teacher-status" class="notice safe"></div>
  <div class="grade-grid"><div class="scorecard"><div class="small">기초 개념 · 5문항</div><b id="score-concept">15</b><small id="score-concept-count">0/5개 정답</small></div><div class="scorecard"><div class="small">알고리즘 적용 · 6문항</div><b id="score-apply">15</b><small id="score-apply-count">0/6개 정답</small></div><div class="scorecard"><div class="small">이해·설명 · 6문항</div><b id="score-write">10</b><small id="score-write-count">0/6개 충분</small></div></div>
  <div class="panel" style="margin:14px 0"><div class="actions" style="justify-content:space-between"><h2 style="margin:0">예상 총점</h2><strong id="score-total" style="font-size:34px;color:var(--mint)">40점</strong></div><p class="small" style="margin:8px 0 0">시험용 채점 결과이며 공식 성적이 아닙니다. 제출 전 답안을 교사 화면에서 확인할 수 있습니다.</p></div>
- <div class="panel"><h2>📋 평가 영역별 4단계 기준</h2><div class="tablewrap"><table><thead><tr><th>영역</th><th>최상</th><th>상</th><th>중</th><th>하</th></tr></thead><tbody><tr><th>기초 개념</th><td>5개 · 30점</td><td>4개 · 25점</td><td>2~3개 · 20점</td><td>0~1개 · 15점</td></tr><tr><th>알고리즘 적용</th><td>5~6개 · 30점</td><td>4개 · 25점</td><td>2~3개 · 20점</td><td>0~1개 · 15점</td></tr><tr><th>이해·설명</th><td>6개 충분 · 40점</td><td>4~5개 · 30점</td><td>2~3개 · 20점</td><td>0~1개 · 10점</td></tr></tbody></table></div></div>
+ <div class="panel"><h2>📋 평가 영역별 4단계 기준</h2><div class="tablewrap"><table><thead><tr><th>영역</th><th>최상</th><th>상</th><th>중</th><th>하</th></tr></thead><tbody><tr><th>기초 개념</th><td>5개 · 30점</td><td>4개 · 25점</td><td>3개 · 20점</td><td>0~2개 · 15점</td></tr><tr><th>알고리즘 적용</th><td>6개 · 30점</td><td>5개 · 25점</td><td>4개 · 20점</td><td>0~3개 · 15점</td></tr><tr><th>이해·설명</th><td>6개 충분 · 40점</td><td>5개 충분 · 30점</td><td>4개 충분 · 20점</td><td>0~3개 충분 · 10점</td></tr></tbody></table></div></div>
  <div id="teacher-questions"></div>
  <div class="bottom"><span class="small" id="teacher-save-status">테스트 채점 자료는 이 브라우저에만 저장됩니다.</span><div class="actions"><button id="teacher-save">💾 테스트 채점 저장</button><button id="teacher-to-student" class="primary">학생 화면 돌아가기</button></div></div>
 </section>
@@ -151,10 +151,10 @@ function objectiveScore(ids,stages){
  return {correct:got,points:pts};
 }
 function gradeScores(){
- const concept=objectiveScore(CONCEPT,[5,4,2]);
- const apply=objectiveScore(APPLY,[5,4,2]);
+ const concept=objectiveScore(CONCEPT,[5,4,3]);
+ const apply=objectiveScore(APPLY,[6,5,4]);
  const full=WRITING.filter(function(id){return data.rated[id]==='full'}).length;
- const write=full===6?40:full>=4?30:full>=2?20:10;
+ const write=full===6?40:full===5?30:full===4?20:10;
  return {concept:concept,apply:apply,full:full,write:write,total:concept.points+apply.points+write};
 }
 function updateGrade(){

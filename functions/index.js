@@ -11,7 +11,7 @@ const ROOT='nepal-v27/private/assessments';
 const TEACHER_UID='GIoPe92By9esQ6H0KcJjvYoPiyN2';
 const TEACHER_EMAIL='goldrain1993@gmail.com';
 const rubric={design:[30,25,20,15],implementation:[30,25,20,15],report:[40,30,20,10]};
-const RUBRIC_VERSION='mission-comprehension-2026-v5';
+const RUBRIC_VERSION='mission-comprehension-2026-v6';
 const QUESTION_GROUPS={"purpose":["Q01"],"io":["Q02","Q03"],"scenes":["Q04","Q05"],"algorithm":["Q06"],"functions":["Q07","Q08","Q09","Q10"],"test1":["Q11","Q12","Q13","Q14"],"test2":["Q15"],"changes":["Q16"],"contribution":["Q17"]};
 const QUESTION_IDS=["Q01","Q02","Q03","Q04","Q05","Q06","Q07","Q08","Q09","Q10","Q11","Q12","Q13","Q14","Q15","Q16","Q17"];
 const SUBJECTIVE_IDS=["Q02","Q08","Q13","Q14","Q15","Q17"];
@@ -52,12 +52,14 @@ function parse17Questions(fields){
 }
 function objectiveArea(answers,ids){
  const correct=ids.filter(id=>answers[id]===OBJECTIVE_ANSWERS[id]).length;
- const score=correct>=5?30:correct===4?25:correct>=2?20:15;
+ const score=ids.length===5
+  ?(correct===5?30:correct===4?25:correct===3?20:15)
+  :(correct===6?30:correct===5?25:correct===4?20:15);
  return {correct,score,total:ids.length};
 }
 function subjectiveArea(subjective){
  const full=subjective.filter(x=>x.judgment==='충분').length;
- return {full,score:full===6?40:full>=4?30:full>=2?20:10,total:SUBJECTIVE_IDS.length};
+ return {full,score:full===6?40:full===5?30:full===4?20:10,total:SUBJECTIVE_IDS.length};
 }
 function anonymize(s){
  return String(s||'').replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,'[이메일]')
@@ -121,6 +123,43 @@ exports.gradeNepalAssessment=onCall({
   const answers=parse17Questions(submission.fields);
   const basic=objectiveArea(answers,CONCEPT_IDS);
   const applied=objectiveArea(answers,APPLICATION_IDS);
+  // Existing v5 AI judgments remain valid: only the four-tier score thresholds changed.
+  // Upgrade the cached result without a second OpenAI request or altering final teacher scores.
+  const priorQuestions=cached?.details?.questions;
+  const priorSubjective=cached?.details?.subjective;
+  if(cached?.rubricVersion==='mission-comprehension-2026-v5'&&request.data?.refresh!==true&&
+   Array.isArray(priorQuestions)&&priorQuestions.length===17&&Array.isArray(priorSubjective)&&
+   priorSubjective.length===6&&QUESTION_IDS.every(id=>priorQuestions.some(q=>q.key===id))&&
+   SUBJECTIVE_IDS.every(id=>priorSubjective.some(q=>q.key===id))){
+   const retained=SUBJECTIVE_IDS.map(id=>{
+    const earlier=priorSubjective.find(q=>q.key===id);
+    const blank=!String(answers[id]||'').trim();
+    const judgment=blank?'보완 필요':['충분','보완 필요','교사확인'].includes(earlier.judgment)?earlier.judgment:'교사확인';
+    return {key:id,judgment,reason:blank?'미응답 — 기본점수 적용':String(earlier.reason||'교사 확인 필요').slice(0,400)};
+   });
+   const written=subjectiveArea(retained);
+   const freshQuestions=QUESTION_IDS.map(id=>{
+    if(OBJECTIVE_ANSWERS[id]!==undefined){
+     const right=answers[id]===OBJECTIVE_ANSWERS[id];
+     return {key:id,judgment:right?'정확':'오개념',
+      reason:right?'정답표와 일치':String(answers[id]||'').trim()?'정답: '+OBJECTIVE_ANSWERS[id]:'미응답 — 오답 처리'};
+    }
+    const entry=retained.find(x=>x.key===id);
+    return {key:id,judgment:entry.judgment==='충분'?'정확':entry.judgment==='보완 필요'?'부분정확':'교사확인',reason:entry.reason};
+   });
+   const upgraded={...cached,design:basic.score,implementation:applied.score,report:written.score,
+    rubricVersion:RUBRIC_VERSION,
+    details:{...cached.details,
+     questions:freshQuestions,subjective:retained,
+     designEvidence:'기초 개념 객관식 '+basic.correct+'/'+basic.total+'개 정답 (새 v6 배점)',
+     implementationEvidence:'알고리즘 적용 객관식 '+applied.correct+'/'+applied.total+'개 정답 (새 v6 배점)',
+     reportEvidence:'서술형 '+written.full+'/'+written.total+'개 충분 (기존 AI 판단 재사용, 새 v6 배점)',
+     objectiveCorrect:{concept:basic.correct,application:applied.correct},
+     subjectiveFull:written.full},
+    createdAt:admin.database.ServerValue.TIMESTAMP};
+   await root.child('aiReviews/'+uid).set(upgraded);
+   return {...upgraded,createdAt:Date.now()};
+  }
   const displayName=String(submission.displayName||'').trim();
   const scrub=v=>{
    let s=anonymize(v);

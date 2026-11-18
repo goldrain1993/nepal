@@ -3,7 +3,8 @@
 'use strict';
 if(global.NepalAssessment)return;
 const ROOT='nepal-v27/private/assessments';
-const AI_RUBRIC_VERSION='mission-comprehension-2026-v5';
+const AI_RUBRIC_VERSION='mission-comprehension-2026-v6';
+const COMPATIBLE_AI_RUBRICS=['mission-comprehension-2026-v5',AI_RUBRIC_VERSION];
 const AI_QUESTION_LABELS={"Q01":"미션 1 · 수위값 변수에 저장해야 할 데이터는 무엇인가요?","Q02":"미션 1·2 · 수위값을 저장할 때 '계속 반복하기'를 사용하지 않으면 어떤 문제가 생길까요?","Q03":"미션 2 · 실시간 수위 경보 프로그램의 올바른 처리 순서는?","Q04":"미션 3 · 위험 기준이 수위 4.0m 이상이고 현재 수위가 4.2m일 때, 수위위험 값은?","Q05":"미션 3 · 수위위험 변수에는 어떤 값이 저장되나요?","Q06":"미션 4 · 네 센서의 위험 여부를 각각 저장하는 올바른 방법은?","Q07":"미션 5 · 수위위험 + 유속위험 + 진동위험 + 강수위험의 값의 범위는?","Q08":"미션 5 · 네 개의 위험 변수(각 0 또는 1)를 모두 더한 값은 무엇을 의미하나요?","Q09":"미션 5 · 위험개수 ≥ N 규칙에서 N은 무엇을 뜻하나요?","Q10":"미션 5 · 위험 신호가 [1,0,1,0]이고 N=2라면, 위험개수 ≥ N 규칙의 결과는?","Q11":"미션 6 · 엔트리 리스트는 무엇을 순서대로 모아 저장하는 자료구조인가요?","Q12":"미션 6 · 리스트 [1,0,1,1]에 기록된 위험한 센서는 몇 개인가요?","Q13":"미션 6 · 반복 계산할 때 '위험개수를 0으로 정하기' 코드가 빠지면 어떤 일이 생기나요?","Q14":"미션 6 · 여러 개의 변수를 따로 사용하는 것보다 리스트와 반복문을 함께 사용할 때 장점은?","Q15":"FINAL · 불필요한 경보와 경보 누락은 각각 네팔 주민에게 어떤 영향을 주나요?","Q16":"FINAL · 위험개수=2, N=2일 때 '위험개수 ≥ N'과 '위험개수 > N'의 결과를 비교하면?","Q17":"개인 코드 설명 · 엔트리 개발자 모드에서 사용한 코드 중 한 부분을 골라, 관련 프로그래밍 개념과 작동 원리를 자신의 말로 설명하세요."};
 let aiPrivacyAcknowledged=false;
 const FIELDS=[
@@ -32,9 +33,9 @@ const GUIDES={
  aiUse:{hint:'AI를 사용했다면 도구명, 질문·활용 내용, 직접 검증한 내용을 적으세요. 사용하지 않았다면 ‘미사용’이라고 적으세요.',outline:'사용 도구: / 활용 목적: / 검토·수정한 내용: (사용하지 않은 경우: 미사용)'}
 };
 const RUBRICS=[
- ['개념 설계','30점','변수·반복·조건·여러 센서의 원리를 정확하게 설명','25점','핵심 개념을 대체로 바르게 설명','20점','일부 개념의 이해와 적용이 부족','15점','기본 개념의 이해가 매우 부족'],
- ['알고리즘 적용','30점','N개 경보·리스트·FINAL 상황을 정확하게 계산하고 적용','25점','주요 사례를 대체로 정확히 판단','20점','일부 사례만 정확하게 판단','15점','기본 사례 적용이 매우 부족'],
- ['이해·설명','40점','경보 경계값·개별 코드 원리·경보 안전성에 대해 근거를 들어 구체적으로 설명','30점','핵심 근거와 설명을 대체로 제시','20점','일부 근거나 설명만 적절','10점','설명과 근거가 매우 부족']
+ ['기초 개념','30점','Q01·03·04·05·06 중 5개 정답','25점','4개 정답','20점','3개 정답','15점','0~2개 정답'],
+ ['알고리즘 적용','30점','Q07·09·10·11·12·16 중 6개 정답','25점','5개 정답','20점','4개 정답','15점','0~3개 정답'],
+ ['이해·설명','40점','서술형 Q02·08·13·14·15·17 중 6개 충분','30점','5개 충분','20점','4개 충분','10점','0~3개 충분']
 ];
 function rubricHtml(){
  return '<div class="na-card na-rubric"><h3>📋 수행평가 채점 기준 (총 100점)</h3><p class="na-muted">각 영역별 4단계 평가 · 교사가 개인 답안과 채점 근거를 확인하여 최종 확정합니다.</p><div class="na-table-scroll"><table class="na-table"><thead><tr><th scope="col">영역</th><th scope="col">최상</th><th scope="col">상</th><th scope="col">중</th><th scope="col">하</th></tr></thead><tbody>'+RUBRICS.map(r=>'<tr><th scope="row">'+r[0]+'</th>'+[1,3,5,7].map(i=>'<td><b>'+r[i]+'</b><span class="na-rubric-desc">'+r[i+1]+'</span></td>').join('')+'</tr>').join('')+'</tbody></table></div></div>';
@@ -226,7 +227,7 @@ async function fetchGradebook(){
   if(current!==token)return;
   gradebookRows=result.data.rows.map(row=>{
    const proposal=aiReviews?.[row.uid];
-   const complete=proposal?.rubricVersion===AI_RUBRIC_VERSION&&
+   const complete=COMPATIBLE_AI_RUBRICS.includes(proposal?.rubricVersion)&&
     Array.isArray(proposal.details?.questions)&&proposal.details.questions.length===17;
    return {...row,aiStatus:aiReviews===null?'unknown':!proposal?'pending':complete?'complete':'old'};
   });
@@ -271,7 +272,7 @@ async function runBatchAI(){
    state.textContent=clazz+'반 '+(done+1)+'/'+students.length+'명 진행 · 성공 '+ok+'명 / 형식 확인 '+legacy+'명 / 오류 '+fail+'명';
    try{
     const response=await callable({uid:row.uid});
-    if(response.data?.rubricVersion!==AI_RUBRIC_VERSION)throw Error('AI 채점 서버가 이전 기준입니다. Firebase Functions 재배포가 필요합니다.');
+    if(!COMPATIBLE_AI_RUBRICS.includes(response.data?.rubricVersion))throw Error('AI 채점 결과가 17문항 형식이 아닙니다. Firebase Functions를 확인해 주세요.');
     ok++;consecutiveErrors=0;
     row.aiStatus='complete';
     if(teacherUid===row.uid&&opened===token){aiResult=response.data;showAI()}
@@ -387,7 +388,7 @@ function questionAnswers(){
 }
 function currentAI(){
  const questions=aiResult?.details?.questions;
- return !!aiResult&&aiResult.rubricVersion===AI_RUBRIC_VERSION&&
+ return !!aiResult&&COMPATIBLE_AI_RUBRICS.includes(aiResult.rubricVersion)&&
   [30,25,20,15].includes(aiResult.design)&&[30,25,20,15].includes(aiResult.implementation)&&
   [40,30,20,10].includes(aiResult.report)&&Array.isArray(questions)&&questions.length===17&&
   QUESTION_IDS.every(id=>questions.some(q=>q.key===id));
@@ -409,9 +410,10 @@ function reviewQuestionMeta(){
    expected:isObjective?CORRECT_CHOICES[id]:EXPLANATION_KEYS[id]};
  });
 }
-function scoreFromAccepted(correct,max){
- if(max===40)return correct===6?40:correct>=4?30:correct>=2?20:10;
- return correct>=5?30:correct===4?25:correct>=2?20:15;
+function scoreFromAccepted(correct,area){
+ if(area==='explanation')return correct===6?40:correct===5?30:correct===4?20:10;
+ if(area==='application')return correct===6?30:correct===5?25:correct===4?20:15;
+ return correct===5?30:correct===4?25:correct===3?20:15;
 }
 function calculatedReview(){
  if(!currentAI())return null;
@@ -425,9 +427,9 @@ function calculatedReview(){
  const concept=CONCEPT_IDS.filter(id=>accepted.has(id)).length;
  const application=APPLICATION_IDS.filter(id=>accepted.has(id)).length;
  const explanation=SUBJECTIVE_IDS.filter(id=>accepted.has(id)).length;
- const design=scoreFromAccepted(concept,30);
- const implementation=scoreFromAccepted(application,30);
- const report=scoreFromAccepted(explanation,40);
+ const design=scoreFromAccepted(concept,'concept');
+ const implementation=scoreFromAccepted(application,'application');
+ const report=scoreFromAccepted(explanation,'explanation');
  return {design,implementation,report,total:design+implementation+report,
   counts:{concept,application,explanation},ambiguousIds:meta.filter(q=>q.ambiguous).map(q=>q.id),accepted};
 }
@@ -572,7 +574,7 @@ async function loadReview(uid){
   aiResult=aiSnap.val();
   savedReview=reviewSnap.val()||null;
   if(!teacherDoc)throw Error('학생 제출 기록이 없습니다.');
-  if(savedReview?.aiRubricVersion===AI_RUBRIC_VERSION&&savedReview?.aiQuestionSignature===currentQuestionSignature()&&savedReview.questionOverrides&&typeof savedReview.questionOverrides==='object')
+  if(savedReview?.aiQuestionSignature===currentQuestionSignature()&&savedReview.questionOverrides&&typeof savedReview.questionOverrides==='object')
    reviewOverrides={...savedReview.questionOverrides};
   container.innerHTML='<div class="na-card"><h3>'+esc(teacherDoc.displayName||'학생')+' · '+esc(teacherDoc.classId?.slice(1)||'')+'반</h3><p>'+esc(formatTime(teacherDoc.submittedAt))+' · 개인별 수행평가 답안</p><div id="na-previous-review" class="na-muted"></div></div>'+
    '<div class="na-card"><h3>🤖 AI 1차 채점 및 문항별 판단</h3><p class="na-muted">AI가 객관식 11문항과 서술형 6문항을 1차 판정합니다. 아래 학생 답안에서 판단 근거와 정답 요소를 비교하고, 주황색 판정은 체크 시 정답으로 인정할 수 있습니다.</p><div class="na-actions"><button id="na-run-ai" class="na-btn" type="button">🤖 AI 1차 채점 실행</button></div><div id="na-ai"></div></div>'+
@@ -601,8 +603,9 @@ function showAI(){
  }else if(!currentAI()){
   display.innerHTML='<p class="na-ai-warning">현재 17문항 기준의 AI 결과가 아닙니다. [AI 1차 채점 실행]을 눌러 최신 결과를 받아야 자동 점수를 확정할 수 있습니다.</p>';
  }else{
-  const score=aiResult.design+aiResult.implementation+aiResult.report;
-  display.innerHTML='<p class="na-muted">AI 최초 제안 '+score+'점 · 객관식 정답표 + 서술형 AI 판단. 최종 점수는 아래 교사 체크에 따라 계산됩니다.</p>';
+  const proposalScore=calculatedReview();
+  const outdated=aiResult.rubricVersion!==AI_RUBRIC_VERSION;
+  display.innerHTML='<p class="na-muted">AI 1차 판단(현재 기준 '+(proposalScore?proposalScore.total:'—')+'점 · 교사 체크 반영) · 객관식 정답표 + 서술형 AI 판단.'+(outdated?' 기존 v5 AI 문항별 판단을 새 v6 점수 구간에 재계산했습니다.':'')+' 최종 점수는 교사가 확정합니다.</p>';
  }
  renderQuestionAnnotations();
  renderCalculatedReview();
@@ -618,8 +621,8 @@ async function runAI(){
   const result=await callable({uid});
   if(uid!==teacherUid)return;
   const suggested=result.data;
-  if(!suggested||suggested.rubricVersion!==AI_RUBRIC_VERSION)
-   throw Error('AI 채점 서버 기준이 이전 버전입니다. Firebase Functions 버전을 확인해 주세요.');
+  if(!suggested||!COMPATIBLE_AI_RUBRICS.includes(suggested.rubricVersion))
+   throw Error('17문항 AI 채점 결과가 아닙니다. Firebase Functions 버전을 확인해 주세요.');
   aiResult=suggested;
   if(savedReview?.aiQuestionSignature!==currentQuestionSignature())reviewOverrides={};
   const entry=gradebookRows.find(row=>row.uid===uid);
@@ -640,7 +643,7 @@ async function saveGrade(){
   el('na-teacher-note')?.focus();return;
  }
  const note=ambiguous.length?typed:String(savedReview?.note||'자동 채점 결과 확인 및 최종 확정').slice(0,2400);
- const aiComparison='\nAI 최초 제안: '+(aiResult.design+aiResult.implementation+aiResult.report)+'점 / 교사 판정 후: '+result.total+'점';
+ const aiComparison='\n새 기준(v6) 교사 판정 점수: '+result.total+'점';
  if(!confirm('선택한 학생의 점수를 '+result.total+'점으로 확정할까요?\n주황색 '+ambiguous.length+'문항 중 '+ambiguous.filter(id=>reviewOverrides[id]===true).length+'문항을 정답으로 인정합니다.'+aiComparison+'\n확정 후에도 교사는 다시 검토·수정할 수 있습니다.'))return;
  const uid=teacherUid,opened=token,signature=currentQuestionSignature(),btn=el('na-grade');
  btn.disabled=true;
@@ -651,7 +654,7 @@ async function saveGrade(){
    const question=latest?.details?.questions?.find(q=>q.key===id);
    return id+':'+String(question?.judgment||'');
   }).join('|');
-  if(latest?.rubricVersion!==AI_RUBRIC_VERSION||latestSignature!==signature)
+  if(!COMPATIBLE_AI_RUBRICS.includes(latest?.rubricVersion)||latestSignature!==signature)
    throw Error('AI 1차 채점 내용이 변경되었습니다. 이 학생의 제출본을 다시 열어 확인해 주세요.');
   if(uid!==teacherUid||opened!==token)throw Error('채점 중 다른 학생 화면으로 전환되었습니다. 저장을 중지합니다.');
   const decisions=Object.fromEntries(ambiguous.map(id=>[id,reviewOverrides[id]===true]));
