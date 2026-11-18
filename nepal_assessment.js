@@ -70,6 +70,8 @@ function mount(){
  const css=document.createElement('style');
  css.textContent='#na-root{position:fixed;inset:0;z-index:18000;display:none;overflow:auto;background:#06110b;color:#e6f8dc;font:14px/1.65 system-ui,"Malgun Gothic",sans-serif}#na-root.show{display:block}#na-root *{box-sizing:border-box}.na-box{max-width:950px;margin:24px auto;padding:24px;background:#10261a;border:1px solid #47694a;border-radius:17px}.na-top{display:flex;align-items:center;justify-content:space-between;gap:12px}.na-box h2{margin:0;color:#c6fba7}.na-card{background:#163020;border:1px solid #3a6544;border-radius:12px;padding:15px;margin:15px 0}.na-card h3{margin:0 0 9px;color:#d5ffb6}.na-muted{font-size:12px;color:#bcd0b4}.na-field{display:block;margin:13px 0}.na-field strong{display:block;margin:0 0 5px}.na-field textarea{display:block;width:100%;min-height:93px;padding:12px;resize:vertical;color:#fff;background:#08190f;border:1px solid #62816a;border-radius:8px;font:13px/1.6 system-ui}.na-btn{border:1px solid #8cbd7e;color:#e9ffe3;background:#264e34;border-radius:9px;padding:9px 13px;font-weight:800;cursor:pointer}.na-btn.primary{background:#c0f58b;color:#0b2b16}.na-btn:disabled{opacity:.55}.na-actions{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}.na-read{white-space:pre-wrap;overflow-wrap:anywhere;background:#0a1b11;padding:12px;border:1px solid #3c6746;border-radius:8px;margin-top:8px}.na-table{border-collapse:collapse;width:100%}.na-table td,.na-table th{padding:8px;border-bottom:1px solid #456949;text-align:left}.na-score{display:flex;gap:12px;flex-wrap:wrap}.na-score label{display:grid;gap:4px}.na-score select{padding:9px;background:#07190e;color:#fff;border:1px solid #779a80;border-radius:8px}.na-field>label{display:block;font-weight:800;margin-bottom:5px}.na-help{margin:0 0 8px;color:#c5d9ba;font-size:13px}.na-field textarea::placeholder{color:#a3b4a5;opacity:1}.na-table-scroll{overflow-x:auto}.na-rubric .na-table{min-width:740px;font-size:12px}.na-rubric .na-table th{min-width:100px}.na-rubric-desc{display:block;margin-top:4px;font-weight:400;color:#d3dfd0}.na-progress{font-weight:800;color:#d4f9ae;margin:10px 0}.na-code-status{padding:10px;background:#102e21;border:1px solid #4d865b;border-radius:8px}.na-check{padding:9px 12px;margin:6px 0;border-left:3px solid #96c882;background:#103021}.na-preview-list{margin:0;padding:0;list-style:none}.na-preview-list li{margin:11px 0}.na-block-grid{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}.na-block-chip{border:1px solid #5d9366;border-radius:8px;padding:4px 9px;background:#1d4129;font-size:12px}.na-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px}.na-compare>div{min-width:0}.na-compare .na-read{max-height:310px;overflow:auto}#na-message{white-space:pre-wrap;min-height:28px;color:#c6eead}@media(max-width:700px){.na-compare{grid-template-columns:1fr}}@media(max-width:700px){.na-box{margin:0;padding:12px;border-radius:0}}';
  css.textContent+='#na-editor{padding-bottom:110px}#na-editor>.na-actions{position:fixed;bottom:14px;right:max(16px,calc((100vw - 950px)/2 + 22px));z-index:18100;display:flex;justify-content:flex-end;gap:10px;padding:10px 12px;margin:0;background:#10261af5;border:1px solid #547d59;border-radius:12px;box-shadow:0 -7px 24px #08180d99;max-width:calc(100vw - 32px)}#na-submit{font-size:16px;min-width:145px}@media(max-width:700px){#na-editor>.na-actions{left:12px;right:12px;justify-content:space-between}#na-editor>.na-actions .na-btn{flex:1;min-width:0}}';
+ css.textContent+="\n #na-root .na-gradebook-details{padding:14px 17px}\n #na-root .na-gradebook-summary{cursor:pointer;list-style:disclosure-closed;font-weight:900;font-size:17px;color:#c3efff}\n #na-root .na-gradebook-details[open] .na-gradebook-summary{margin-bottom:16px}\n #na-root .na-gradebook-summary .na-muted{font-size:12px;font-weight:500;margin-left:10px}\n #na-root .na-ai-done{color:#91efd0;font-weight:850}\n #na-root .na-ai-warning{color:#ffd18a;font-weight:750}\n #na-root .na-ai-pending{color:#c5d4e2}\n ";
+ css.textContent+="\n#na-root .na-answer-card{padding:17px;margin:12px 0}\n#na-root .na-answer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}\n#na-root .na-answer-head h3{font-size:15px;flex:1;margin:0 0 8px;line-height:1.5}\n#na-root .na-answer-label{font-size:12px;color:#b7d7e8;font-weight:850;margin:8px 0 5px}\n#na-root .na-answer-card .na-read{margin:2px 0 9px;white-space:pre-wrap;line-height:1.65}\n#na-root .na-verdict{border-radius:99px;border:1px solid;padding:4px 12px;white-space:nowrap;font-size:12px;font-weight:900;flex:none}\n#na-root .na-verdict-correct{color:#beffe0;background:#164e39;border-color:#419c68}\n#na-root .na-verdict-wrong{color:#ffd1cf;background:#57252a;border-color:#bf5962}\n#na-root .na-verdict-review{color:#ffe1b7;background:#603e22;border-color:#d09a4b}\n#na-root .na-verdict-pending{color:#d0e8f4;background:#284457;border-color:#718ba0}\n#na-root .na-answer-key{margin-top:9px;padding:10px 13px;border-left:3px solid #73c9f7;background:#0c3047;color:#daefff;font-size:13px;border-radius:5px}\n#na-root .na-ai-reason{margin-top:9px;padding:10px 13px;background:#0b2434;color:#d3e7f5;border:1px solid #315a72;border-radius:8px;font-size:13px;white-space:pre-wrap}\n#na-root .na-manual-row{display:flex;align-items:center;gap:11px;flex-wrap:wrap;padding:12px;margin-top:11px;background:#44311e;border:1px solid #bb8652;border-radius:10px}\n#na-root .na-manual-check{font-size:14px;font-weight:900;color:#ffe6be;cursor:pointer;display:inline-flex;align-items:center;gap:7px}\n#na-root .na-manual-check input{accent-color:#80e1b5;width:18px;height:18px}\n#na-root .na-manual-outcome{font-size:12px;color:#ffdfb0}\n#na-root .na-auto-score{display:grid;gap:4px;min-width:135px;flex:1;border:1px solid #477c93;border-radius:11px;padding:12px;background:#0c3045}\n#na-root .na-auto-score>span{font-size:12px;font-weight:800;color:#bddbea}\n#na-root .na-auto-score output{font-size:22px;font-weight:900;color:#c5efff}\n#na-root .na-auto-total{border-color:#79cafa;background:#16486a}\n#na-root .na-auto-total output{color:#fff}\n#na-root #na-scoring-state{margin:7px 0 13px}\n#na-root #na-note-wrap{margin-top:15px}\n#na-root #na-grade{margin-top:12px;min-height:48px;font-size:15px}\n#na-root #na-previous-review{margin-top:8px;color:#b9dce8}\n@media(max-width:700px){#na-root .na-answer-card{padding:12px}#na-root .na-auto-score{min-width:105px}}\n";
  document.head.appendChild(css);
  panel=document.createElement('section');panel.id='na-root';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','수행평가 작성 및 관리');document.body.appendChild(panel);
 }
@@ -165,17 +167,19 @@ function selectedGradeRows(){
 function showGradebook(){
  const box=el('na-gb-table'),status=el('na-gb-status'),csv=el('na-gb-csv');
  if(!box||!status||!gradebookLoaded)return;
- const list=selectedGradeRows(),submitted=list.filter(r=>r.submitted).length,confirmed=list.filter(r=>r.status==='확정').length;
- status.textContent='계정·제출 기록 '+list.length+'명 / 제출 '+submitted+'명 / 점수 확정 '+confirmed+'명 / 미채점 '+(submitted-confirmed)+'명 / 미제출 '+(list.length-submitted)+'명 · 미로그인 학생은 명단에 없을 수 있습니다.';
+ const list=selectedGradeRows(),submitted=list.filter(r=>r.submitted).length,confirmed=list.filter(r=>r.status==='확정').length,aiFinished=list.filter(r=>r.aiStatus==='complete').length;
+ status.textContent='계정·제출 기록 '+list.length+'명 / 제출 '+submitted+'명 / AI 1차 완료 '+aiFinished+'명 / 점수 확정 '+confirmed+'명 / 최종 미확정 '+(submitted-confirmed)+'명 / 미제출 '+(list.length-submitted)+'명 · 미로그인 학생은 명단에 없을 수 있습니다.';
  csv.disabled=list.length===0;
  const batch=el('na-ai-batch');if(batch)batch.disabled=aiBatchRunning||el('na-gb-class')?.value==='all'||!list.some(r=>r.submitted&&r.uid&&r.status!=='확정');
  const val=(v)=>esc(v==null?'—':v);
- box.innerHTML=list.length?'<table class="na-table"><thead><tr><th>반</th><th>번호</th><th>이름(등록명)</th><th>구글 계정 ID</th><th>개념 설계<br>30점</th><th>알고리즘 적용<br>30점</th><th>이해·설명<br>40점</th><th>총점<br>100점</th><th>상태·주의</th><th>상세</th></tr></thead><tbody>'+
+ box.innerHTML=list.length?'<table class="na-table"><thead><tr><th>반</th><th>번호</th><th>이름(등록명)</th><th>구글 계정 ID</th><th>개념 설계<br>30점</th><th>알고리즘 적용<br>30점</th><th>이해·설명<br>40점</th><th>총점<br>100점</th><th>AI 1차 채점</th><th>상태·주의</th><th>상세</th></tr></thead><tbody>'+
  list.map(x=>{
   const score=x.score;
+  const aiLabel=!x.submitted?'—':x.aiStatus==='complete'?'✓ 완료':x.aiStatus==='old'?'⚠ 이전 기준':x.aiStatus==='unknown'?'⚠ 확인 불가':'미채점';
+  const aiStyle=x.aiStatus==='complete'?'na-ai-done':x.aiStatus==='old'||x.aiStatus==='unknown'?'na-ai-warning':'na-ai-pending';
   const scores=score?'<td>'+val(score.design)+'</td><td>'+val(score.implementation)+'</td><td>'+val(score.report)+'</td><td><strong>'+val(score.total)+'</strong></td>':'<td>—</td><td>—</td><td>—</td><td>—</td>';
   return '<tr><td>'+val(x.clazz)+'</td><td>'+val(x.number)+'</td><td>'+val(x.name)+'</td><td>'+val(x.accountId)+'</td>'+scores+
-   '<td>'+val(x.status)+(x.warning?'<div class="na-muted" style="color:#ffe6a0">'+val(x.warning)+'</div>':'')+'</td><td>'+
+   '<td><span class="'+aiStyle+'">'+val(aiLabel)+'</span></td><td>'+val(x.status)+(x.warning?'<div class="na-muted" style="color:#ffe6a0">'+val(x.warning)+'</div>':'')+'</td><td>'+
    (x.submitted?'<button type="button" class="na-btn" data-gb-uid="'+val(x.uid)+'">보기</button>':'—')+'</td></tr>';
  }).join('')+'</tbody></table>':'<p class="na-muted">선택한 반에서 확인된 계정·제출 기록이 없습니다.</p>';
 }
@@ -183,8 +187,8 @@ function exportGradebook(){
  if(!gradebookLoaded)return;
  const current=el('na-gb-class')?.value||'all',data=selectedGradeRows();
  if(!data.length)return;
- const rows=[['학년','반','번호','이름(등록명)','구글 계정 ID','개념 설계','알고리즘 적용','이해·설명','총점','상태','확인 필요']];
- data.forEach(x=>rows.push([x.grade,x.clazz,x.number??'',x.name,x.accountId,x.score?.design??'',x.score?.implementation??'',x.score?.report??'',x.score?.total??'',x.status,x.warning||'']));
+ const rows=[['학년','반','번호','이름(등록명)','구글 계정 ID','개념 설계','알고리즘 적용','이해·설명','총점','AI 1차 채점','상태','확인 필요']];
+ data.forEach(x=>rows.push([x.grade,x.clazz,x.number??'',x.name,x.accountId,x.score?.design??'',x.score?.implementation??'',x.score?.report??'',x.score?.total??'',!x.submitted?'—':x.aiStatus==='complete'?'완료':x.aiStatus==='old'?'이전 기준':x.aiStatus==='unknown'?'확인 불가':'미채점',x.status,x.warning||'']));
  const clean=x=>{let s=String(x??'');if(/^[\s]*[=+\-@\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'};
  const content='\ufeff'+rows.map(r=>r.map(clean).join(',')).join('\r\n');
  const url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8'}));
@@ -210,9 +214,22 @@ async function fetchGradebook(){
   const result=await ctx.fb.app().functions('asia-northeast3').httpsCallable('getNepalAssessmentGradebook')({});
   if(current!==token)return;
   if(!Array.isArray(result.data?.rows))throw Error('서버가 유효한 성적표 목록을 반환하지 않았습니다.');
-  gradebookRows=result.data.rows;gradebookLoaded=true;showGradebook();
+  let aiReviews=null;
+  try{
+   aiReviews=(await ctx.db.ref(ROOT+'/aiReviews').once('value')).val()||{};
+  }catch(error){
+   console.warn('AI 채점 상태 조회 실패',error);
+  }
+  if(current!==token)return;
+  gradebookRows=result.data.rows.map(row=>{
+   const proposal=aiReviews?.[row.uid];
+   const complete=proposal?.rubricVersion===AI_RUBRIC_VERSION&&
+    Array.isArray(proposal.details?.questions)&&proposal.details.questions.length===17;
+   return {...row,aiStatus:aiReviews===null?'unknown':!proposal?'pending':complete?'complete':'old'};
+  });
+  gradebookLoaded=true;showGradebook();
  }catch(e){
-  if(current===token){gradebookLoaded=false;state.textContent='⚠ 반별 성적표 조회 실패: '+String(e.code||e.message||e)+' · 신규 Firebase 함수 배포를 확인하세요. 기존 학생 제출 목록·교사 채점은 그대로 사용할 수 있습니다.';}
+  if(current===token){gradebookLoaded=false;state.textContent='⚠ 반별 성적표 조회 실패: '+String(e.code||e.message||e)+' · 신규 Firebase 함수 배포를 확인하세요. 성적표와 학생별 상세 보기를 사용할 수 없습니다. 서버 채점표 함수를 확인해 주세요.';}
  }finally{gradebookLoading=false;if(button?.isConnected)button.disabled=false}
 }
 
@@ -229,7 +246,7 @@ async function ensureGradeCallable(){
 }
 function confirmAIDataUse(){
  if(aiPrivacyAcknowledged)return true;
- if(!confirm('학교의 개인정보 처리 기준에 따라 AI 서비스에 학생의 서술형 답안을 제공할 수 있음을 확인했습니까?\n이름과 일반 연락처 패턴은 가리고, 엔트리 코드 원본 대신 블록 종류 요약만 전송됩니다.\nAI 점수는 교사가 검토하고 확정해야 합니다.'))return false;
+ if(!confirm('학교의 개인정보 처리 기준에 따라 AI 서비스에 학생의 서술형 답안을 제공할 수 있음을 확인했습니까?\n이름과 일반 연락처 패턴은 서버에서 가리며, 조별 코드 원본은 AI에 전송하지 않습니다.\nAI 점수는 교사가 검토하고 확정해야 합니다.'))return false;
  aiPrivacyAcknowledged=true;return true;
 }
 async function runBatchAI(){
@@ -253,6 +270,7 @@ async function runBatchAI(){
     const response=await callable({uid:row.uid});
     if(response.data?.rubricVersion!==AI_RUBRIC_VERSION)throw Error('AI 채점 서버가 이전 기준입니다. Firebase Functions 재배포가 필요합니다.');
     ok++;consecutiveErrors=0;
+    row.aiStatus='complete';
     if(teacherUid===row.uid&&opened===token){aiResult=response.data;showAI()}
    }catch(e){
     const msg=String(e.code||e.message||e);
@@ -278,7 +296,7 @@ async function teacherOpen(t){
  if(t!==token)return;
  const classValue=Number(classSnap?.val());
  const classLimit=Number.isInteger(classValue)&&classValue>=11&&classValue<=20?classValue:11;
- el('na-body').innerHTML='<div class="na-card"><h3>🛡 반별 수행평가 공개 설정</h3><p>공개할 반만 선택하세요. 처음에는 모든 반이 비공개이며 기존 전체 공개 설정은 사용하지 않습니다. 한 반을 닫아도 다른 반과 이미 제출한 답안에는 영향이 없습니다.</p><div id="na-release-list" class="na-release-list">반별 공개 상태를 확인하는 중…</div><div id="na-release-state" class="na-muted" role="status"></div></div><div class="na-card">AI는 객관식을 정답표로 계산하고 서술형 답변을 바탕으로 1차 채점안을 제안합니다. 학생 이름과 연락처 등 일반적인 식별정보는 가려 전송하지만 자유서술에 개인정보가 포함되지 않았는지 교사가 확인하고 학교 지침에 따라 이용하세요. 교사가 최종 점수를 확정하며, AI 제안은 학생에게 공개되지 않습니다.</div><div class="na-card"><h3>📊 반별 수행평가 성적표</h3><p class="na-muted">2026학년도 1학년 · 구글 계정 26-10101은 1학년 1반 1번입니다. 이름은 학생 등록명과 연결하며 교사 확정점수만 표시합니다.</p><div class="na-actions"><label for="na-gb-class">학급 선택</label><select id="na-gb-class" style="padding:9px;color:#fff;background:#0b2a3e;border:1px solid #5c8bac;border-radius:8px"><option value="all">전체 1학년</option>'+Array.from({length:classLimit},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'반</option>').join('')+'</select><button id="na-gb-refresh" type="button" class="na-btn">↻ 조회</button><button id="na-gb-csv" type="button" class="na-btn" disabled>CSV 내려받기</button></div><div id="na-gb-status" class="na-muted">학교 계정과 성적표를 불러오는 중…</div><div id="na-gb-table" style="overflow:auto;max-height:62vh;margin-top:12px"></div></div><div class="na-card"><h3>🤖 학급 AI 1차 일괄 채점</h3><p class="na-muted">한 반씩 채점합니다. 제출 완료·성적 미확정 학생 대상이며, 객관식 11개는 정답표로 계산하고 서술형 6개는 AI가 1차 판단합니다. 교사가 최종 점수를 확정해야 합니다. 채점 중에는 이 화면을 열어 두세요.</p><div class="na-actions"><button id="na-ai-batch" class="na-btn" disabled>선택 학급 AI 일괄 채점</button><button id="na-ai-stop" class="na-btn" disabled>⏹ 중단</button></div><div id="na-ai-batch-status" class="na-muted" role="status">학급을 선택해 주세요.</div></div><div class="na-card"><h3>학생 제출 목록</h3><div id="na-roster">조회 중…</div></div><div id="na-review"></div>';
+ el('na-body').innerHTML='<div class="na-card"><h3>🛡 반별 수행평가 공개 설정</h3><p>공개할 반만 선택하세요. 처음에는 모든 반이 비공개이며 기존 전체 공개 설정은 사용하지 않습니다. 한 반을 닫아도 다른 반과 이미 제출한 답안에는 영향이 없습니다.</p><div id="na-release-list" class="na-release-list">반별 공개 상태를 확인하는 중…</div><div id="na-release-state" class="na-muted" role="status"></div></div><div class="na-card">AI는 객관식을 정답표로 계산하고 서술형 답변을 바탕으로 1차 채점안을 제안합니다. 학생 이름과 연락처 등 일반적인 식별정보는 가려 전송하지만 자유서술에 개인정보가 포함되지 않았는지 교사가 확인하고 학교 지침에 따라 이용하세요. 교사가 최종 점수를 확정하며, AI 제안은 학생에게 공개되지 않습니다.</div><details class="na-card na-gradebook-details"><summary class="na-gradebook-summary">📊 반별 수행평가 성적표 <span class="na-muted">클릭하여 펼치기 / 접기</span></summary><p class="na-muted">2026학년도 1학년 · 구글 계정 26-10101은 1학년 1반 1번입니다. 이름은 학생 등록명과 연결하며 교사 확정점수만 표시합니다.</p><div class="na-actions"><label for="na-gb-class">학급 선택</label><select id="na-gb-class" style="padding:9px;color:#fff;background:#0b2a3e;border:1px solid #5c8bac;border-radius:8px"><option value="all">전체 1학년</option>'+Array.from({length:classLimit},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'반</option>').join('')+'</select><button id="na-gb-refresh" type="button" class="na-btn">↻ 조회</button><button id="na-gb-csv" type="button" class="na-btn" disabled>CSV 내려받기</button></div><div id="na-gb-status" class="na-muted">학교 계정과 성적표를 불러오는 중…</div><div id="na-gb-table" style="overflow:auto;max-height:62vh;margin-top:12px"></div></details><div class="na-card"><h3>🤖 학급 AI 1차 일괄 채점</h3><p class="na-muted">한 반씩 채점합니다. 제출 완료·성적 미확정 학생 대상이며, 객관식 11개는 정답표로 계산하고 서술형 6개는 AI가 1차 판단합니다. 교사가 최종 점수를 확정해야 합니다. 채점 중에는 이 화면을 열어 두세요.</p><div class="na-actions"><button id="na-ai-batch" class="na-btn" disabled>선택 학급 AI 일괄 채점</button><button id="na-ai-stop" class="na-btn" disabled>⏹ 중단</button></div><div id="na-ai-batch-status" class="na-muted" role="status">학급을 선택해 주세요.</div></div><div id="na-review"></div>';
  gradebookRows=[];gradebookLoaded=false;gradebookLoading=false;aiBatchCancel=true;
  el('na-gb-class').onchange=showGradebook;
  el('na-gb-refresh').onclick=fetchGradebook;
@@ -329,118 +347,257 @@ async function teacherOpen(t){
   }
  };
  await refreshRelease();
- try{
-  const snap=await ctx.db.ref(ROOT+'/index').once('value');
-  if(t!==token)return;
-  const items=Object.entries(snap.val()||{}).map(([uid,x])=>({uid,...x})).sort((a,b)=>a.classId.localeCompare(b.classId,undefined,{numeric:true})||String(a.displayName||'').localeCompare(String(b.displayName||''),'ko'));
-  el('na-roster').innerHTML=items.length?'<p>제출 완료 '+items.length+'명</p><table class="na-table"><tr><th>반</th><th>제출자</th><th>제출 시각</th><th>열기</th></tr>'+items.map(x=>'<tr><td>'+esc(x.classId.slice(1))+'반</td><td>'+esc(x.displayName)+'</td><td>'+esc(formatTime(x.submittedAt))+'</td><td><button class="na-btn" data-uid="'+esc(x.uid)+'">보기</button></td></tr>').join('')+'</table>':'제출된 결과물이 없습니다.';
-  el('na-roster').onclick=e=>{const b=e.target.closest('button[data-uid]');if(b)loadReview(b.dataset.uid)};
-  message('학생의 [보기]를 선택하면 제출 원본과 채점 화면을 확인할 수 있습니다.');
- }catch(e){message('현황 조회 실패: '+String(e.code||e.message||e))}
+
 }
-async function loadReview(uid){
- teacherUid=uid;message('제출본 불러오는 중…');
- const container=el('na-review');container.innerHTML='';
- try{
-  const [snap,review,ai]=await Promise.all([ctx.db.ref(ROOT+'/submissions/'+uid).once('value'),ctx.db.ref(ROOT+'/reviews/'+uid).once('value'),ctx.db.ref(ROOT+'/aiReviews/'+uid).once('value')]);
-  if(teacherUid!==uid)return;
-  teacherDoc=snap.val();aiResult=ai.val();if(!teacherDoc)throw Error('제출본이 없습니다.');
-  container.innerHTML='<div class="na-card"><h3>'+esc(teacherDoc.displayName||'학생')+' · '+esc(teacherDoc.classId.slice(1))+'반</h3><p>'+esc(formatTime(teacherDoc.submittedAt))+' · 개인별 수행평가 답안</p></div>'+rubricHtml()+
- FIELDS.filter(([k])=>k!=='aiUse').map(([k,label])=>'<div class="na-card"><b>'+esc(label)+'</b><div class="na-read">'+esc(teacherDoc.fields?.[k]||'미작성')+'</div></div>').join('')+
- '<div class="na-card"><h3>🤖 AI 1차 채점 제안 · 교사 검증 필수</h3><p class="na-muted">객관식은 정답표로 계산하고 서술형은 AI가 제안합니다. 개인 답안을 검토한 뒤 교사가 확정합니다.</p><div id="na-ai"></div><div class="na-actions"><button id="na-run-ai" class="na-btn" type="button">AI 1차 채점 실행</button><button id="na-apply-ai" class="na-btn" type="button" disabled>AI 점수를 입력란에 불러오기</button></div></div>'+
- '<div class="na-card"><h3>교사 최종 평가</h3><div class="na-score">'+[['design','기초 개념',[30,25,20,15]],['implementation','알고리즘 적용',[30,25,20,15]],['report','이해·설명',[40,30,20,10]]].map(([k,name,scores])=>'<label>'+name+'<select id="na-score-'+k+'"><option value="">선택</option>'+scores.map(x=>'<option value="'+x+'">'+x+'점</option>').join('')+'</select></label>').join('')+'</div>'+
- '<div class="na-card"><h3>교사 검증 확인</h3><label class="na-check"><input id="na-verify-answers" type="checkbox"> 객관식 선택 답안을 확인했습니다.</label><label class="na-check"><input id="na-verify-boundary" type="checkbox"> 경보 경계값과 문항별 정답을 검토했습니다.</label><label class="na-check"><input id="na-verify-code" type="checkbox"> 서술형 6문항의 설명과 채점 근거를 검토했습니다.</label></div>'+
- '<label class="na-field"><strong>교사 채점 근거 (필수)</strong><textarea id="na-teacher-note" maxlength="2400" placeholder="AI 채점 제안과 다른 부분, 검토 근거를 기록하세요."></textarea></label><button class="na-btn primary" id="na-grade">✅ 교사 최종 점수 확정</button></div>';
-const old=review.val()||{};
-  for(const key of ['design','implementation','report'])el('na-score-'+key).value=old[key]??'';
-  el('na-teacher-note').value=old.note||'';
-  el('na-grade').onclick=saveGrade;
-  el('na-run-ai').onclick=runAI;
-   el('na-apply-ai').onclick=applyAI;
-  showAI();message('AI의 영역별 근거와 17개 문항(9개 답안 묶음) 판단을 확인하고, 교사가 점수를 수정·확정하세요.');
- }catch(e){message('제출본 읽기 실패: '+String(e.code||e.message||e))}
+const QUESTION_GROUPS={purpose:['Q01'],io:['Q02','Q03'],scenes:['Q04','Q05'],algorithm:['Q06'],functions:['Q07','Q08','Q09','Q10'],test1:['Q11','Q12','Q13','Q14'],test2:['Q15'],changes:['Q16'],contribution:['Q17']};
+const QUESTION_IDS=Array.from({length:17},(_,i)=>'Q'+String(i+1).padStart(2,'0'));
+const CONCEPT_IDS=['Q01','Q03','Q04','Q05','Q06'];
+const APPLICATION_IDS=['Q07','Q09','Q10','Q11','Q12','Q16'];
+const SUBJECTIVE_IDS=['Q02','Q08','Q13','Q14','Q15','Q17'];
+const CORRECT_CHOICES={
+ Q01:'수위 센서가 현재 측정한 값',
+ Q03:'센서값 읽기 → 변수 저장 → 위험 여부 판단',
+ Q04:'1(위험)',Q05:'0 또는 1',
+ Q06:'각 센서의 위험 변수를 만들고 0 또는 1을 저장',
+ Q07:'0~4',Q09:'경보에 필요한 최소 위험 센서 개수',
+ Q10:'경보 발생(1)',Q11:'여러 값(자료)',Q12:'3개',
+ Q16:'이상(≥): 경보 / 초과(>): 정상'
+};
+const EXPLANATION_KEYS={
+ Q02:'반복이 없다면 변화하는 센서값을 계속 갱신하지 못해 위험 판단이 부정확해진다.',
+ Q08:'0과 1로 표현한 네 위험 신호의 합은 위험한 센서의 수를 의미한다.',
+ Q13:'위험개수를 매번 0으로 초기화하지 않으면 이전 계산값이 누적되어 오류가 발생한다.',
+ Q14:'리스트에 여러 값을 저장하고 반복문으로 처리하면 중복 코드를 줄이고 효율적으로 계산할 수 있다.',
+ Q15:'불필요한 경보는 혼란과 신뢰 저하를 낳고, 경보 누락은 대피 실패와 인명·재산 피해를 키운다.',
+ Q17:'자신이 선택한 엔트리 블록에서 변수·조건·반복·리스트 중 관련 개념과 작동 과정을 구체적으로 설명한다.'
+};
+let savedReview=null,reviewOverrides={};
+function questionAnswers(){
+ const answers={},fields=teacherDoc?.fields||{};
+ for(const [key,ids] of Object.entries(QUESTION_GROUPS)){
+  for(const line of String(fields[key]||'').split(/\r?\n/)){
+   const found=/^(Q\d{2}):\s*(.*?)\s*$/.exec(line);
+   if(found&&ids.includes(found[1])&&answers[found[1]]===undefined)answers[found[1]]=found[2];
+  }
+ }
+ return answers;
 }
 function currentAI(){
- return aiResult&&aiResult.rubricVersion===AI_RUBRIC_VERSION&&
+ const questions=aiResult?.details?.questions;
+ return !!aiResult&&aiResult.rubricVersion===AI_RUBRIC_VERSION&&
   [30,25,20,15].includes(aiResult.design)&&[30,25,20,15].includes(aiResult.implementation)&&
-  [40,30,20,10].includes(aiResult.report);
+  [40,30,20,10].includes(aiResult.report)&&Array.isArray(questions)&&questions.length===17&&
+  QUESTION_IDS.every(id=>questions.some(q=>q.key===id));
 }
-function showAI(){
- const display=el('na-ai'),apply=el('na-apply-ai');
- if(!display)return;
- if(apply)apply.disabled=!currentAI();
- if(!aiResult){display.innerHTML='<div class="na-read">AI 1차 채점이 아직 없습니다. 교사 계정에서 버튼을 눌러 점수와 근거를 요청하세요.</div>';return}
- if(!currentAI()){
-  display.innerHTML='<div class="na-read">⚠ 과거 평가기준으로 생성된 AI 결과가 있거나 응답이 유효하지 않습니다. 이번 미션 이해도 기준으로 다시 AI 채점을 실행해야 합니다. 이전 제안점수는 교사 채점에 적용하지 않습니다.</div>';
+function currentQuestionSignature(){
+ return currentAI()?QUESTION_IDS.map(id=>{
+  const q=aiResult.details.questions.find(v=>v.key===id);
+  return id+':'+q.judgment;
+ }).join('|'):'';
+}
+function reviewQuestionMeta(){
+ const answers=questionAnswers(),judgments=new Map((aiResult?.details?.questions||[]).map(q=>[q.key,q]));
+ return QUESTION_IDS.map(id=>{
+  const answer=String(answers[id]||'').trim(),proposal=judgments.get(id)||null;
+  const isObjective=Object.hasOwn(CORRECT_CHOICES,id);
+  const verdict=!answer?'미응답':currentAI()?String(proposal?.judgment||'교사확인'):'AI 채점 전';
+  const ambiguous=!isObjective&&!!answer&&currentAI()&&(verdict==='부분정확'||verdict==='교사확인');
+  return {id,answer,proposal,isObjective,verdict,ambiguous,
+   expected:isObjective?CORRECT_CHOICES[id]:EXPLANATION_KEYS[id]};
+ });
+}
+function scoreFromAccepted(correct,max){
+ if(max===40)return correct===6?40:correct>=4?30:correct>=2?20:10;
+ return correct>=5?30:correct===4?25:correct>=2?20:15;
+}
+function calculatedReview(){
+ if(!currentAI())return null;
+ const meta=reviewQuestionMeta();
+ const accepted=new Set(meta.filter(q=>{
+  if(!q.answer)return false;
+  if(q.isObjective)return q.answer===q.expected;
+  if(q.verdict==='정확')return true;
+  return q.ambiguous&&reviewOverrides[q.id]===true;
+ }).map(q=>q.id));
+ const concept=CONCEPT_IDS.filter(id=>accepted.has(id)).length;
+ const application=APPLICATION_IDS.filter(id=>accepted.has(id)).length;
+ const explanation=SUBJECTIVE_IDS.filter(id=>accepted.has(id)).length;
+ const design=scoreFromAccepted(concept,30);
+ const implementation=scoreFromAccepted(application,30);
+ const report=scoreFromAccepted(explanation,40);
+ return {design,implementation,report,total:design+implementation+report,
+  counts:{concept,application,explanation},ambiguousIds:meta.filter(q=>q.ambiguous).map(q=>q.id),accepted};
+}
+function renderQuestionAnnotations(){
+ const list=el('na-question-list');
+ if(!list||!teacherDoc)return;
+ const meta=reviewQuestionMeta();
+ const valid=currentAI();
+ const hasStructure=QUESTION_IDS.every(id=>Object.hasOwn(questionAnswers(),id));
+ if(!hasStructure){
+  list.innerHTML='<div class="na-card"><h3>과거 형식의 제출본</h3><p class="na-muted">이 제출본은 17문항 형식이 아닙니다. 원문을 확인하고 기존 확정 점수를 유지하세요.</p></div>'+
+   FIELDS.filter(([k])=>k!=='aiUse').map(([k,title])=>'<div class="na-card"><b>'+esc(title)+'</b><div class="na-read">'+esc(teacherDoc.fields?.[k]||'미작성')+'</div></div>').join('');
   return;
  }
- const scores=[
-  ['개념 설계',aiResult.design,30,aiResult.details?.designEvidence],
-  ['알고리즘 적용',aiResult.implementation,30,aiResult.details?.implementationEvidence],
-  ['이해·설명',aiResult.report,40,aiResult.details?.reportEvidence]
- ];
- const total=aiResult.design+aiResult.implementation+aiResult.report;
- const questions=(aiResult.details?.questions||[]);
- display.innerHTML='<div class="na-read"><b>AI 제안 총점: '+total+'/100점</b> (최저 40점, 4단계 점수)<p class="na-muted">AI 초안입니다. 교사 점수 저장 전에는 확정되지 않습니다.</p></div>'+
- scores.map(([name,got,max,evidence])=>'<div class="na-read"><b>'+esc(name)+' '+got+'/'+max+'점</b>\n'+esc(evidence||'세부 평가 근거를 확인해 주세요.')+'</div>').join('')+
- '<div class="na-read"><b>종합 판단</b>\n'+esc(aiResult.reason||'')+'</div>'+
- (aiResult.warnings?.length?'<div class="na-read"><b>⚠ 교사 검증 필요</b>\n'+aiResult.warnings.map(x=>'• '+esc(x)).join('\n')+'</div>':'')+
- '<details class="na-card"><summary>17개 문항(9개 답안 묶음)별 AI 판단 펼쳐 보기</summary><div>'+questions.map(x=>{
-  const label=AI_QUESTION_LABELS[x.key]||FIELDS.find(f=>f[0]===x.key)?.[1]||x.key;
-  return '<div class="na-read"><b>'+esc(label)+' — '+esc(x.judgment)+'</b>\n'+esc(x.reason)+'</div>';
- }).join('')+'</div></details>';
+ list.innerHTML=meta.map(q=>{
+  let color=q.verdict==='정확'?'na-verdict-correct':q.verdict==='오개념'||q.verdict==='미응답'?'na-verdict-wrong':q.verdict==='부분정확'||q.verdict==='교사확인'?'na-verdict-review':'na-verdict-pending';
+  const reason=!valid?'AI 채점 후 이곳에 판단 근거가 표시됩니다.':q.isObjective?(q.answer===q.expected?'정답표와 일치합니다.':!q.answer?'미응답 문항입니다.':'정답표와 일치하지 않습니다.'):(q.proposal?.reason||'AI 판단 근거 없음');
+  const answerNote=q.isObjective?'정답':'서술형 핵심 정답 요소';
+  const decision=q.ambiguous?'<label class="na-manual-check"><input type="checkbox" data-review-question="'+q.id+'" '+(reviewOverrides[q.id]===true?'checked':'')+'> 교사가 정답으로 인정</label><span class="na-manual-outcome" id="na-outcome-'+q.id+'">'+(reviewOverrides[q.id]===true?'✓ 정답으로 처리':'미체크 · 오답으로 처리')+'</span>':'';
+  return '<article class="na-card na-answer-card"><div class="na-answer-head"><h3>'+esc(q.id)+' · '+esc(AI_QUESTION_LABELS[q.id]||'')+'</h3><span class="na-verdict '+color+'">'+esc(q.verdict)+'</span></div>'+
+   '<div class="na-answer-label">학생 답안</div><div class="na-read">'+esc(q.answer||'미응답')+'</div>'+
+   '<div class="na-answer-key"><b>'+answerNote+':</b> '+esc(q.expected||'')+'</div>'+
+   '<div class="na-ai-reason"><b>AI 판단 근거:</b> '+esc(reason)+'</div>'+
+   (decision?'<div class="na-manual-row">'+decision+'</div>':'')+'</article>';
+ }).join('');
+ list.onchange=event=>{
+  const checkbox=event.target.closest('input[data-review-question]');
+  if(!checkbox)return;
+  const id=checkbox.dataset.reviewQuestion;
+  const meta=reviewQuestionMeta().find(q=>q.id===id);
+  if(!meta?.ambiguous)return;
+  reviewOverrides[id]=checkbox.checked;
+  const result=el('na-outcome-'+id);
+  if(result)result.textContent=checkbox.checked?'✓ 정답으로 처리':'미체크 · 오답으로 처리';
+  renderCalculatedReview();
+ };
 }
-function applyAI(){
- if(!currentAI()){message('현재 미션 평가기준으로 생성된 AI 제안이 없습니다. 먼저 AI 1차 채점을 실행하세요.');return}
- const selected={design:aiResult.design,implementation:aiResult.implementation,report:aiResult.report};
- for(const [k,val] of Object.entries(selected)){
-  const input=el('na-score-'+k);if(input)input.value=String(val);
+function renderCalculatedReview(){
+ const data=calculatedReview();
+ const waiting=el('na-scoring-state'),submit=el('na-grade'),noteWrap=el('na-note-wrap');
+ if(waiting)waiting.textContent=!data?'AI 1차 채점이 완료되면 17개 문항의 판정과 교사 체크를 합산해 점수가 자동 계산됩니다.':
+  '정답 인정: 기초 개념 '+data.counts.concept+'/5 · 알고리즘 적용 '+data.counts.application+'/6 · 이해·설명 '+data.counts.explanation+'/6 · 기본점수 40점 포함';
+ for(const key of ['design','implementation','report']){
+  const node=el('na-score-'+key);
+  if(node)node.textContent=data?data[key]+'점':'—';
  }
- message('✓ AI 제안점수를 교사 입력란으로 불러왔습니다. 원본 답안을 검증하고 필요한 점수를 수정한 뒤 [교사 점수 저장]을 눌러야 확정됩니다.');
+ const total=el('na-score-total');if(total)total.textContent=data?data.total+'점':'—';
+ if(noteWrap){
+  noteWrap.hidden=!data||data.ambiguousIds.length===0;
+  const note=el('na-teacher-note');
+  if(note)note.required=!!data&&data.ambiguousIds.length>0;
+  const hint=el('na-note-description');
+  if(hint&&data)hint.textContent='부분정확·교사확인 '+data.ambiguousIds.length+'개 문항('+data.ambiguousIds.join(', ')+')을 정답 인정할지 검토한 근거를 5자 이상 작성해 주세요.';
+ }
+ if(submit)submit.disabled=!data;
+ const status=el('na-previous-review');
+ if(status&&savedReview){
+  const old=Number(savedReview.design)+Number(savedReview.implementation)+Number(savedReview.report);
+  status.textContent='이전에 확정한 점수: '+old+'점 · 현재 계산: '+(data?data.total+'점':'확인 불가')+' · [최종 점수 확정]을 누르기 전에는 이전 기록이 유지됩니다.';
+ }
+}
+async function loadReview(uid){
+ teacherUid=uid;savedReview=null;reviewOverrides={};message('학생 답안을 불러오는 중…');
+ const container=el('na-review');container.innerHTML='';
+ try{
+  const [submissionSnap,reviewSnap,aiSnap]=await Promise.all([
+   ctx.db.ref(ROOT+'/submissions/'+uid).once('value'),
+   ctx.db.ref(ROOT+'/reviews/'+uid).once('value'),
+   ctx.db.ref(ROOT+'/aiReviews/'+uid).once('value')
+  ]);
+  if(uid!==teacherUid)return;
+  teacherDoc=submissionSnap.val();
+  aiResult=aiSnap.val();
+  savedReview=reviewSnap.val()||null;
+  if(!teacherDoc)throw Error('학생 제출 기록이 없습니다.');
+  if(savedReview?.aiRubricVersion===AI_RUBRIC_VERSION&&savedReview?.aiQuestionSignature===currentQuestionSignature()&&savedReview.questionOverrides&&typeof savedReview.questionOverrides==='object')
+   reviewOverrides={...savedReview.questionOverrides};
+  container.innerHTML='<div class="na-card"><h3>'+esc(teacherDoc.displayName||'학생')+' · '+esc(teacherDoc.classId?.slice(1)||'')+'반</h3><p>'+esc(formatTime(teacherDoc.submittedAt))+' · 개인별 수행평가 답안</p><div id="na-previous-review" class="na-muted"></div></div>'+
+   '<div class="na-card"><h3>🤖 AI 1차 채점 및 문항별 판단</h3><p class="na-muted">AI가 객관식 11문항과 서술형 6문항을 1차 판정합니다. 아래 학생 답안에서 판단 근거와 정답 요소를 비교하고, 주황색 판정은 체크 시 정답으로 인정할 수 있습니다.</p><div class="na-actions"><button id="na-run-ai" class="na-btn" type="button">🤖 AI 1차 채점 실행</button></div><div id="na-ai"></div></div>'+
+   '<div id="na-question-list"></div>'+
+   '<div class="na-card"><h3>교사 최종 평가</h3><div id="na-scoring-state" class="na-muted"></div><div class="na-score">'+
+   [['design','기초 개념'],['implementation','알고리즘 적용'],['report','이해·설명']].map(([key,title])=>'<div class="na-auto-score"><span>'+title+'</span><output id="na-score-'+key+'">—</output></div>').join('')+
+   '<div class="na-auto-score na-auto-total"><span>자동 계산 총점</span><output id="na-score-total">—</output></div></div>'+
+   '<div class="na-field" id="na-note-wrap" hidden><label for="na-teacher-note"><strong>교사 채점 근거 (부분정확·교사확인 문항이 있을 때 필수)</strong></label><p id="na-note-description" class="na-muted"></p><textarea id="na-teacher-note" maxlength="1600" placeholder="정답으로 인정하거나 오답으로 처리한 이유를 적어 주세요."></textarea></div>'+
+   '<button class="na-btn primary" id="na-grade" type="button" disabled>✅ 교사 최종 점수 확정</button></div>'+
+   rubricHtml();
+  el('na-teacher-note').value=savedReview?.note||'';
+  el('na-grade').onclick=saveGrade;
+  el('na-run-ai').onclick=runAI;
+  showAI();
+  if(container.isConnected)container.scrollIntoView({behavior:'smooth',block:'start'});
+  message('17개 문항을 직접 검토하고, 주황색 판정은 필요하면 정답 인정에 체크하세요. 점수는 자동으로 계산됩니다.');
+ }catch(e){message('학생 답안 조회 실패: '+String(e.code||e.message||e))}
+}
+function showAI(){
+ const display=el('na-ai');
+ if(!display)return;
+ if(!aiResult){
+  display.innerHTML='<p class="na-muted">AI 1차 채점 전입니다. 채점을 실행하면 학생 답안 옆에 정확·오개념·부분정확·교사확인 결과가 표시됩니다.</p>';
+ }else if(!currentAI()){
+  display.innerHTML='<p class="na-ai-warning">현재 17문항 기준의 AI 결과가 아닙니다. [AI 1차 채점 실행]을 눌러 최신 결과를 받아야 자동 점수를 확정할 수 있습니다.</p>';
+ }else{
+  const score=aiResult.design+aiResult.implementation+aiResult.report;
+  display.innerHTML='<p class="na-muted">AI 최초 제안 '+score+'점 · 객관식 정답표 + 서술형 AI 판단. 최종 점수는 아래 교사 체크에 따라 계산됩니다.</p>';
+ }
+ renderQuestionAnnotations();
+ renderCalculatedReview();
 }
 async function runAI(){
  const btn=el('na-run-ai');
  if(!btn||!teacherUid)return;
  if(!confirmAIDataUse())return;
  const uid=teacherUid;
- btn.disabled=true;message('AI 1차 채점 요청 중 · 제출 답안의 개인정보를 제외하고 미션 평가 기준으로 분석합니다…');
+ btn.disabled=true;message('AI 1차 채점 요청 중 · 완료되면 각 학생 답안 옆에 정답과 판단 근거가 표시됩니다…');
  try{
   const callable=await ensureGradeCallable();
   const result=await callable({uid});
   if(uid!==teacherUid)return;
   const suggested=result.data;
   if(!suggested||suggested.rubricVersion!==AI_RUBRIC_VERSION)
-   throw Error('서버의 AI 채점 기준이 이전 버전입니다. Firebase Functions 서버를 새 버전으로 배포한 후 다시 실행하세요.');
-  aiResult=suggested;showAI();
-  message('✓ AI 1차 채점안이 도착했습니다. 17개 문항(9개 답안 묶음)별 근거를 확인한 후 교사가 점수를 확정하세요.');
+   throw Error('AI 채점 서버 기준이 이전 버전입니다. Firebase Functions 버전을 확인해 주세요.');
+  aiResult=suggested;
+  if(savedReview?.aiQuestionSignature!==currentQuestionSignature())reviewOverrides={};
+  const entry=gradebookRows.find(row=>row.uid===uid);
+  if(entry)entry.aiStatus=currentAI()?'complete':'old';
+  showAI();showGradebook();
+  message('✓ AI 1차 채점 완료. 학생별 답안 옆의 AI 판정과 근거를 확인하고, 주황색 문항의 정답 인정 여부를 선택하세요.');
  }catch(e){
-  message('⚠ AI 채점 호출 실패: '+String(e.code||e.message||e)+'\nCloud Functions 배포·OPENAI_API_KEY 설정·교사 계정 권한을 확인하세요. AI 없이 직접 채점도 가능합니다.');
+  message('⚠ AI 1차 채점 요청 실패: '+String(e.code||e.message||e)+'\nCloud Functions 및 OPENAI_API_KEY 상태를 확인하세요.');
  }finally{if(btn.isConnected)btn.disabled=false}
 }
 async function saveGrade(){
- const scores=Object.fromEntries(['design','implementation','report'].map(k=>[k,Number(el('na-score-'+k).value)]));
- if(![30,25,20,15].includes(scores.design)||![30,25,20,15].includes(scores.implementation)||![40,30,20,10].includes(scores.report)){message('평가계획에 정해진 점수 단계만 선택할 수 있습니다.');return}
- const total=scores.design+scores.implementation+scores.report;
- const requiredVerifications=['na-verify-answers','na-verify-boundary','na-verify-code'];
- if(requiredVerifications.some(id=>!el(id)?.checked)){
-  message('최종 확정 전에 객관식·경계값·서술형 채점 근거를 모두 확인해 주세요.');
-  return;
+ const result=calculatedReview();
+ if(!result){message('17문항 AI 1차 채점 결과가 있어야 자동 점수를 확정할 수 있습니다. 먼저 AI 채점을 실행해 주세요.');return}
+ const ambiguous=result.ambiguousIds;
+ const typed=String(el('na-teacher-note')?.value||'').trim();
+ if(ambiguous.length&&typed.length<5){
+  message('부분정확·교사확인 문항이 있으므로 교사 채점 근거를 5자 이상 작성해 주세요.');
+  el('na-teacher-note')?.focus();return;
  }
- const note=el('na-teacher-note').value.trim();
- if(note.length<5){message('교사가 확인한 채점 근거를 5자 이상 적어 주세요. AI 제안만으로 최종 점수를 확정하지 않습니다.');el('na-teacher-note').focus();return}
- const aiComparison=currentAI()?'\nAI 제안: '+(aiResult.design+aiResult.implementation+aiResult.report)+'점 / 교사 확정: '+total+'점':'';
- if(!confirm('학생 개인 답안과 채점 근거를 교사가 검토하고 '+total+'점으로 최종 확정할까요?'+aiComparison))return;
- const btn=el('na-grade');btn.disabled=true;
+ const note=ambiguous.length?typed:String(savedReview?.note||'자동 채점 결과 확인 및 최종 확정').slice(0,2400);
+ const aiComparison='\nAI 최초 제안: '+(aiResult.design+aiResult.implementation+aiResult.report)+'점 / 교사 판정 후: '+result.total+'점';
+ if(!confirm('선택한 학생의 점수를 '+result.total+'점으로 확정할까요?\n주황색 '+ambiguous.length+'문항 중 '+ambiguous.filter(id=>reviewOverrides[id]===true).length+'문항을 정답으로 인정합니다.'+aiComparison+'\n확정 후에도 교사는 다시 검토·수정할 수 있습니다.'))return;
+ const uid=teacherUid,opened=token,signature=currentQuestionSignature(),btn=el('na-grade');
+ btn.disabled=true;
  try{
-  await ctx.db.ref(ROOT+'/reviews/'+teacherUid).set({...scores,note,reviewedAt:ctx.fb.database.ServerValue.TIMESTAMP,reviewedBy:ctx.user.uid});
-  message('✓ '+total+'점 최종 채점 저장 완료. 학생에게 자동으로 점수를 공개하지 않습니다.');
+  // Reject confirmations based on AI judgments that have changed in the meantime.
+  const latest=(await ctx.db.ref(ROOT+'/aiReviews/'+uid).once('value')).val();
+  const latestSignature=QUESTION_IDS.map(id=>{
+   const question=latest?.details?.questions?.find(q=>q.key===id);
+   return id+':'+String(question?.judgment||'');
+  }).join('|');
+  if(latest?.rubricVersion!==AI_RUBRIC_VERSION||latestSignature!==signature)
+   throw Error('AI 1차 채점 내용이 변경되었습니다. 이 학생의 제출본을 다시 열어 확인해 주세요.');
+  if(uid!==teacherUid||opened!==token)throw Error('채점 중 다른 학생 화면으로 전환되었습니다. 저장을 중지합니다.');
+  const decisions=Object.fromEntries(ambiguous.map(id=>[id,reviewOverrides[id]===true]));
+  const document={
+   design:result.design,implementation:result.implementation,report:result.report,
+   note,reviewedAt:ctx.fb.database.ServerValue.TIMESTAMP,reviewedBy:ctx.user.uid,
+   aiRubricVersion:AI_RUBRIC_VERSION,aiQuestionSignature:signature,
+   questionOverrides:decisions
+  };
+  await ctx.db.ref(ROOT+'/reviews/'+uid).set(document);
+  savedReview={...document,reviewedAt:Date.now()};
+  message('✓ '+result.total+'점으로 최종 점수 확정 완료. 체크한 정답 인정 문항도 저장했습니다. 학생에게 점수를 자동 공개하지 않습니다.');
+  renderCalculatedReview();
   fetchGradebook();
- }catch(e){message('교사 점수 저장 실패: '+String(e.code||e.message||e))}
- finally{if(btn.isConnected)btn.disabled=false}
+ }catch(e){message('⚠ 교사 최종 점수 저장 실패: '+String(e.code||e.message||e))}
+ finally{if(btn?.isConnected)btn.disabled=false}
 }
 global.NepalAssessment={open:async options=>{
  if(!options?.user||!options?.db)return;
- ctx=options;mount();clearTimeout(timer);prepared=null;writing=false;finalDoc=null;teacherDoc=null;teacherUid=null;aiResult=null;
+ ctx=options;mount();clearTimeout(timer);prepared=null;writing=false;finalDoc=null;teacherDoc=null;teacherUid=null;aiResult=null;savedReview=null;reviewOverrides={};
  const t=++token;
  if(options.isTeacher)await teacherOpen(t);
  else if(options.student)await studentOpen(t);
