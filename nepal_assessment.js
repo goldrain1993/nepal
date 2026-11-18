@@ -515,6 +515,7 @@ async function loadReview(uid){
   el('na-grade').onclick=saveGrade;
   el('na-run-ai').onclick=runAI;
   showAI();
+  if(container.isConnected)container.scrollIntoView({behavior:'smooth',block:'start'});
   message('17개 문항을 직접 검토하고, 주황색 판정은 필요하면 정답 인정에 체크하세요. 점수는 자동으로 계산됩니다.');
  }catch(e){message('학생 답안 조회 실패: '+String(e.code||e.message||e))}
 }
