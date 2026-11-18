@@ -660,6 +660,7 @@ async function saveGrade(){
   };
   await ctx.db.ref(ROOT+'/reviews/'+uid).set(document);
   savedReview={...document,reviewedAt:Date.now()};
+  el('na-teacher-note')?.dispatchEvent(new Event('input'));
   message('✓ '+result.total+'점으로 최종 점수 확정 완료. 체크한 정답 인정 문항도 저장했습니다. 학생에게 점수를 자동 공개하지 않습니다.');
   renderCalculatedReview();
   fetchGradebook();
