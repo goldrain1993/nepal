@@ -229,7 +229,7 @@ async function fetchGradebook(){
   });
   gradebookLoaded=true;showGradebook();
  }catch(e){
-  if(current===token){gradebookLoaded=false;state.textContent='⚠ 반별 성적표 조회 실패: '+String(e.code||e.message||e)+' · 신규 Firebase 함수 배포를 확인하세요. 기존 학생 제출 목록·교사 채점은 그대로 사용할 수 있습니다.';}
+  if(current===token){gradebookLoaded=false;state.textContent='⚠ 반별 성적표 조회 실패: '+String(e.code||e.message||e)+' · 신규 Firebase 함수 배포를 확인하세요. 성적표와 학생별 상세 보기를 사용할 수 없습니다. 서버 채점표 함수를 확인해 주세요.';}
  }finally{gradebookLoading=false;if(button?.isConnected)button.disabled=false}
 }
 
