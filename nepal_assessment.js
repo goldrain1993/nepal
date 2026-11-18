@@ -245,7 +245,7 @@ async function ensureGradeCallable(){
 }
 function confirmAIDataUse(){
  if(aiPrivacyAcknowledged)return true;
- if(!confirm('학교의 개인정보 처리 기준에 따라 AI 서비스에 학생의 서술형 답안을 제공할 수 있음을 확인했습니까?\n이름과 일반 연락처 패턴은 가리고, 엔트리 코드 원본 대신 블록 종류 요약만 전송됩니다.\nAI 점수는 교사가 검토하고 확정해야 합니다.'))return false;
+ if(!confirm('학교의 개인정보 처리 기준에 따라 AI 서비스에 학생의 서술형 답안을 제공할 수 있음을 확인했습니까?\n이름과 일반 연락처 패턴은 서버에서 가리며, 조별 코드 원본은 AI에 전송하지 않습니다.\nAI 점수는 교사가 검토하고 확정해야 합니다.'))return false;
  aiPrivacyAcknowledged=true;return true;
 }
 async function runBatchAI(){
@@ -536,40 +536,62 @@ async function runAI(){
  if(!btn||!teacherUid)return;
  if(!confirmAIDataUse())return;
  const uid=teacherUid;
- btn.disabled=true;message('AI 1차 채점 요청 중 · 제출 답안의 개인정보를 제외하고 미션 평가 기준으로 분석합니다…');
+ btn.disabled=true;message('AI 1차 채점 요청 중 · 완료되면 각 학생 답안 옆에 정답과 판단 근거가 표시됩니다…');
  try{
   const callable=await ensureGradeCallable();
   const result=await callable({uid});
   if(uid!==teacherUid)return;
   const suggested=result.data;
   if(!suggested||suggested.rubricVersion!==AI_RUBRIC_VERSION)
-   throw Error('서버의 AI 채점 기준이 이전 버전입니다. Firebase Functions 서버를 새 버전으로 배포한 후 다시 실행하세요.');
-  aiResult=suggested;showAI();
-  message('✓ AI 1차 채점안이 도착했습니다. 17개 문항(9개 답안 묶음)별 근거를 확인한 후 교사가 점수를 확정하세요.');
+   throw Error('AI 채점 서버 기준이 이전 버전입니다. Firebase Functions 버전을 확인해 주세요.');
+  aiResult=suggested;
+  if(savedReview?.aiQuestionSignature!==currentQuestionSignature())reviewOverrides={};
+  const entry=gradebookRows.find(row=>row.uid===uid);
+  if(entry)entry.aiStatus=currentAI()?'complete':'old';
+  showAI();showGradebook();
+  message('✓ AI 1차 채점 완료. 학생별 답안 옆의 AI 판정과 근거를 확인하고, 주황색 문항의 정답 인정 여부를 선택하세요.');
  }catch(e){
-  message('⚠ AI 채점 호출 실패: '+String(e.code||e.message||e)+'\nCloud Functions 배포·OPENAI_API_KEY 설정·교사 계정 권한을 확인하세요. AI 없이 직접 채점도 가능합니다.');
+  message('⚠ AI 1차 채점 요청 실패: '+String(e.code||e.message||e)+'\nCloud Functions 및 OPENAI_API_KEY 상태를 확인하세요.');
  }finally{if(btn.isConnected)btn.disabled=false}
 }
 async function saveGrade(){
- const scores=Object.fromEntries(['design','implementation','report'].map(k=>[k,Number(el('na-score-'+k).value)]));
- if(![30,25,20,15].includes(scores.design)||![30,25,20,15].includes(scores.implementation)||![40,30,20,10].includes(scores.report)){message('평가계획에 정해진 점수 단계만 선택할 수 있습니다.');return}
- const total=scores.design+scores.implementation+scores.report;
- const requiredVerifications=['na-verify-answers','na-verify-boundary','na-verify-code'];
- if(requiredVerifications.some(id=>!el(id)?.checked)){
-  message('최종 확정 전에 객관식·경계값·서술형 채점 근거를 모두 확인해 주세요.');
-  return;
+ const result=calculatedReview();
+ if(!result){message('17문항 AI 1차 채점 결과가 있어야 자동 점수를 확정할 수 있습니다. 먼저 AI 채점을 실행해 주세요.');return}
+ const ambiguous=result.ambiguousIds;
+ const typed=String(el('na-teacher-note')?.value||'').trim();
+ if(ambiguous.length&&typed.length<5){
+  message('부분정확·교사확인 문항이 있으므로 교사 채점 근거를 5자 이상 작성해 주세요.');
+  el('na-teacher-note')?.focus();return;
  }
- const note=el('na-teacher-note').value.trim();
- if(note.length<5){message('교사가 확인한 채점 근거를 5자 이상 적어 주세요. AI 제안만으로 최종 점수를 확정하지 않습니다.');el('na-teacher-note').focus();return}
- const aiComparison=currentAI()?'\nAI 제안: '+(aiResult.design+aiResult.implementation+aiResult.report)+'점 / 교사 확정: '+total+'점':'';
- if(!confirm('학생 개인 답안과 채점 근거를 교사가 검토하고 '+total+'점으로 최종 확정할까요?'+aiComparison))return;
- const btn=el('na-grade');btn.disabled=true;
+ const note=ambiguous.length?typed:String(savedReview?.note||'자동 채점 결과 확인 및 최종 확정').slice(0,2400);
+ const aiComparison='\nAI 최초 제안: '+(aiResult.design+aiResult.implementation+aiResult.report)+'점 / 교사 판정 후: '+result.total+'점';
+ if(!confirm('선택한 학생의 점수를 '+result.total+'점으로 확정할까요?\n주황색 '+ambiguous.length+'문항 중 '+ambiguous.filter(id=>reviewOverrides[id]===true).length+'문항을 정답으로 인정합니다.'+aiComparison+'\n확정 후에도 교사는 다시 검토·수정할 수 있습니다.'))return;
+ const uid=teacherUid,opened=token,signature=currentQuestionSignature(),btn=el('na-grade');
+ btn.disabled=true;
  try{
-  await ctx.db.ref(ROOT+'/reviews/'+teacherUid).set({...scores,note,reviewedAt:ctx.fb.database.ServerValue.TIMESTAMP,reviewedBy:ctx.user.uid});
-  message('✓ '+total+'점 최종 채점 저장 완료. 학생에게 자동으로 점수를 공개하지 않습니다.');
+  // Reject confirmations based on AI judgments that have changed in the meantime.
+  const latest=(await ctx.db.ref(ROOT+'/aiReviews/'+uid).once('value')).val();
+  const latestSignature=QUESTION_IDS.map(id=>{
+   const question=latest?.details?.questions?.find(q=>q.key===id);
+   return id+':'+String(question?.judgment||'');
+  }).join('|');
+  if(latest?.rubricVersion!==AI_RUBRIC_VERSION||latestSignature!==signature)
+   throw Error('AI 1차 채점 내용이 변경되었습니다. 이 학생의 제출본을 다시 열어 확인해 주세요.');
+  if(uid!==teacherUid||opened!==token)throw Error('채점 중 다른 학생 화면으로 전환되었습니다. 저장을 중지합니다.');
+  const decisions=Object.fromEntries(ambiguous.map(id=>[id,reviewOverrides[id]===true]));
+  const document={
+   design:result.design,implementation:result.implementation,report:result.report,
+   note,reviewedAt:ctx.fb.database.ServerValue.TIMESTAMP,reviewedBy:ctx.user.uid,
+   aiRubricVersion:AI_RUBRIC_VERSION,aiQuestionSignature:signature,
+   questionOverrides:decisions
+  };
+  await ctx.db.ref(ROOT+'/reviews/'+uid).set(document);
+  savedReview={...document,reviewedAt:Date.now()};
+  message('✓ '+result.total+'점으로 최종 점수 확정 완료. 체크한 정답 인정 문항도 저장했습니다. 학생에게 점수를 자동 공개하지 않습니다.');
+  renderCalculatedReview();
   fetchGradebook();
- }catch(e){message('교사 점수 저장 실패: '+String(e.code||e.message||e))}
- finally{if(btn.isConnected)btn.disabled=false}
+ }catch(e){message('⚠ 교사 최종 점수 저장 실패: '+String(e.code||e.message||e))}
+ finally{if(btn?.isConnected)btn.disabled=false}
 }
 global.NepalAssessment={open:async options=>{
  if(!options?.user||!options?.db)return;
