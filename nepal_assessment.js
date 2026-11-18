@@ -170,12 +170,14 @@ function showGradebook(){
  csv.disabled=list.length===0;
  const batch=el('na-ai-batch');if(batch)batch.disabled=aiBatchRunning||el('na-gb-class')?.value==='all'||!list.some(r=>r.submitted&&r.uid&&r.status!=='확정');
  const val=(v)=>esc(v==null?'—':v);
- box.innerHTML=list.length?'<table class="na-table"><thead><tr><th>반</th><th>번호</th><th>이름(등록명)</th><th>구글 계정 ID</th><th>개념 설계<br>30점</th><th>알고리즘 적용<br>30점</th><th>이해·설명<br>40점</th><th>총점<br>100점</th><th>상태·주의</th><th>상세</th></tr></thead><tbody>'+
+ box.innerHTML=list.length?'<table class="na-table"><thead><tr><th>반</th><th>번호</th><th>이름(등록명)</th><th>구글 계정 ID</th><th>개념 설계<br>30점</th><th>알고리즘 적용<br>30점</th><th>이해·설명<br>40점</th><th>총점<br>100점</th><th>AI 1차 채점</th><th>상태·주의</th><th>상세</th></tr></thead><tbody>'+
  list.map(x=>{
   const score=x.score;
+  const aiLabel=!x.submitted?'—':x.aiStatus==='complete'?'✓ 완료':x.aiStatus==='old'?'⚠ 이전 기준':x.aiStatus==='unknown'?'⚠ 확인 불가':'미채점';
+  const aiStyle=x.aiStatus==='complete'?'na-ai-done':x.aiStatus==='old'||x.aiStatus==='unknown'?'na-ai-warning':'na-ai-pending';
   const scores=score?'<td>'+val(score.design)+'</td><td>'+val(score.implementation)+'</td><td>'+val(score.report)+'</td><td><strong>'+val(score.total)+'</strong></td>':'<td>—</td><td>—</td><td>—</td><td>—</td>';
   return '<tr><td>'+val(x.clazz)+'</td><td>'+val(x.number)+'</td><td>'+val(x.name)+'</td><td>'+val(x.accountId)+'</td>'+scores+
-   '<td>'+val(x.status)+(x.warning?'<div class="na-muted" style="color:#ffe6a0">'+val(x.warning)+'</div>':'')+'</td><td>'+
+   '<td><span class="'+aiStyle+'">'+val(aiLabel)+'</span></td><td>'+val(x.status)+(x.warning?'<div class="na-muted" style="color:#ffe6a0">'+val(x.warning)+'</div>':'')+'</td><td>'+
    (x.submitted?'<button type="button" class="na-btn" data-gb-uid="'+val(x.uid)+'">보기</button>':'—')+'</td></tr>';
  }).join('')+'</tbody></table>':'<p class="na-muted">선택한 반에서 확인된 계정·제출 기록이 없습니다.</p>';
 }
@@ -183,8 +185,8 @@ function exportGradebook(){
  if(!gradebookLoaded)return;
  const current=el('na-gb-class')?.value||'all',data=selectedGradeRows();
  if(!data.length)return;
- const rows=[['학년','반','번호','이름(등록명)','구글 계정 ID','개념 설계','알고리즘 적용','이해·설명','총점','상태','확인 필요']];
- data.forEach(x=>rows.push([x.grade,x.clazz,x.number??'',x.name,x.accountId,x.score?.design??'',x.score?.implementation??'',x.score?.report??'',x.score?.total??'',x.status,x.warning||'']));
+ const rows=[['학년','반','번호','이름(등록명)','구글 계정 ID','개념 설계','알고리즘 적용','이해·설명','총점','AI 1차 채점','상태','확인 필요']];
+ data.forEach(x=>rows.push([x.grade,x.clazz,x.number??'',x.name,x.accountId,x.score?.design??'',x.score?.implementation??'',x.score?.report??'',x.score?.total??'',!x.submitted?'—':x.aiStatus==='complete'?'완료':x.aiStatus==='old'?'이전 기준':x.aiStatus==='unknown'?'확인 불가':'미채점',x.status,x.warning||'']));
  const clean=x=>{let s=String(x??'');if(/^[\s]*[=+\-@\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'};
  const content='\ufeff'+rows.map(r=>r.map(clean).join(',')).join('\r\n');
  const url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8'}));
@@ -210,7 +212,20 @@ async function fetchGradebook(){
   const result=await ctx.fb.app().functions('asia-northeast3').httpsCallable('getNepalAssessmentGradebook')({});
   if(current!==token)return;
   if(!Array.isArray(result.data?.rows))throw Error('서버가 유효한 성적표 목록을 반환하지 않았습니다.');
-  gradebookRows=result.data.rows;gradebookLoaded=true;showGradebook();
+  let aiReviews=null;
+  try{
+   aiReviews=(await ctx.db.ref(ROOT+'/aiReviews').once('value')).val()||{};
+  }catch(error){
+   console.warn('AI 채점 상태 조회 실패',error);
+  }
+  if(current!==token)return;
+  gradebookRows=result.data.rows.map(row=>{
+   const proposal=aiReviews?.[row.uid];
+   const complete=proposal?.rubricVersion===AI_RUBRIC_VERSION&&
+    Array.isArray(proposal.details?.questions)&&proposal.details.questions.length===17;
+   return {...row,aiStatus:aiReviews===null?'unknown':!proposal?'pending':complete?'complete':'old'};
+  });
+  gradebookLoaded=true;showGradebook();
  }catch(e){
   if(current===token){gradebookLoaded=false;state.textContent='⚠ 반별 성적표 조회 실패: '+String(e.code||e.message||e)+' · 신규 Firebase 함수 배포를 확인하세요. 기존 학생 제출 목록·교사 채점은 그대로 사용할 수 있습니다.';}
  }finally{gradebookLoading=false;if(button?.isConnected)button.disabled=false}
@@ -253,6 +268,7 @@ async function runBatchAI(){
     const response=await callable({uid:row.uid});
     if(response.data?.rubricVersion!==AI_RUBRIC_VERSION)throw Error('AI 채점 서버가 이전 기준입니다. Firebase Functions 재배포가 필요합니다.');
     ok++;consecutiveErrors=0;
+    row.aiStatus='complete';
     if(teacherUid===row.uid&&opened===token){aiResult=response.data;showAI()}
    }catch(e){
     const msg=String(e.code||e.message||e);
