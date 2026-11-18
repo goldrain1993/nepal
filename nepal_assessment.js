@@ -495,7 +495,9 @@ function closeStudentReview(){
  const saved=savedReview?.questionOverrides||{};
  const hasUnsavedChecks=!!pending&&pending.ambiguousIds.some(id=>
   (reviewOverrides[id]===true)!==(saved[id]===true));
- if(hasUnsavedChecks&&!confirm('아직 확정하지 않은 정답 인정 체크가 있습니다.\n답안지를 닫으면 해당 변경은 저장되지 않습니다. 답안지를 접을까요?'))return;
+ const noteInput=el('na-teacher-note');
+ const hasUnsavedNote=!!noteInput&&String(noteInput.value||'').trim()!==String(savedReview?.note||'').trim();
+ if((hasUnsavedChecks||hasUnsavedNote)&&!confirm('아직 확정하지 않은 교사 판정 또는 채점 근거가 있습니다.\n답안지를 닫으면 해당 변경은 저장되지 않습니다. 답안지를 접을까요?'))return;
  teacherUid=null;teacherDoc=null;aiResult=null;savedReview=null;reviewOverrides={};
  area.replaceChildren();
  // Open the existing gradebook, retaining the chosen class and loaded score rows.
