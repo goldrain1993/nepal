@@ -73,10 +73,12 @@ function mount(){
  css.textContent+="\n #na-root .na-gradebook-details{padding:14px 17px}\n #na-root .na-gradebook-summary{cursor:pointer;list-style:disclosure-closed;font-weight:900;font-size:17px;color:#c3efff}\n #na-root .na-gradebook-details[open] .na-gradebook-summary{margin-bottom:16px}\n #na-root .na-gradebook-summary .na-muted{font-size:12px;font-weight:500;margin-left:10px}\n #na-root .na-ai-done{color:#91efd0;font-weight:850}\n #na-root .na-ai-warning{color:#ffd18a;font-weight:750}\n #na-root .na-ai-pending{color:#c5d4e2}\n ";
  css.textContent+="\n#na-root .na-answer-card{padding:17px;margin:12px 0}\n#na-root .na-answer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}\n#na-root .na-answer-head h3{font-size:15px;flex:1;margin:0 0 8px;line-height:1.5}\n#na-root .na-answer-label{font-size:12px;color:#b7d7e8;font-weight:850;margin:8px 0 5px}\n#na-root .na-answer-card .na-read{margin:2px 0 9px;white-space:pre-wrap;line-height:1.65}\n#na-root .na-verdict{border-radius:99px;border:1px solid;padding:4px 12px;white-space:nowrap;font-size:12px;font-weight:900;flex:none}\n#na-root .na-verdict-correct{color:#beffe0;background:#164e39;border-color:#419c68}\n#na-root .na-verdict-wrong{color:#ffd1cf;background:#57252a;border-color:#bf5962}\n#na-root .na-verdict-review{color:#ffe1b7;background:#603e22;border-color:#d09a4b}\n#na-root .na-verdict-pending{color:#d0e8f4;background:#284457;border-color:#718ba0}\n#na-root .na-answer-key{margin-top:9px;padding:10px 13px;border-left:3px solid #73c9f7;background:#0c3047;color:#daefff;font-size:13px;border-radius:5px}\n#na-root .na-ai-reason{margin-top:9px;padding:10px 13px;background:#0b2434;color:#d3e7f5;border:1px solid #315a72;border-radius:8px;font-size:13px;white-space:pre-wrap}\n#na-root .na-manual-row{display:flex;align-items:center;gap:11px;flex-wrap:wrap;padding:12px;margin-top:11px;background:#44311e;border:1px solid #bb8652;border-radius:10px}\n#na-root .na-manual-check{font-size:14px;font-weight:900;color:#ffe6be;cursor:pointer;display:inline-flex;align-items:center;gap:7px}\n#na-root .na-manual-check input{accent-color:#80e1b5;width:18px;height:18px}\n#na-root .na-manual-outcome{font-size:12px;color:#ffdfb0}\n#na-root .na-auto-score{display:grid;gap:4px;min-width:135px;flex:1;border:1px solid #477c93;border-radius:11px;padding:12px;background:#0c3045}\n#na-root .na-auto-score>span{font-size:12px;font-weight:800;color:#bddbea}\n#na-root .na-auto-score output{font-size:22px;font-weight:900;color:#c5efff}\n#na-root .na-auto-total{border-color:#79cafa;background:#16486a}\n#na-root .na-auto-total output{color:#fff}\n#na-root #na-scoring-state{margin:7px 0 13px}\n#na-root #na-note-wrap{margin-top:15px}\n#na-root #na-grade{margin-top:12px;min-height:48px;font-size:15px}\n#na-root #na-previous-review{margin-top:8px;color:#b9dce8}\n@media(max-width:700px){#na-root .na-answer-card{padding:12px}#na-root .na-auto-score{min-width:105px}}\n";
  css.textContent+="#na-root .na-grade-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:13px}\n#na-root .na-grade-actions .na-btn{min-height:47px;font-size:14px}\n#na-root .na-grade-actions #na-close-review{border-color:#699cb8;background:#183d55;color:#d5f0ff}\n#na-root .na-grade-actions #na-close-review:hover{background:#255b7b}\n@media(max-width:700px){#na-root .na-grade-actions{flex-direction:column;align-items:stretch}#na-root .na-grade-actions .na-btn{width:100%}}";
+ css.textContent+="\n/* Desktop: reserve a right column so the floating memo never masks answer cards. */\n#na-root.na-has-floating-note .na-box{\n  width:calc(100% - 395px);max-width:1030px;\n  margin-left:max(16px,calc((100vw - 1330px)/2));\n  margin-right:375px;\n}\n#na-root .na-floating-note{\n  position:fixed;z-index:18060;right:18px;top:74px;bottom:18px;\n  width:335px;max-height:calc(100vh - 92px);\n  display:flex;flex-direction:column;overflow:hidden;\n  background:linear-gradient(155deg,#123e58,#091f32);\n  border:1px solid #77b7d9;border-radius:15px;\n  box-shadow:0 16px 45px #0009;color:#e9f8ff;\n}\n#na-root .na-floating-note[hidden]{display:none!important}\n#na-root .na-memo-header{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px;border-bottom:1px solid #527f99;background:#174863}\n#na-root .na-memo-headline{display:flex;align-items:center;gap:9px;min-width:0}\n#na-root .na-memo-headline strong{display:block;font-size:15px;color:#fff}\n#na-root .na-memo-headline small{display:block;color:#bde4f6;font-size:11px}\n#na-root #na-memo-toggle{padding:6px 9px;white-space:nowrap;font-size:12px}\n#na-root .na-memo-content{display:flex;flex-direction:column;flex:1;min-height:0;padding:13px}\n#na-root .na-memo-note-container{display:flex;flex-direction:column;min-height:0;flex:1}\n#na-root .na-memo-note-container #na-note-wrap{display:flex;flex-direction:column;min-height:0;flex:1;margin:0}\n#na-root .na-memo-note-container #na-note-wrap[hidden]{display:none!important}\n#na-root .na-memo-note-container label strong{font-size:13px;color:#f0faff}\n#na-root .na-memo-note-container #na-note-description{font-size:12px;color:#b9dcee;margin:8px 0 10px}\n#na-root .na-memo-note-container #na-teacher-note{display:block;flex:1;width:100%;min-height:130px;margin:0;resize:none;background:#05192a;border:1px solid #75a9c5;color:#f4fcff;font-size:14px;line-height:1.75;padding:13px;outline-offset:2px}\n#na-root .na-memo-note-container #na-teacher-note:focus{border-color:#b4e8ff;outline:2px solid #4298bc}\n#na-root .na-memo-bottom{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;margin-top:10px;font-size:11px;color:#b8daeb}\n#na-root .na-memo-bottom .is-unsaved{color:#ffe0a4}\n#na-root .na-floating-note.is-collapsed{bottom:auto;max-height:64px;width:320px}\n#na-root .na-floating-note.is-collapsed .na-memo-content{display:none}\n#na-root .na-floating-note.is-collapsed .na-memo-header{border:0}\n#na-root.na-has-floating-note .na-box{transition:width .15s ease}\n@media(max-width:1250px){\n #na-root.na-has-floating-note .na-box{width:calc(100% - 350px);margin:14px 332px 18px 14px}\n #na-root .na-floating-note{right:12px;top:64px;bottom:12px;width:305px}\n}\n@media(max-width:1040px){\n #na-root.na-has-floating-note .na-box{width:calc(100% - 28px);max-width:950px;margin:15px auto}\n #na-root .na-floating-note{top:auto;bottom:14px;right:14px;max-height:min(70vh,500px);width:min(335px,calc(100vw - 28px))}\n #na-root .na-floating-note.is-collapsed{width:min(320px,calc(100vw - 28px))}\n}\n@media(max-width:700px){\n #na-root.na-has-floating-note .na-box{width:100%;max-width:none;margin:0}\n #na-root .na-floating-note{bottom:10px;right:10px;width:calc(100vw - 20px)}\n #na-root .na-floating-note.is-collapsed{width:min(310px,calc(100vw - 20px))}\n}\n";
  document.head.appendChild(css);
  panel=document.createElement('section');panel.id='na-root';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','수행평가 작성 및 관리');document.body.appendChild(panel);
 }
 function shell(title,desc){
+ unmountTeacherMemo();
  panel.innerHTML='<div class="na-box"><div class="na-top"><div><h2>'+esc(title)+'</h2><div class="na-muted">'+esc(desc)+'</div></div><button id="na-close" class="na-btn">✕ 닫기</button></div><div id="na-body"></div><div id="na-message" role="status"></div></div>';
  el('na-close').onclick=()=>{clearTimeout(timer);panel.classList.remove('show');token++};
  panel.classList.add('show');
@@ -463,9 +465,49 @@ function renderQuestionAnnotations(){
   renderCalculatedReview();
  };
 }
+
+/* The teacher's grading note stays in a fixed, right-side notepad while reviewing answers. */
+function mountTeacherMemo(){
+ const noteWrap=el('na-note-wrap'),note=el('na-teacher-note');
+ if(!panel||!noteWrap||!note)return;
+ el('na-floating-note')?.remove();
+ const memo=document.createElement('aside');
+ memo.id='na-floating-note';
+ memo.className='na-floating-note';
+ memo.hidden=true;
+ memo.setAttribute('aria-label','교사 채점 근거 메모장');
+ memo.innerHTML='<div class="na-memo-header"><div class="na-memo-headline"><span aria-hidden="true">🗒️</span><div><strong>교사 채점 근거</strong><small>답안과 함께 보는 고정 메모장</small></div></div><button id="na-memo-toggle" class="na-btn" type="button" aria-expanded="true" aria-controls="na-memo-content">접기</button></div>'+
+  '<div id="na-memo-content" class="na-memo-content"><div class="na-memo-note-container"></div><div class="na-memo-bottom"><span id="na-memo-counter">0 / 1600자</span><span id="na-memo-unsaved">최종 점수 확정 시 함께 저장</span></div></div>';
+ memo.querySelector('.na-memo-note-container').appendChild(noteWrap);
+ panel.appendChild(memo);
+ const toggle=memo.querySelector('#na-memo-toggle');
+ const narrow=!!global.matchMedia?.('(max-width: 1040px)')?.matches;
+ if(narrow){memo.classList.add('is-collapsed');toggle.setAttribute('aria-expanded','false');toggle.textContent='펼치기'}
+ toggle.onclick=()=>{
+  const closed=memo.classList.toggle('is-collapsed');
+  toggle.setAttribute('aria-expanded',String(!closed));
+  toggle.textContent=closed?'펼치기':'접기';
+  if(!closed)note.focus({preventScroll:true});
+ };
+ const counter=memo.querySelector('#na-memo-counter'),unsaved=memo.querySelector('#na-memo-unsaved');
+ const update=()=>{
+  counter.textContent=note.value.length+' / 1600자';
+  const saved=String(savedReview?.note||'');
+  unsaved.textContent=note.value!==saved?'● 아직 저장되지 않은 메모':'최종 점수 확정 시 함께 저장';
+  unsaved.classList.toggle('is-unsaved',note.value!==saved);
+ };
+ note.addEventListener('input',update);
+ update();
+}
+function unmountTeacherMemo(){
+ el('na-floating-note')?.remove();
+ panel?.classList.remove('na-has-floating-note');
+}
+
 function renderCalculatedReview(){
  const data=calculatedReview();
  const waiting=el('na-scoring-state'),submit=el('na-grade'),noteWrap=el('na-note-wrap');
+ const memo=el('na-floating-note');
  if(waiting)waiting.textContent=!data?'AI 1차 채점이 완료되면 17개 문항의 판정과 교사 체크를 합산해 점수가 자동 계산됩니다.':
   '정답 인정: 기초 개념 '+data.counts.concept+'/5 · 알고리즘 적용 '+data.counts.application+'/6 · 이해·설명 '+data.counts.explanation+'/6 · 기본점수 40점 포함';
  for(const key of ['design','implementation','report']){
@@ -477,6 +519,7 @@ function renderCalculatedReview(){
   noteWrap.hidden=!data||data.ambiguousIds.length===0;
   const note=el('na-teacher-note');
   if(note)note.required=!!data&&data.ambiguousIds.length>0;
+  if(memo){memo.hidden=noteWrap.hidden;panel.classList.toggle('na-has-floating-note',!memo.hidden)}
   const hint=el('na-note-description');
   if(hint&&data)hint.textContent='부분정확·교사확인 '+data.ambiguousIds.length+'개 문항('+data.ambiguousIds.join(', ')+')을 정답 인정할지 검토한 근거를 5자 이상 작성해 주세요.';
  }
@@ -499,6 +542,7 @@ function closeStudentReview(){
  const hasUnsavedNote=!!noteInput&&String(noteInput.value||'').trim()!==String(savedReview?.note||'').trim();
  if((hasUnsavedChecks||hasUnsavedNote)&&!confirm('아직 확정하지 않은 교사 판정 또는 채점 근거가 있습니다.\n답안지를 닫으면 해당 변경은 저장되지 않습니다. 답안지를 접을까요?'))return;
  teacherUid=null;teacherDoc=null;aiResult=null;savedReview=null;reviewOverrides={};
+ unmountTeacherMemo();
  area.replaceChildren();
  // Open the existing gradebook, retaining the chosen class and loaded score rows.
  gradebook.open=true;
@@ -511,6 +555,7 @@ function closeStudentReview(){
  });
 }
 async function loadReview(uid){
+ unmountTeacherMemo();
  teacherUid=uid;savedReview=null;reviewOverrides={};message('학생 답안을 불러오는 중…');
  const container=el('na-review');container.innerHTML='';
  try{
@@ -536,6 +581,7 @@ async function loadReview(uid){
    '<div class="na-grade-actions"><button class="na-btn primary" id="na-grade" type="button" disabled>✅ 교사 최종 점수 확정</button><button class="na-btn" id="na-close-review" type="button" title="학생 답안지를 닫고 반별 수행평가 성적표로 이동">↩ 답안지 접기 · 성적표로 돌아가기</button></div></div>'+
    rubricHtml();
   el('na-teacher-note').value=savedReview?.note||'';
+  mountTeacherMemo();
   el('na-grade').onclick=saveGrade;
   el('na-close-review').onclick=closeStudentReview;
   el('na-run-ai').onclick=runAI;
