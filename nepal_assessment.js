@@ -530,17 +530,19 @@ function renderCalculatedReview(){
   status.textContent='이전에 확정한 점수: '+old+'점 · 현재 계산: '+(data?data.total+'점':'확인 불가')+' · [최종 점수 확정]을 누르기 전에는 이전 기록이 유지됩니다.';
  }
 }
+function hasUnsavedTeacherEdits(){
+ const current=calculatedReview();
+ const saved=savedReview?.questionOverrides||{};
+ const changedChecks=!!current&&current.ambiguousIds.some(id=>(reviewOverrides[id]===true)!==(saved[id]===true));
+ const note=el('na-teacher-note');
+ const changedNote=!!note&&String(note.value||'').trim()!==String(savedReview?.note||'').trim();
+ return changedChecks||changedNote;
+}
 function closeStudentReview(){
  const area=el('na-review'),gradebook=el('na-body')?.querySelector('.na-gradebook-details');
  if(!area||!gradebook)return;
  // A modified teacher decision remains a draft until [교사 최종 점수 확정] is clicked.
- const pending=calculatedReview();
- const saved=savedReview?.questionOverrides||{};
- const hasUnsavedChecks=!!pending&&pending.ambiguousIds.some(id=>
-  (reviewOverrides[id]===true)!==(saved[id]===true));
- const noteInput=el('na-teacher-note');
- const hasUnsavedNote=!!noteInput&&String(noteInput.value||'').trim()!==String(savedReview?.note||'').trim();
- if((hasUnsavedChecks||hasUnsavedNote)&&!confirm('아직 확정하지 않은 교사 판정 또는 채점 근거가 있습니다.\n답안지를 닫으면 해당 변경은 저장되지 않습니다. 답안지를 접을까요?'))return;
+ if(hasUnsavedTeacherEdits()&&!confirm('아직 확정하지 않은 교사 판정 또는 채점 근거가 있습니다.\n답안지를 닫으면 해당 변경은 저장되지 않습니다. 답안지를 접을까요?'))return;
  teacherUid=null;teacherDoc=null;aiResult=null;savedReview=null;reviewOverrides={};
  unmountTeacherMemo();
  area.replaceChildren();
@@ -555,6 +557,7 @@ function closeStudentReview(){
  });
 }
 async function loadReview(uid){
+ if(teacherUid&&teacherUid!==uid&&hasUnsavedTeacherEdits()&&!confirm('현재 학생의 채점 메모 또는 정답 인정 체크가 저장되지 않았습니다.\n다른 학생을 열면 변경이 사라집니다. 계속할까요?'))return;
  unmountTeacherMemo();
  teacherUid=uid;savedReview=null;reviewOverrides={};message('학생 답안을 불러오는 중…');
  const container=el('na-review');container.innerHTML='';
