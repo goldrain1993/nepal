@@ -167,8 +167,8 @@ function selectedGradeRows(){
 function showGradebook(){
  const box=el('na-gb-table'),status=el('na-gb-status'),csv=el('na-gb-csv');
  if(!box||!status||!gradebookLoaded)return;
- const list=selectedGradeRows(),submitted=list.filter(r=>r.submitted).length,confirmed=list.filter(r=>r.status==='확정').length;
- status.textContent='계정·제출 기록 '+list.length+'명 / 제출 '+submitted+'명 / 점수 확정 '+confirmed+'명 / 미채점 '+(submitted-confirmed)+'명 / 미제출 '+(list.length-submitted)+'명 · 미로그인 학생은 명단에 없을 수 있습니다.';
+ const list=selectedGradeRows(),submitted=list.filter(r=>r.submitted).length,confirmed=list.filter(r=>r.status==='확정').length,aiFinished=list.filter(r=>r.aiStatus==='complete').length;
+ status.textContent='계정·제출 기록 '+list.length+'명 / 제출 '+submitted+'명 / AI 1차 완료 '+aiFinished+'명 / 점수 확정 '+confirmed+'명 / 최종 미확정 '+(submitted-confirmed)+'명 / 미제출 '+(list.length-submitted)+'명 · 미로그인 학생은 명단에 없을 수 있습니다.';
  csv.disabled=list.length===0;
  const batch=el('na-ai-batch');if(batch)batch.disabled=aiBatchRunning||el('na-gb-class')?.value==='all'||!list.some(r=>r.submitted&&r.uid&&r.status!=='확정');
  const val=(v)=>esc(v==null?'—':v);
