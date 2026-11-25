@@ -254,43 +254,59 @@ function confirmAIDataUse(){
  if(!confirm('학교의 개인정보 처리 기준에 따라 AI 서비스에 학생의 서술형 답안을 제공할 수 있음을 확인했습니까?\n이름과 일반 연락처 패턴은 서버에서 가리며, 조별 코드 원본은 AI에 전송하지 않습니다.\nAI 점수는 교사가 검토하고 확정해야 합니다.'))return false;
  aiPrivacyAcknowledged=true;return true;
 }
-async function runBatchAI(){
+async function runBatchAI(mode='class'){
  if(aiBatchRunning||!ctx?.isTeacher||!gradebookLoaded)return;
- const clazz=el('na-gb-class')?.value;
- if(!clazz||clazz==='all'){message('일괄 채점은 1개 학급씩 진행합니다.');return}
- const students=selectedGradeRows().filter(r=>r.submitted&&r.uid&&r.status!=='확정');
- if(!students.length){message('이 학급에서 아직 확정되지 않은 제출 답안이 없습니다.');return}
+ const clazz=el('na-gb-class')?.value||'all';
+ if(mode==='class'&&clazz==='all'){message('선택 학급 일괄 채점은 1개 반을 선택하세요. 전체 학급은 [전체 1학년 AI 일괄 채점]을 사용하세요.');return;}
+ const source=mode==='all'?gradebookRows:mode==='pending'?classGradeRows():selectedGradeRows();
+ const students=eligibleForBatch(source).filter(r=>mode!=='pending'||r.aiStatus==='pending');
+ const scope=mode==='all'?'전체 1학년':clazz==='all'?'전체 1학년':clazz+'반';
+ const qualifier=mode==='pending'?'AI 미채점 학생':mode==='all'?'제출·미확정 학생':'현재 화면의 제출·미확정 학생';
+ if(!students.length){message(scope+'에 '+qualifier+'이 없습니다.');return;}
  if(!confirmAIDataUse())return;
- if(!confirm(clazz+'반 '+students.length+'명 AI 1차 채점을 시작할까요?\n이미 채점한 학생은 서버에 저장된 결과를 재사용합니다.'))return;
+ const cached=students.filter(r=>r.aiStatus==='complete').length;
+ const newRequests=students.length-cached;
+ if(!confirm(scope+'의 '+qualifier+' '+students.length+'명을 순차적으로 AI 채점할까요?'+
+  (cached?' \n기존 AI 완료 '+cached+'명은 서버에 저장된 결과를 재사용합니다.':'')+
+  '\n새 AI 분석이 필요한 학생은 최대 '+newRequests+'명이며 외부 API 비용이 발생할 수 있습니다.'+
+  '\n확정된 학생 및 미제출 학생은 제외합니다. 채점 중에는 이 화면을 열어 두세요.'))return;
  aiBatchRunning=true;aiBatchCancel=false;
- const opened=token,button=el('na-ai-batch'),stop=el('na-ai-stop'),state=el('na-ai-batch-status');
- button.disabled=true;stop.disabled=false;
+ const opened=token,stop=el('na-ai-stop'),state=el('na-ai-batch-status');
+ ['na-ai-batch','na-ai-batch-pending','na-ai-batch-all','na-gb-refresh','na-gb-csv'].forEach(id=>{
+   const button=el(id);if(button)button.disabled=true;
+ });
+ if(stop)stop.disabled=false;
  let done=0,ok=0,legacy=0,fail=0,errorText='',consecutiveErrors=0;
  try{
   const callable=await ensureGradeCallable();
   for(const row of students){
    if(aiBatchCancel||opened!==token)break;
-   state.textContent=clazz+'반 '+(done+1)+'/'+students.length+'명 진행 · 성공 '+ok+'명 / 형식 확인 '+legacy+'명 / 오류 '+fail+'명';
+   const studentLabel=row.clazz+'반 '+(row.number??'번호 미확인')+'번';
+   if(state)state.textContent=scope+' '+(done+1)+'/'+students.length+'명 진행 ('+studentLabel+') · 성공 '+ok+'명 / 구형 답안 '+legacy+'명 / 오류 '+fail+'명';
    try{
+    // 서버의 유효한 기존 AI 결과는 재사용하며, 명시적인 재채점(refresh)은 실행하지 않음.
     const response=await callable({uid:row.uid});
     if(!COMPATIBLE_AI_RUBRICS.includes(response.data?.rubricVersion))throw Error('AI 채점 결과가 17문항 형식이 아닙니다. Firebase Functions를 확인해 주세요.');
-    ok++;consecutiveErrors=0;
-    row.aiStatus='complete';
-    if(teacherUid===row.uid&&opened===token){aiResult=response.data;showAI()}
+    ok++;consecutiveErrors=0;row.aiStatus='complete';
+    if(teacherUid===row.uid&&opened===token){aiResult=response.data;showAI();}
    }catch(e){
     const msg=String(e.code||e.message||e);
-    if(msg.includes('failed-precondition')){legacy++;consecutiveErrors=0}else{fail++;consecutiveErrors++;if(!errorText)errorText=msg}
-    if(consecutiveErrors>=3||msg.includes('재배포')||msg.includes('not-found')||msg.includes('permission-denied')){aiBatchCancel=true;break}
+    if(msg.includes('failed-precondition')){legacy++;consecutiveErrors=0;}
+    else{fail++;consecutiveErrors++;if(!errorText)errorText=msg;}
+    if(consecutiveErrors>=3||msg.includes('재배포')||msg.includes('not-found')||msg.includes('permission-denied')){aiBatchCancel=true;break;}
    }
    done++;
+   if(opened===token&&done%5===0)showGradebook();
   }
- }catch(e){fail++;errorText=String(e.code||e.message||e)}
+ }catch(e){fail++;errorText=String(e.code||e.message||e);}
  finally{
   aiBatchRunning=false;
   if(opened===token){
-   stop.disabled=true;
-   state.textContent=clazz+'반 '+(aiBatchCancel?'중단':'완료')+' · AI 제안 '+ok+'명 / 구형 답안 '+legacy+'명 / 오류 '+fail+'명'+(errorText?' · 오류: '+errorText:'')+' · 점수 최종 확정은 별도로 진행하세요.';
+   if(stop)stop.disabled=true;
    showGradebook();
+   if(state)state.textContent=scope+' '+(aiBatchCancel?'중단':'완료')+
+     ' · AI 1차 채점 '+ok+'명 / 구형 답안 '+legacy+'명 / 오류 '+fail+'명'+
+     (errorText?' · 오류: '+errorText:'')+' · 최종 점수 확정은 교사가 별도로 진행하세요.';
   }
  }
 }
